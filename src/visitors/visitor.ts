@@ -1,5 +1,3 @@
-import { Maybe } from "purify-ts/Maybe";
-
 export interface ParentEvent {
   type: "parent";
   id: string;

@@ -8,6 +8,7 @@ export class TreeMap<T> {
     await ret.populate();
     return ret;
   }
+
   protected parentMap = new PureMap<string, string>();
   protected childMap = new PureMap<string, string[]>();
   protected nodeMap = new PureMap<string, T>();
@@ -16,19 +17,22 @@ export class TreeMap<T> {
     return this.visitor.walk((event) => {
       switch (event.type) {
         case "parent": {
-          this.parentMap.set(event.id, event.parent);
+          this.parentMap.setFirst(event.id, event.parent);
           break;
         }
         case "node": {
-          this.nodeMap.set(event.id, event.node);
+          this.nodeMap.setFirst(event.id, event.node);
           break;
         }
         case "children": {
-          this.childMap.set(event.id, event.children);
+          this.childMap.setFirst(event.id, event.children);
           break;
         }
       }
     });
+  }
+  get keys() {
+    return this.nodeMap.keys();
   }
   get root() {
     return this.visitor.root;
