@@ -37,6 +37,12 @@ export class TreeMap<T> {
   get root() {
     return this.visitor.root;
   }
+  find(n: T): Maybe<string> {
+    for (const [id, node] of this.nodeMap.entries()) {
+      if (node === n) return Just(id);
+    }
+    return Nothing;
+  }
   parentNode(n: string): Maybe<T> {
     return this.parent(n).map((p) => this.node(p));
   }

@@ -21,6 +21,11 @@ export class PureMap<K, V> extends Map<K, V> {
       throw new Error(`Map already contains an entry for this key`);
     return this.set(k, v);
   }
+
+  setRet(k: K, v: V): V {
+    this.set(k, v);
+    return v;
+  }
   mustGet(k: K, e?: Error): V {
     if (!this.has(k)) {
       throw e ?? new Error(`No entry found for given key`);

@@ -1,9 +1,7 @@
-import { Maybe } from "purify-ts/Maybe";
 import { TreeMap } from "../maps/treemap";
 import { GenericVisitor, NamedChildren } from "../visitors/generic";
 import { ObjectVisitor } from "../visitors/object";
 import { ArborGlyph } from "./arborglyph";
-import { synOpts } from "./synthetic";
 
 export type Tree =
   | { type: "fork"; left: Tree; right: Tree }
@@ -32,13 +30,8 @@ describe("Create a few attributed trees", () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
 
     const init = new ArborGlyph(map)
-      .namedSynthetic(
-        "childCount",
-        ({ childIds }): number => childIds.length,
-        synOpts<number>({})
-      )
       .synthetic<number>(({ childIds }) => childIds.length)
-      .named("childCount2");
+      .named("childCount");
 
     const attributes = init
       .synthetic(({ childIds, attrs }) =>
@@ -57,11 +50,11 @@ describe("Create a few attributed trees", () => {
   });
   it("should create an attributed tree with an inherted attribute", async () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
-    const attributes = new ArborGlyph(map).inherited(
-      "depth",
-      (parent: Maybe<number>): number => parent.map((_) => _ + 1).orDefault(0),
-      {}
-    );
+    const attributes = new ArborGlyph(map)
+      .inherited<number>(({ parentValue }) =>
+        parentValue.map((_) => _ + 1).orDefault(0)
+      )
+      .named("depth");
 
     expect(attributes.query("depth", "$")).toEqual(0);
     expect(attributes.query("depth", "$.a")).toEqual(1);
@@ -69,8 +62,58 @@ describe("Create a few attributed trees", () => {
     expect(attributes.query("depth", "$.h")).toEqual(1);
   });
 
+  it("should honor memoize flag evaluations", async () => {
+    const map = await TreeMap.create(new ObjectVisitor(data));
+    const calls: string[] = [];
+    let attributes = new ArborGlyph(map)
+      .inherited<number>(
+        ({ parentValue, nid }) => {
+          calls.push(`nomemo:${nid}`);
+          return parentValue.map((_) => _ + 1).orDefault(0);
+        },
+        { memoize: false }
+      )
+      .named("depth")
+      .inherited<number>(
+        ({ parentValue, nid }) => {
+          calls.push(`memo:${nid}`);
+          return parentValue.map((_) => _ + 1).orDefault(0);
+        },
+        { memoize: true }
+      )
+      .named("depthMemo");
+
+    expect(attributes.query("depth", "$")).toEqual(0);
+    expect(attributes.query("depth", "$")).toEqual(0);
+    expect(calls).toEqual(["nomemo:$", "nomemo:$"]);
+    expect(attributes.query("depthMemo", "$")).toEqual(0);
+    expect(attributes.query("depthMemo", "$")).toEqual(0);
+    expect(calls).toEqual(["nomemo:$", "nomemo:$", "memo:$"]);
+    expect(attributes.query("depthMemo", "$.c.d.0.e")).toEqual(4);
+    expect(calls).toEqual([
+      "nomemo:$",
+      "nomemo:$",
+      "memo:$",
+      "memo:$.c",
+      "memo:$.c.d",
+      "memo:$.c.d.0",
+      "memo:$.c.d.0.e",
+    ]);
+    expect(attributes.query("depthMemo", "$.c.d")).toEqual(2);
+    expect(calls).toEqual([
+      "nomemo:$",
+      "nomemo:$",
+      "memo:$",
+      "memo:$.c",
+      "memo:$.c.d",
+      "memo:$.c.d.0",
+      "memo:$.c.d.0.e",
+    ]);
+  });
+
   it("should create an attributed tree with a repmin attribute", async () => {
     const data = fork(leaf(3), fork(leaf(2), leaf(10)));
+    const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
     const map = await TreeMap.create(new GenericVisitor(data, treeChildren));
 
     const attributes = new ArborGlyph(map)
@@ -78,9 +121,10 @@ describe("Create a few attributed trees", () => {
         node.type === "leaf" ? node.value : Math.min(...childValues)
       )
       .named("min")
-      .inherited("globmin", (parent: Maybe<number>, _pid, attrs, _node, nid) =>
-        parent.orDefault(attrs.min(nid))
+      .inherited<number>(({ parentValue, attrs, nid }) =>
+        parentValue.orDefault(attrs.min(nid))
       )
+      .named("globmin")
       .synthetic<Tree>(({ childAttrs, node, attrs, nid }) =>
         node.type === "leaf"
           ? leaf(attrs.globmin(nid))
@@ -90,8 +134,7 @@ describe("Create a few attributed trees", () => {
 
     expect(attributes.query("min", "$")).toEqual(2);
     expect(attributes.query("globmin", "$.right.left")).toEqual(2);
-    expect(attributes.query("repmin", "$")).toEqual(
-      fork(leaf(2), fork(leaf(2), leaf(2)))
-    );
+    expect(attributes.query("repmin", "$")).toEqual(solution);
+    expect(attributes.queryNode("repmin", data)).toEqual(solution);
   });
 });

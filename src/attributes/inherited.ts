@@ -1,37 +1,35 @@
 import { Maybe } from "purify-ts/Maybe";
 import { TreeMap } from "../maps/treemap";
 import { Attribute, AttributeTypes, DefinedAttributes } from "./attributes";
+import { memoizeEvaluator } from "./memoize";
 
-export type InheritedFunction<
-  T,
-  A extends AttributeTypes,
-  R,
-  PV extends R = R
-> = (
-  parent: Maybe<PV>,
-  parentId: Maybe<string>,
-  attrs: DefinedAttributes<A>,
-  node: T,
-  nid: string
+export interface InheritedArgs<T, A extends AttributeTypes, R> {
+  parentValue: Maybe<R>;
+  parentId: Maybe<string>;
+  attrs: DefinedAttributes<A>;
+  node: T;
+  nid: string;
+}
+
+export type InheritedFunction<T, A extends AttributeTypes, R> = (
+  args: InheritedArgs<T, A, R>
 ) => R;
 
-export interface InheritedOptions {}
+export interface InheritedOptions {
+  memoize?: boolean;
+}
 
-export function eagerInheritedAttribute<T, A, R, CV extends R>(
-  f: InheritedFunction<T, A, R, CV>,
+export function eagerInheritedAttribute<T, A, R>(
+  evaluate: InheritedFunction<T, A, R>,
   map: TreeMap<T>,
-  attrs: DefinedAttributes<A>
+  attrs: DefinedAttributes<A>,
+  memoize: boolean
 ): Attribute<R> {
-  /**
-   * This case is necessary because we lied to the TypeScript compiler about
-   * the fact that `R` and `CV` are different types.  But they aren't really.
-   */
-  const evaluate: InheritedFunction<T, any, R, R> = f as any;
-  const ret = (nid: string): R => {
+  const ret = memoizeEvaluator((nid: string): R => {
     const node = map.node(nid);
-    const parent = map.parent(nid);
-    const parentValue = parent.map((_) => ret(_));
-    return evaluate(parentValue, parent, attrs, node, nid);
-  };
+    const parentId = map.parent(nid);
+    const parentValue = parentId.map((_) => ret(_));
+    return evaluate({ parentValue, parentId, attrs, node, nid });
+  }, memoize);
   return ret;
 }
