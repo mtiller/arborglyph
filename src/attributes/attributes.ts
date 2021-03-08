@@ -28,16 +28,28 @@ export type DefinedAttributes<A extends AttributeTypes> = {
 
 /**
  * This is the union of all possile attribute definitions.
+ * In this context, `OV` stands for "other values" and that
+ * means the value of child in the synthetic case and parents
+ * in the inherited case.  In practice, these two types should
+ * be identical.  But this can prevent us from inferring R as
+ * the return type from the evaluation functions (since child
+ * values is an argument and it is greedily inferred over return type.)
  */
-export type AttributeDefinition<T, A extends Attributes<any>, R> =
-  | SyntheticAttributeDefinition<T, A, R>
+export type AttributeDefinition<
+  T,
+  A extends Attributes<any>,
+  R,
+  OV extends R
+> =
+  | SyntheticAttributeDefinition<T, A, R, OV>
   | InheritedAttributeDefinition<T, A, R>
   | NodeAttributeDefinition<T, A, R>;
 
 export type AttributeDefinitionReturnType<F> = F extends AttributeDefinition<
   any,
   any,
-  infer R
+  infer R,
+  any
 >
   ? R
   : undefined;
@@ -46,7 +58,7 @@ export type AttributeDefinitionReturnType<F> = F extends AttributeDefinition<
  * A collection of attribute definitions that all operate on nodes of type `T`
  */
 export type AttributeDefinitions<T> = {
-  [key: string]: AttributeDefinition<T, any, any>;
+  [key: string]: AttributeDefinition<T, any, any, any>;
 };
 
 export type AttributeTypesFromDefinitions<
@@ -63,7 +75,7 @@ export type AddAttribute<
   T,
   A extends AttributeDefinitions<T>,
   N extends string,
-  F extends AttributeDefinition<T, AttributeTypesFromDefinitions<A>, any>
+  F extends AttributeDefinition<T, AttributeTypesFromDefinitions<A>, any, any>
 > = { [P in keyof A]: A[P] } & { [P in N]: F };
 
 export type Attributes<F extends AttributeDefinitions<any>> = {

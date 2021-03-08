@@ -22,9 +22,9 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
    * @param options
    * @returns
    */
-  synthetic<R, N extends string>(
+  synthetic<R, N extends string, CV extends R>(
     name: N,
-    f: SyntheticFunction<T, AttributeTypesFromDefinitions<A>, R>,
+    f: SyntheticFunction<T, AttributeTypesFromDefinitions<A>, R, CV>,
     options: SyntheticOptions = {}
   ): ArborGlyphPlusSynthetic<T, A, N, typeof f> {
     const newA: ArborGlyphPlusSynthetic<T, A, N, typeof f>["attrs"] = {
@@ -35,6 +35,9 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
   }
   get keys(): Set<keyof A> {
     return new Set(Object.keys(this.attrs));
+  }
+  foo<R, AR extends R[]>(f: (x: AR) => R): R {
+    throw new Error(`Unimplemented`);
   }
   query<N extends keyof A>(attr: N, nid: string): A[N] {
     throw new Error(`Unimplemented`);
@@ -49,5 +52,5 @@ export type ArborGlyphPlusSynthetic<
   T,
   A extends AttributeDefinitions<T>,
   N extends string,
-  F extends SyntheticFunction<T, AttributeTypesFromDefinitions<A>, any>
+  F extends SyntheticFunction<T, AttributeTypesFromDefinitions<A>, any, any>
 > = ArborGlyph<T, AddAttribute<T, A, N, SyntheticDefintionFromEval<F>>>;
