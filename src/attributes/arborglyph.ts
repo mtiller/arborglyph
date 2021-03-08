@@ -1,10 +1,14 @@
 import { TreeMap } from "../maps/treemap";
 import {
   AddAttribute,
+  AttributeDefinition,
+  AttributeDefinitionReturnType,
   AttributeDefinitions,
+  AttributeTypeFromDefinition,
   AttributeTypesFromDefinitions,
 } from "./attributes";
 import {
+  SyntheticAttributeDefinition,
   SyntheticDefintionFromEval,
   SyntheticFunction,
   SyntheticOptions,
@@ -22,7 +26,7 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
    * @param options
    * @returns
    */
-  synthetic<R, N extends string, CV extends R>(
+  synthetic<R, N extends string, CV extends R = R>(
     name: N,
     f: SyntheticFunction<T, AttributeTypesFromDefinitions<A>, R, CV>,
     options: SyntheticOptions = {}
@@ -39,9 +43,38 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
   foo<R, AR extends R[]>(f: (x: AR) => R): R {
     throw new Error(`Unimplemented`);
   }
-  query<N extends keyof A>(attr: N, nid: string): A[N] {
+  query<N extends keyof A>(
+    attr: N,
+    nid: string
+  ): AttributeTypeFromDefinition<N, A> {
+    const def: AttributeDefinition<
+      T,
+      AttributeTypesFromDefinitions<A>,
+      AttributeTypeFromDefinition<N, A>,
+      any
+    > = this.attrs[attr];
+    if (def === undefined)
+      throw new Error(`No attribute named '${attr}' found on tree`);
+    switch (def.type) {
+      case "synthetic": {
+        const result = evaluateSynthetic(nid, def, this.map);
+        console.log("Query = ", result);
+        return result;
+      }
+    }
     throw new Error(`Unimplemented`);
   }
+}
+
+function evaluateSynthetic<T, A, R>(
+  nid: string,
+  def: SyntheticAttributeDefinition<T, A, R, R>,
+  map: TreeMap<T>
+): R {
+  const node = map.node(nid);
+  const childIds = map.children(nid);
+  const childValues = childIds.map((id) => evaluateSynthetic(id, def, map));
+  return def.evaluate(childValues, childIds, {} as any, node, nid);
 }
 
 /**

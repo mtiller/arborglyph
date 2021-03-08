@@ -1,6 +1,11 @@
 import { DefinedAttributes, Attributes, AttributeTypes } from "./attributes";
 
-export type SyntheticFunction<T, A extends AttributeTypes, R, CV extends R> = (
+export type SyntheticFunction<
+  T,
+  A extends AttributeTypes,
+  R,
+  CV extends R = R
+> = (
   childValues: CV[],
   childIds: string[],
   attrs: DefinedAttributes<A>,

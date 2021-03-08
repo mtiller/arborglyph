@@ -67,6 +67,11 @@ export type AttributeTypesFromDefinitions<
   [P in keyof D]: AttributeDefinitionReturnType<D[P]>;
 };
 
+export type AttributeTypeFromDefinition<
+  N extends keyof D,
+  D extends AttributeDefinitions<any>
+> = AttributeDefinitionReturnType<D[N]>;
+
 export type NodeType<F> = F extends AttributeDefinitions<infer T>
   ? T
   : undefined;
