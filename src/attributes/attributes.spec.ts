@@ -31,19 +31,24 @@ describe("Create a few attributed trees", () => {
   it("should create an attributed tree with a synthetic attribute", async () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
 
-    const init = new ArborGlyph(map).synthetic(
-      "childCount",
-      ({ childIds }): number => childIds.length,
-      synOpts<number>({})
-    );
-
-    const attributes = init.synthetic("maxChild", ({ childIds, attrs }) =>
-      childIds.reduce(
-        (p, id): number =>
-          attrs.childCount(id) > p ? attrs.childCount(id) : p,
-        0
+    const init = new ArborGlyph(map)
+      .namedSynthetic(
+        "childCount",
+        ({ childIds }): number => childIds.length,
+        synOpts<number>({})
       )
-    );
+      .synthetic<number>(({ childIds }) => childIds.length)
+      .named("childCount2");
+
+    const attributes = init
+      .synthetic(({ childIds, attrs }) =>
+        childIds.reduce(
+          (p, id): number =>
+            attrs.childCount(id) > p ? attrs.childCount(id) : p,
+          0
+        )
+      )
+      .named("maxChild");
 
     expect(attributes.attrs).toContain("childCount");
     expect(attributes.attrs).toContain("maxChild");
@@ -69,23 +74,19 @@ describe("Create a few attributed trees", () => {
     const map = await TreeMap.create(new GenericVisitor(data, treeChildren));
 
     const attributes = new ArborGlyph(map)
-      .synthetic(
-        "min",
-        ({ childValues, node }) =>
-          node.type === "leaf" ? node.value : Math.min(...childValues),
-        synOpts<number>({})
+      .synthetic<number>(({ childValues, node }) =>
+        node.type === "leaf" ? node.value : Math.min(...childValues)
       )
+      .named("min")
       .inherited("globmin", (parent: Maybe<number>, _pid, attrs, _node, nid) =>
         parent.orDefault(attrs.min(nid))
       )
-      .synthetic(
-        "repmin",
-        ({ childAttrs, node, attrs, nid }) =>
-          node.type === "leaf"
-            ? leaf(attrs.globmin(nid))
-            : fork(childAttrs(node.left), childAttrs(node.right)),
-        synOpts<Tree>({})
-      );
+      .synthetic<Tree>(({ childAttrs, node, attrs, nid }) =>
+        node.type === "leaf"
+          ? leaf(attrs.globmin(nid))
+          : fork(childAttrs(node.left), childAttrs(node.right))
+      )
+      .named("repmin");
 
     expect(attributes.query("min", "$")).toEqual(2);
     expect(attributes.query("globmin", "$.right.left")).toEqual(2);

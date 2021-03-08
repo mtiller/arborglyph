@@ -11,7 +11,8 @@ export interface SyntheticArg<T, R, A extends AttributeTypes = {}> {
 }
 
 export type SyntheticFunction<T, A extends AttributeTypes, R> = (
-  args: SyntheticArg<T, R, A>
+  args: SyntheticArg<T, R, A>,
+  r?: R
 ) => R;
 
 export interface SyntheticOptions<R> {

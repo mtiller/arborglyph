@@ -27,7 +27,7 @@ export class ArborGlyph<T, A extends AttributeTypes> {
    * @param options
    * @returns
    */
-  synthetic<R, N extends string, CV extends R = R>(
+  namedSynthetic<R, N extends string>(
     name: N,
     f: SyntheticFunction<T, A, R>,
     options: SyntheticOptions<R> = {}
@@ -38,6 +38,21 @@ export class ArborGlyph<T, A extends AttributeTypes> {
       [name]: attr,
     };
     return new ArborGlyph(this.map, attrs);
+  }
+  synthetic<R>(
+    f: SyntheticFunction<T, A, R>,
+    options: SyntheticOptions<R> = {}
+  ) {
+    const attr = eagerSyntheticAttribute<T, A, R>(f, this.map, this.attributes);
+    return {
+      named: <N extends string>(n: N) => {
+        const attrs: ArborGlyphPlusNewAttribute<T, A, N, R>["attributes"] = {
+          ...this.attributes,
+          [n]: attr,
+        };
+        return new ArborGlyph(this.map, attrs);
+      },
+    };
   }
   inherited<N extends string, R, PV extends R = R>(
     name: N,
