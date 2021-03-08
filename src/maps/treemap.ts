@@ -31,7 +31,7 @@ export class TreeMap<T> {
       }
     });
   }
-  get keys() {
+  get ids() {
     return this.nodeMap.keys();
   }
   get root() {

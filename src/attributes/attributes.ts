@@ -1,6 +1,3 @@
-import { InheritedAttributeDefinition } from "./inherited";
-import { NodeAttributeDefinition } from "./nodeattr";
-
 /**
  * An attribute is simply a function that we can call passing in the node
  * identifier and getting back some value.  The details of how the value

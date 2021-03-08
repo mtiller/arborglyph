@@ -1,6 +1,11 @@
 import { TreeMap } from "../maps/treemap";
 import { AddAttribute, AttributeTypes, DefinedAttributes } from "./attributes";
 import {
+  eagerInheritedAttribute,
+  InheritedFunction,
+  InheritedOptions,
+} from "./inherited";
+import {
   eagerSyntheticAttribute,
   SyntheticFunction,
   SyntheticOptions,
@@ -9,7 +14,7 @@ import {
 export class ArborGlyph<T, A extends AttributeTypes> {
   constructor(
     protected map: TreeMap<T>,
-    protected attrs: DefinedAttributes<A> = {} as any
+    protected attributes: DefinedAttributes<A> = {} as any
   ) {}
   /**
    * Note, for type inferencing to work here, the first argument of the
@@ -26,19 +31,47 @@ export class ArborGlyph<T, A extends AttributeTypes> {
     name: N,
     f: SyntheticFunction<T, A, R, CV>,
     options: SyntheticOptions = {}
-  ): ArborGlyphPlusSynthetic<T, A, N, R> {
-    const attr = eagerSyntheticAttribute<T, A, R, CV>(f, this.map, this.attrs);
-    const attrs: ArborGlyphPlusSynthetic<T, A, N, R>["attrs"] = {
-      ...this.attrs,
+  ): ArborGlyphPlusNewAttribute<T, A, N, R> {
+    const attr = eagerSyntheticAttribute<T, A, R, CV>(
+      f,
+      this.map,
+      this.attributes
+    );
+    const attrs: ArborGlyphPlusNewAttribute<T, A, N, R>["attributes"] = {
+      ...this.attributes,
       [name]: attr,
     };
     return new ArborGlyph(this.map, attrs);
   }
-  get keys(): Set<keyof A> {
-    return new Set(Object.keys(this.attrs));
+  inherited<N extends string, R, PV extends R = R>(
+    name: N,
+    f: InheritedFunction<T, A, R, PV>,
+    options: InheritedOptions = {}
+  ): ArborGlyphPlusNewAttribute<T, A, N, R> {
+    const attr = eagerInheritedAttribute<T, A, R, PV>(
+      f,
+      this.map,
+      this.attributes
+    );
+    const attrs: ArborGlyphPlusNewAttribute<T, A, N, R>["attributes"] = {
+      ...this.attributes,
+      [name]: attr,
+    };
+    return new ArborGlyph(this.map, attrs);
+  }
+  get attrs(): Set<keyof A> {
+    return new Set(Object.keys(this.attributes));
   }
   query<N extends keyof A>(attr: N, nid: string): A[N] {
-    return this.attrs[attr](nid);
+    return this.attributes[attr](nid);
+  }
+  debug<N extends keyof A>(attr: N, cur = this.map.root, prefix: string = "") {
+    const val = this.attributes[attr](cur);
+    console.log(`${prefix}${cur}: ${JSON.stringify(val)}`);
+    const subprefix = prefix + "  ";
+    for (const child of this.map.children(cur)) {
+      this.debug(attr, child, subprefix);
+    }
   }
 }
 
@@ -46,7 +79,7 @@ export class ArborGlyph<T, A extends AttributeTypes> {
  * This is basically the type of an `ArborGlyph` after it has had an attribute
  * named `N` that is evaluated with `F` added to it.
  */
-export type ArborGlyphPlusSynthetic<
+export type ArborGlyphPlusNewAttribute<
   T,
   A extends AttributeTypes,
   N extends string,

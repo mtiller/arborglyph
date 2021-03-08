@@ -1,7 +1,20 @@
-import { AttributeTypes } from "./attributes";
+import { TreeMap } from "../maps/treemap";
+import { Attribute, AttributeTypes, DefinedAttributes } from "./attributes";
 
-export interface NodeAttributeDefinition<T, A extends AttributeTypes, R> {
-  type: "node";
-  evaluate: (node: T, attrs: A, nid: string) => R;
-  options: {};
+export type NodeFunction<T, A extends AttributeTypes, R> = (
+  node: T,
+  attrs: DefinedAttributes<A>,
+  nid: string
+) => R;
+
+export function eagerNodeAttribute<T, A, R>(
+  evaluate: NodeFunction<T, A, R>,
+  map: TreeMap<T>,
+  attrs: DefinedAttributes<A>
+): Attribute<R> {
+  const ret = (nid: string): R => {
+    const node = map.node(nid);
+    return evaluate(node, attrs, nid);
+  };
+  return ret;
 }

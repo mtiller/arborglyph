@@ -13,7 +13,7 @@ describe("Test the treemap functionality", () => {
     };
     const visitor = new ObjectVisitor(data);
     const map = await TreeMap.create(visitor);
-    expect([...map.keys]).toEqual(["$", "$.a", "$.b", "$.c", "$.c.d", "$.c.e"]);
+    expect([...map.ids]).toEqual(["$", "$.a", "$.b", "$.c", "$.c.d", "$.c.e"]);
   });
 
   it("should catch funny names that produce duplicate entries", async () => {
@@ -41,7 +41,7 @@ describe("Test the treemap functionality", () => {
     };
     const visitor = new ObjectVisitor(data, (p, c) => `${p}/${c}`);
     const map = await TreeMap.create(visitor);
-    expect([...map.keys]).toEqual([
+    expect([...map.ids]).toEqual([
       "$",
       "$/a",
       "$/c.d",

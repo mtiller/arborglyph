@@ -1,7 +1,6 @@
 import { isObject } from "../util";
+import { Namer } from "./namer";
 import { TreeHandler, TreeVisitor } from "./visitor";
-
-export type Namer = (parent: string, child: string) => string;
 
 function walkObject<T>(
   cur: T,
