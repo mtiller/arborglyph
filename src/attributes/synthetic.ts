@@ -1,10 +1,5 @@
 import { TreeMap } from "../maps/treemap";
-import {
-  DefinedAttributes,
-  Attributes,
-  AttributeTypes,
-  Attribute,
-} from "./attributes";
+import { DefinedAttributes, AttributeTypes, Attribute } from "./attributes";
 
 export type SyntheticFunction<
   T,
@@ -20,26 +15,6 @@ export type SyntheticFunction<
 ) => R;
 
 export interface SyntheticOptions {}
-
-export interface SyntheticAttributeDefinition<
-  T,
-  A extends AttributeTypes,
-  R,
-  CV extends R
-> {
-  type: "synthetic";
-  evaluate: SyntheticFunction<T, A, R, CV>;
-  options: SyntheticOptions;
-}
-
-export type SyntheticDefintionFromEval<F> = F extends SyntheticFunction<
-  infer T,
-  infer A,
-  infer R,
-  infer CV
->
-  ? SyntheticAttributeDefinition<T, A, R, CV>
-  : undefined;
 
 export function eagerSyntheticAttribute<T, A, R, CV extends R>(
   f: SyntheticFunction<T, A, R, CV>,

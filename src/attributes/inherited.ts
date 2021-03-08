@@ -1,13 +1,26 @@
-import { Attributes } from "./attributes";
+import { Maybe } from "purify-ts/Maybe";
+import { AttributeTypes, DefinedAttributes } from "./attributes";
 
-export interface InheritedAttributeDefinition<T, A extends Attributes<any>, R> {
+export type InheritedFunction<
+  T,
+  A extends AttributeTypes,
+  R,
+  PV extends R = R
+> = (
+  parent: PV,
+  parentId: Maybe<string>,
+  attrs: DefinedAttributes<A>,
+  node: T,
+  nid: string
+) => R;
+
+export interface InheritedAttributeDefinition<
+  T,
+  A extends AttributeTypes,
+  R,
+  PV extends R
+> {
   type: "inherited";
-  evaluate: (
-    childValues: R[],
-    childIds: string[],
-    attrs: A,
-    node: T,
-    nid: string
-  ) => R;
+  evaluate: InheritedFunction<T, A, R, PV>;
   options: {};
 }

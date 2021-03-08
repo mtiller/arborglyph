@@ -1,7 +1,6 @@
 import { TreeMap } from "../maps/treemap";
 import { ObjectVisitor } from "../visitors/object";
 import { ArborGlyph } from "./arborglyph";
-import { SyntheticFunction } from "./synthetic";
 
 describe("Create a few attributed trees", () => {
   const data = {
@@ -33,6 +32,7 @@ describe("Create a few attributed trees", () => {
     );
 
     expect(attributes.keys).toContain("childCount");
+    expect(attributes.keys).toContain("maxChild");
     expect(attributes.query("childCount", "$")).toEqual(4);
     expect(attributes.query("maxChild", "$")).toEqual(5);
   });
