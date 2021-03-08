@@ -76,12 +76,8 @@ export type NodeType<F> = F extends AttributeDefinitions<infer T>
   ? T
   : undefined;
 
-export type AddAttribute<
-  T,
-  A extends AttributeDefinitions<T>,
-  N extends string,
-  F extends AttributeDefinition<T, AttributeTypesFromDefinitions<A>, any, any>
-> = { [P in keyof A]: A[P] } & { [P in N]: F };
+export type AddAttribute<T, A extends AttributeTypes, N extends string, R> = A &
+  { [P in N]: R };
 
 export type Attributes<F extends AttributeDefinitions<any>> = {
   // These are the "builtin" attributes

@@ -1,26 +1,22 @@
 import { TreeMap } from "../maps/treemap";
-import {
-  AddAttribute,
-  AttributeDefinition,
-  AttributeDefinitions,
-  AttributeTypeFromDefinition,
-  AttributeTypesFromDefinitions,
-} from "./attributes";
+import { AddAttribute, AttributeTypes, DefinedAttributes } from "./attributes";
 import {
   eagerSyntheticAttribute,
-  SyntheticAttributeDefinition,
-  SyntheticDefintionFromEval,
   SyntheticFunction,
   SyntheticOptions,
 } from "./synthetic";
 
-export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
-  constructor(protected map: TreeMap<T>, protected attrs: A = {} as any) {}
+export class ArborGlyph<T, A extends AttributeTypes> {
+  constructor(
+    protected map: TreeMap<T>,
+    protected attrs: DefinedAttributes<A> = {} as any
+  ) {}
   /**
-   * Note, for type inferencing to work here, the first argument of the synthetic
-   * evaluation function must be typed.  Normally, the TypeScript compiler
-   * could infer the type `R` from the return type of the synthetic function evaluator.
-   * But because the first argument also involved `R`, it falls back to `unknown`.
+   * Note, for type inferencing to work here, the first argument of the
+   * synthetic evaluation function must be typed.  Normally, the TypeScript
+   * compiler could infer the type `R` from the return type of the synthetic
+   * function evaluator. But because the first argument also involved `R`, it
+   * falls back to `unknown`.
    * @param name
    * @param f
    * @param options
@@ -28,39 +24,21 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
    */
   synthetic<R, N extends string, CV extends R = R>(
     name: N,
-    f: SyntheticFunction<T, AttributeTypesFromDefinitions<A>, R, CV>,
+    f: SyntheticFunction<T, A, R, CV>,
     options: SyntheticOptions = {}
-  ): ArborGlyphPlusSynthetic<T, A, N, typeof f> {
-    const newA: ArborGlyphPlusSynthetic<T, A, N, typeof f>["attrs"] = {
+  ): ArborGlyphPlusSynthetic<T, A, N, R> {
+    const attr = eagerSyntheticAttribute<T, A, R, CV>(f, this.map, this.attrs);
+    const attrs: ArborGlyphPlusSynthetic<T, A, N, R>["attrs"] = {
       ...this.attrs,
-      [name]: { type: "synthetic", evaluate: f, options: options },
+      [name]: attr,
     };
-    return new ArborGlyph(this.map, newA);
+    return new ArborGlyph(this.map, attrs);
   }
   get keys(): Set<keyof A> {
     return new Set(Object.keys(this.attrs));
   }
-  query<N extends keyof A>(
-    attr: N,
-    nid: string
-  ): AttributeTypeFromDefinition<N, A> {
-    const def: AttributeDefinition<
-      T,
-      AttributeTypesFromDefinitions<A>,
-      AttributeTypeFromDefinition<N, A>,
-      any
-    > = this.attrs[attr];
-    if (def === undefined)
-      throw new Error(`No attribute named '${attr}' found on tree`);
-    switch (def.type) {
-      case "synthetic": {
-        const attr = eagerSyntheticAttribute(def, this.map);
-        const result = attr(nid);
-        console.log("Query = ", result);
-        return result;
-      }
-    }
-    throw new Error(`Unimplemented`);
+  query<N extends keyof A>(attr: N, nid: string): A[N] {
+    return this.attrs[attr](nid);
   }
 }
 
@@ -70,7 +48,7 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
  */
 export type ArborGlyphPlusSynthetic<
   T,
-  A extends AttributeDefinitions<T>,
+  A extends AttributeTypes,
   N extends string,
-  F extends SyntheticFunction<T, AttributeTypesFromDefinitions<A>, any, any>
-> = ArborGlyph<T, AddAttribute<T, A, N, SyntheticDefintionFromEval<F>>>;
+  R
+> = ArborGlyph<T, AddAttribute<T, A, N, R>>;

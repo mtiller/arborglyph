@@ -8,6 +8,7 @@ describe("Create a few attributed trees", () => {
     a: [[{ b: 5 }]],
     c: { d: [{ e: 7, f: 8 }] },
     g: 2,
+    h: [1, 2, 3, 4, 5],
   };
   it("should create a basic attributed tree with just built-in attributes", async () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
@@ -32,7 +33,8 @@ describe("Create a few attributed trees", () => {
     );
 
     expect(attributes.keys).toContain("childCount");
-    expect(attributes.query("childCount", "$")).toEqual(3);
+    expect(attributes.query("childCount", "$")).toEqual(4);
+    expect(attributes.query("maxChild", "$")).toEqual(5);
   });
   it("should create an attributed tree with an inherted attribute", async () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
