@@ -3,6 +3,9 @@ import { TreeMap } from "../maps/treemap";
 import { Attribute, AttributeTypes, DefinedAttributes } from "./attributes";
 import { memoizeEvaluator } from "./memoize";
 
+/**
+ * Arguments available when computing a inherited attribute.
+ */
 export interface InheritedArgs<T, A extends AttributeTypes, R> {
   parentValue: Maybe<R>;
   parentId: Maybe<string>;
@@ -11,15 +14,32 @@ export interface InheritedArgs<T, A extends AttributeTypes, R> {
   nid: string;
 }
 
+/**
+ * Type signature of the function that computes inherited attributes.
+ */
 export type InheritedFunction<T, A extends AttributeTypes, R> = (
   args: InheritedArgs<T, A, R>
 ) => R;
 
+/**
+ * Options associated with computed inherited attributes.
+ */
 export interface InheritedOptions {
   memoize?: boolean;
 }
 
-export function eagerInheritedAttribute<T, A, R>(
+/**
+ * This function creates an `Attribute` that returns the value of the inherited
+ * attribute.  It will invoke the provided `evaluate` function to do this, but
+ * it will try to minimize the invocation of that function.  It also manages
+ * "walking the tree" to retrieve parent values.
+ * @param evaluate
+ * @param tree
+ * @param attrs
+ * @param memoize
+ * @returns
+ */
+export function inheritedAttribute<T, A, R>(
   evaluate: InheritedFunction<T, A, R>,
   map: TreeMap<T>,
   attrs: DefinedAttributes<A>,

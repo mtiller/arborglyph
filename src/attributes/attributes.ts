@@ -21,6 +21,3 @@ export type AttributeTypes = Record<string, any>;
 export type DefinedAttributes<A extends AttributeTypes> = {
   [P in keyof A]: Attribute<A[P]>;
 };
-
-export type AddAttribute<T, A extends AttributeTypes, N extends string, R> = A &
-  { [P in N]: R };

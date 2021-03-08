@@ -2,8 +2,10 @@ import { TreeMap } from "../maps/treemap";
 import { DefinedAttributes, AttributeTypes, Attribute } from "./attributes";
 import { memoizeEvaluator } from "./memoize";
 
+/**
+ * Arguments available when computing a synthetic attribute.
+ */
 export interface SyntheticArg<T, R, A extends AttributeTypes = {}> {
-  childValues: R[];
   childAttrs: (x: T) => R;
   childIds: string[];
   attrs: DefinedAttributes<A>;
@@ -11,15 +13,32 @@ export interface SyntheticArg<T, R, A extends AttributeTypes = {}> {
   nid: string;
 }
 
+/**
+ * Type signature of the function that computes synthetic attributes.
+ */
 export type SyntheticFunction<T, A extends AttributeTypes, R> = (
   args: SyntheticArg<T, R, A>,
   r?: R
 ) => R;
 
+/**
+ * Options associated with computed synthetic attributes.
+ */
 export interface SyntheticOptions {
   memoize?: boolean;
 }
 
+/**
+ * This function creates an `Attribute` that returns the value of the synthetic
+ * attribute.  It will invoke the provided `evaluate` function to do this, but
+ * it will try to minimize the invocation of that function.  It also manages
+ * "walking the tree" to retrieve child values on demand.
+ * @param evaluate
+ * @param tree
+ * @param attrs
+ * @param memoize
+ * @returns
+ */
 export function syntheticAttribute<T, A, R>(
   f: SyntheticFunction<T, A, R>,
   tree: TreeMap<T>,
@@ -34,15 +53,14 @@ export function syntheticAttribute<T, A, R>(
   const ret = memoizeEvaluator((nid: string): R => {
     const node = tree.node(nid);
     const childIds = tree.children(nid);
-    // TODO: Get rid of this.  It will evaluate the whole subtree even if the attribute doesn't need these values.
-    const childValues = childIds.map((id) => ret(id));
+
     const childNodes = childIds.map((x) => tree.node(x));
     const childAttrs = (x: T): R => {
       const idx = childNodes.indexOf(x);
       if (idx === -1) throw new Error(`Requested index of non-child node`);
-      return childValues[idx];
+      return ret(childIds[idx]);
     };
-    return evaluate({ childValues, childIds, childAttrs, attrs, node, nid });
+    return evaluate({ childIds, childAttrs, attrs, node, nid });
   }, memoize);
   return ret;
 }

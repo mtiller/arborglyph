@@ -26,6 +26,16 @@ describe("Create a few attributed trees", () => {
 
     expect([...attributes.attrs]).toEqual([]);
   });
+  it("should create a derived attribute", async () => {
+    const map = await TreeMap.create(new ObjectVisitor(data));
+    const attributes = new ArborGlyph(map)
+      .derived(({ node }) => typeof node)
+      .named("typeof");
+    expect(attributes.query("typeof", "$")).toEqual("object");
+    expect(attributes.query("typeof", "$.g")).toEqual("number");
+    expect(attributes.query("typeof", "$.a")).toEqual("object");
+    expect(attributes.query("typeof", "$.h.0")).toEqual("number");
+  });
   it("should create an attributed tree with a synthetic attribute", async () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
 
@@ -117,8 +127,10 @@ describe("Create a few attributed trees", () => {
     const map = await TreeMap.create(new GenericVisitor(data, treeChildren));
 
     const attributes = new ArborGlyph(map)
-      .synthetic<number>(({ childValues, node }) =>
-        node.type === "leaf" ? node.value : Math.min(...childValues)
+      .synthetic<number>(({ childAttrs, node }) =>
+        node.type === "leaf"
+          ? node.value
+          : Math.min(childAttrs(node.left), childAttrs(node.right))
       )
       .named("min")
       .inherited<number>(({ parentValue, attrs, nid }) =>
