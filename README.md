@@ -74,7 +74,7 @@ Let's say we want to add an attribute called `min` that computes the smallest
 leaf value in a given subtree. We do this by adding the following to our definition of the `attributes` variable:
 
 ```typescript
-const attributes = new ArborGlyph(map)
+let attributes = new ArborGlyph(map)
   .synthetic<number>(({ childAttrs, node }) =>
     node.type === "leaf"
       ? node.value
@@ -97,10 +97,11 @@ want to know "what is the smallest value that appears **anywhere** in this
 tree?". That we implement with an _inherited_ attribute as follows:
 
 ```typescript
-      .inherited<number>(({ parentValue, attrs, nid }) =>
-        parentValue.orDefault(attrs.min(nid))
-      )
-      .named("globmin")
+attributes = attributes
+  .inherited<number>(({ parentValue, attrs, nid }) =>
+    parentValue.orDefault(attrs.min(nid))
+  )
+  .named("globmin");
 ```
 
 We just chain this on the end of our previous call. I'm using the `Maybe` type
@@ -127,12 +128,13 @@ minimum value available for all nodes, our next attribute is another synthetic
 attribute that "clones" itself by replacing all values with the global minimum:
 
 ```typescript
-.synthetic<Tree>(({ childAttrs, node, attrs, nid }) =>
-        node.type === "leaf"
-          ? leaf(attrs.globmin(nid))
-          : fork(childAttrs(node.left), childAttrs(node.right))
-      )
-      .named("repmin");
+attributes = attributes
+  .synthetic<Tree>(({ childAttrs, node, attrs, nid }) =>
+    node.type === "leaf"
+      ? leaf(attrs.globmin(nid))
+      : fork(childAttrs(node.left), childAttrs(node.right))
+  )
+  .named("repmin");
 ```
 
 We can evaluate `repmin` on our root node as follows:
