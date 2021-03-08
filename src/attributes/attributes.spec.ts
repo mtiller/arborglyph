@@ -15,7 +15,8 @@ describe("Create a few attributed trees", () => {
   });
   it("should create an attributed tree with a synthetic attribute", async () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
-    const init = new ArborGlyph(map).synthetic(
+    const x = Object.entries({ a: 5, b: "hello" });
+    const init = new ArborGlyph(map).synthetic<"childCount", number>(
       "childCount",
       (childValues): number => childValues.length
     );

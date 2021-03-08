@@ -5,70 +5,96 @@ export interface Attribute<R> {
   (nid: string): R;
 }
 
-/**
- * We deliberately don't include the values of children or parents here
- * because this would encourage traversal of the tree and interferes
- * without our knowing (restricting) how things are computed.
- */
-export type SyntheticAttribute<T, A extends Attributes<any>, R> = (
-  childValues: R[],
-  childIds: string[],
-  attrs: A,
-  node: T,
-  nid: string
-) => R;
-export type InheritedAttribute<T, A extends Attributes<any>, R> = (
-  parentValue: Maybe<R>,
-  attrs: A,
-  node: T,
-  nid: string
-) => R;
+export interface SyntheticAttributeDefinition<T, A extends Attributes<any>, R> {
+  type: "synthetic";
+  evaluate: (
+    childValues: R[],
+    childIds: string[],
+    attrs: A,
+    node: T,
+    nid: string
+  ) => R;
+  options: {};
+}
 
-export type AttributeFunction<T, A extends Attributes<any>, R> =
-  | SyntheticAttribute<T, A, R>
-  | InheritedAttribute<T, A, R>;
+export interface InheritedAttributeDefinition<T, A extends Attributes<any>, R> {
+  type: "inherited";
+  evlauate: (
+    childValues: R[],
+    childIds: string[],
+    attrs: A,
+    node: T,
+    nid: string
+  ) => R;
+  options: {};
+}
 
-export type ResultingAttribute<F> = F extends AttributeFunction<
-  any,
-  any,
-  infer R
->
-  ? Attribute<R>
+export interface NodeAttributeDefinition<T, A extends Attributes<any>, R> {
+  type: "node";
+  evlauate: (node: T, attrs: A, nid: string) => R;
+  options: {};
+}
+
+export type AttributeDefinition<T, A extends Attributes<any>, R> =
+  | SyntheticAttributeDefinition<T, A, R>
+  | InheritedAttributeDefinition<T, A, R>
+  | NodeAttributeDefinition<T, A, R>;
+
+export type AttributeType<F> = F extends AttributeDefinition<any, any, infer R>
+  ? R
   : undefined;
 
-export type AttributeFunctions<T> = {
-  [key: string]: AttributeFunction<T, any, any>;
+export type AttributeDefinitions<T> = {
+  [key: string]: AttributeDefinition<T, any, any>;
 };
 
-export type NodeType<F> = F extends AttributeFunctions<infer T> ? T : undefined;
+export type NodeType<F> = F extends AttributeDefinitions<infer T>
+  ? T
+  : undefined;
+
+export type Merge<A1, A2> = {
+  [P in keyof A1]: A1[P];
+} &
+  {
+    [N in keyof A2]: A2[N];
+  };
 
 export type MergeFunctions<
   T,
-  A extends AttributeFunctions<T>,
+  A extends AttributeDefinitions<T>,
   N extends string,
-  F extends AttributeFunction<T, Attributes<A>, any>
-> = A & Record<N, F>;
+  F extends AttributeDefinition<T, Attributes<A>, any>
+> = { [P in keyof A]: A[P] } & { [P in N]: F };
 
-export type Attributes<F extends AttributeFunctions<any>> = {
+export type Attributes<F extends AttributeDefinitions<any>> = {
   // These are the "builtin" attributes
   // parent: Attribute<string>;
 } & {
-  [K in keyof F]: ResultingAttribute<F[K]>;
+  [K in keyof F]: Attribute<AttributeType<F[K]>>;
 };
 
-export function noAttrs<T>(): AttributeFunctions<T> {
+export function noAttrs<T>(): AttributeDefinitions<T> {
   return {};
 }
 
-export class ArborGlyph<T, A extends AttributeFunctions<T>> {
+export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
   constructor(protected map: TreeMap<T>, protected attrs: A = {} as any) {}
   synthetic<N extends string, R>(
     name: N,
-    f: SyntheticAttribute<T, Attributes<A>, R>
-  ): ArborGlyph<T, MergeFunctions<T, A, N, typeof f>> {
-    const newA: MergeFunctions<T, A, N, typeof f> = {
+    f: SyntheticAttributeDefinition<T, Attributes<A>, R>["evaluate"],
+    options: SyntheticAttributeDefinition<T, Attributes<A>, R>["options"] = {}
+  ): ArborGlyph<
+    T,
+    MergeFunctions<T, A, N, SyntheticAttributeDefinition<T, Attributes<A>, R>>
+  > {
+    const newA: MergeFunctions<
+      T,
+      A,
+      N,
+      SyntheticAttributeDefinition<T, Attributes<A>, R>
+    > = {
       ...this.attrs,
-      [name]: f,
+      [name]: { type: "synthetic", evaluate: f, options: options },
     };
     return new ArborGlyph(this.map, newA);
   }
