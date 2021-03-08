@@ -1,5 +1,5 @@
 import { TreeMap } from "../maps/treemap";
-import { AddAttribute, AttributeTypes, DefinedAttributes } from "./attributes";
+import { AttributeTypes, DefinedAttributes } from "./attributes";
 import {
   eagerInheritedAttribute,
   InheritedFunction,
@@ -29,14 +29,10 @@ export class ArborGlyph<T, A extends AttributeTypes> {
    */
   synthetic<R, N extends string, CV extends R = R>(
     name: N,
-    f: SyntheticFunction<T, A, R, CV>,
-    options: SyntheticOptions = {}
+    f: SyntheticFunction<T, A, R>,
+    options: SyntheticOptions<R> = {}
   ): ArborGlyphPlusNewAttribute<T, A, N, R> {
-    const attr = eagerSyntheticAttribute<T, A, R, CV>(
-      f,
-      this.map,
-      this.attributes
-    );
+    const attr = eagerSyntheticAttribute<T, A, R>(f, this.map, this.attributes);
     const attrs: ArborGlyphPlusNewAttribute<T, A, N, R>["attributes"] = {
       ...this.attributes,
       [name]: attr,
@@ -84,4 +80,4 @@ export type ArborGlyphPlusNewAttribute<
   A extends AttributeTypes,
   N extends string,
   R
-> = ArborGlyph<T, AddAttribute<T, A, N, R>>;
+> = ArborGlyph<T, A & Record<N, R>>;
