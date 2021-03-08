@@ -1,4 +1,10 @@
-import { DefinedAttributes, Attributes, AttributeTypes } from "./attributes";
+import { TreeMap } from "../maps/treemap";
+import {
+  DefinedAttributes,
+  Attributes,
+  AttributeTypes,
+  Attribute,
+} from "./attributes";
 
 export type SyntheticFunction<
   T,
@@ -34,3 +40,16 @@ export type SyntheticDefintionFromEval<F> = F extends SyntheticFunction<
 >
   ? SyntheticAttributeDefinition<T, A, R, CV>
   : undefined;
+
+export function eagerSyntheticAttribute<T, R>(
+  def: SyntheticAttributeDefinition<T, any, R, R>,
+  map: TreeMap<T>
+): Attribute<R> {
+  const ret = (nid: string): R => {
+    const node = map.node(nid);
+    const childIds = map.children(nid);
+    const childValues = childIds.map((id) => ret(id));
+    return def.evaluate(childValues, childIds, {} as any, node, nid);
+  };
+  return ret;
+}
