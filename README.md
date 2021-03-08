@@ -137,6 +137,28 @@ attributes = attributes
   .named("repmin");
 ```
 
+In summary, here is the definition of our annotated tree:
+
+```typescript
+const attributes = new ArborGlyph(map)
+  .synthetic<number>(({ childAttrs, node }) =>
+    node.type === "leaf"
+      ? node.value
+      : Math.min(childAttrs(node.left), childAttrs(node.right))
+  )
+  .named("min")
+  .inherited<number>(({ parentValue, attrs, nid }) =>
+    parentValue.orDefault(attrs.min(nid))
+  )
+  .named("globmin")
+  .synthetic<Tree>(({ childAttrs, node, attrs, nid }) =>
+    node.type === "leaf"
+      ? leaf(attrs.globmin(nid))
+      : fork(childAttrs(node.left), childAttrs(node.right))
+  )
+  .named("repmin");
+```
+
 We can evaluate `repmin` on our root node as follows:
 
 ```typescript
