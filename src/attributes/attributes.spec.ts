@@ -1,7 +1,6 @@
 import { TreeMap } from "../maps/treemap";
 import { ObjectVisitor } from "../visitors/object";
 import { ArborGlyph } from "./arborglyph";
-import { Attribute } from "./attributes";
 import { SyntheticFunction } from "./synthetic";
 
 describe("Create a few attributed trees", () => {
@@ -17,17 +16,21 @@ describe("Create a few attributed trees", () => {
   });
   it("should create an attributed tree with a synthetic attribute", async () => {
     const map = await TreeMap.create(new ObjectVisitor(data));
-    const x = Object.entries({ a: 5, b: "hello" });
+
     const init = new ArborGlyph(map).synthetic(
       "childCount",
       (childValues: number[]) => childValues.length
     );
 
-    const f: SyntheticFunction<
-      any,
-      { childCount: Attribute<number> },
-      number
-    > = (_childValues, childIds, attrs): number =>
+    /**
+     * A function that evaluates a synthetic attribute of type `number` on nodes of type `any` assuming
+     * an existing attribute "childCount" of type `number` has already been defined.
+     * */
+    const f: SyntheticFunction<any, { childCount: number }, number> = (
+      _childValues,
+      childIds,
+      attrs
+    ): number =>
       childIds.reduce(
         (p, id): number =>
           attrs.childCount(id) > p ? attrs.childCount(id) : p,
@@ -36,7 +39,6 @@ describe("Create a few attributed trees", () => {
 
     const attributes = init.synthetic("maxChild", f);
 
-    const y = init.foo("foo", (childValues: number[]) => 0);
     expect(attributes.keys).toContain("childCount");
     expect(attributes.query("childCount", "$")).toEqual(3);
   });

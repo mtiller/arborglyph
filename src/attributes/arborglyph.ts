@@ -1,8 +1,14 @@
 import { TreeMap } from "../maps/treemap";
-import { AddAttribute, AttributeDefinitions, Attributes } from "./attributes";
-import { SyntheticAttributeDefinition, SyntheticFunction } from "./synthetic";
-
-export type ComplexFunction<T, A, R> = (x: T, a: A) => R;
+import {
+  AddAttribute,
+  AttributeDefinitions,
+  AttributeTypesFromDefinitions,
+} from "./attributes";
+import {
+  SyntheticDefintionFromEval,
+  SyntheticFunction,
+  SyntheticOptions,
+} from "./synthetic";
 
 export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
   constructor(protected map: TreeMap<T>, protected attrs: A = {} as any) {}
@@ -18,28 +24,14 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
    */
   synthetic<R, N extends string>(
     name: N,
-    f: SyntheticFunction<T, Attributes<A>, R>,
-    options: SyntheticAttributeDefinition<T, Attributes<A>, any>["options"] = {}
-  ): ArborGlyph<
-    T,
-    AddAttribute<T, A, N, SyntheticAttributeDefinition<T, Attributes<A>, R>>
-  > {
-    const newA: AddAttribute<
-      T,
-      A,
-      N,
-      SyntheticAttributeDefinition<T, Attributes<A>, R>
-    > = {
+    f: SyntheticFunction<T, AttributeTypesFromDefinitions<A>, R>,
+    options: SyntheticOptions = {}
+  ): ArborGlyphPlusSynthetic<T, A, N, typeof f> {
+    const newA: ArborGlyphPlusSynthetic<T, A, N, typeof f>["attrs"] = {
       ...this.attrs,
       [name]: { type: "synthetic", evaluate: f, options: options },
     };
     return new ArborGlyph(this.map, newA);
-  }
-  foo<N extends string, R>(
-    n: N,
-    f: SyntheticFunction<T, Attributes<A>, R>
-  ): { y: R } {
-    throw new Error(`Unimplemented`);
   }
   get keys(): Set<keyof A> {
     return new Set(Object.keys(this.attrs));
@@ -48,3 +40,14 @@ export class ArborGlyph<T, A extends AttributeDefinitions<T>> {
     throw new Error(`Unimplemented`);
   }
 }
+
+/**
+ * This is basically the type of an `ArborGlyph` after it has had an attribute
+ * named `N` that is evaluated with `F` added to it.
+ */
+export type ArborGlyphPlusSynthetic<
+  T,
+  A extends AttributeDefinitions<T>,
+  N extends string,
+  F extends SyntheticFunction<T, AttributeTypesFromDefinitions<A>, any>
+> = ArborGlyph<T, AddAttribute<T, A, N, SyntheticDefintionFromEval<F>>>;
