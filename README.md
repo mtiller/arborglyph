@@ -213,6 +213,7 @@ A third attribute would be one that handles more pathological cases like
 circular dependencies. I noticed that `kiama` has this, but I haven't yet
 figured out what the use case is there (although I don't doubt there are some).
 
-```
-
-```
+Another consideration here is how to deal with semantic error processing in the
+context of both the tree traversal as well as in the propagation of errors
+between layers of attributes.  I think I need a bit more practical examples
+to figure out the best approach here.
