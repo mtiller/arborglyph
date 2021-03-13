@@ -7,7 +7,7 @@ import { AsyncTreeVisitor, TreeHandler, TreeVisitor } from "./visitor";
  **/
 export type NamedChildren<T> = (
   n: T
-) => (Record<string, T> | {}) & { then?: never };
+) => (Record<string, T> & { then?: never }) | {};
 
 const x: NamedChildren<string> = (x) => ({});
 
@@ -15,7 +15,9 @@ const x: NamedChildren<string> = (x) => ({});
  * A function that, when given a node, returns a promise to a map naming and
  * identifying each of its children.
  **/
-export type NamedAsyncChildren<T> = (n: T) => Promise<Record<string, T> | {}>;
+export type NamedAsyncChildren<T> = (
+  n: T
+) => Promise<(Record<string, T> & { then?: never }) | {}>;
 
 /**
  * A helper function that recursively walks a generic data structure with the help
