@@ -20,7 +20,7 @@ import {
  * possible which allow ambiguous attributes to be type annotated (without
  * triggering the need to annotate everything).
  */
-export class ArborGlyph<T, A extends AttributeTypes> {
+export class ArborGlyph<T, A extends AttributeTypes = {}> {
   /**
    * Manage a given tree with a set of attributes associated with it.  Normally,
    * this constructor is invoked with only the first argument and additional
