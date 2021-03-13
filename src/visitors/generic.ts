@@ -5,7 +5,11 @@ import { AsyncTreeVisitor, TreeHandler, TreeVisitor } from "./visitor";
  * A function that, when given a node, returns a map naming and identifying each
  * of its children.
  **/
-export type NamedChildren<T> = (n: T) => Record<string, T> | {};
+export type NamedChildren<T> = (
+  n: T
+) => (Record<string, T> | {}) & { then?: never };
+
+const x: NamedChildren<string> = (x) => ({});
 
 /**
  * A function that, when given a node, returns a promise to a map naming and
