@@ -4,6 +4,7 @@
   "description": "A library for annotating trees with attribute grammars",
   "main": "lib/index.js",
   "scripts": {
+    "prepublish": "tsc && jest",
     "build": "tsc",
     "test": "jest"
   },
