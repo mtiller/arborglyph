@@ -2,7 +2,7 @@ import { ObjectVisitor } from "../visitors/object";
 import { TreeMap } from "./treemap";
 
 describe("Test the treemap functionality", () => {
-  it("should populate itself from an object", async () => {
+  it("should populate itself from an object", () => {
     const data = {
       a: "a",
       b: "b",
@@ -12,11 +12,11 @@ describe("Test the treemap functionality", () => {
       },
     };
     const visitor = new ObjectVisitor(data);
-    const map = await TreeMap.create(visitor);
+    const map = TreeMap.create(visitor);
     expect([...map.ids]).toEqual(["$", "$.a", "$.b", "$.c", "$.c.d", "$.c.e"]);
   });
 
-  it("should catch funny names that produce duplicate entries", async () => {
+  it("should catch funny names that produce duplicate entries", () => {
     const data = {
       a: "a",
       "c.d": "b",
@@ -26,11 +26,11 @@ describe("Test the treemap functionality", () => {
       },
     };
     const visitor = new ObjectVisitor(data);
-    expect(() => TreeMap.create(visitor)).rejects.toThrowError(
-      "Map already contains an entry for this key"
+    expect(() => TreeMap.create(visitor)).toThrowError(
+      "Setting parent node for $.c.d to $.c when it already has a parent"
     );
   });
-  it("should allow different name mangling schemes to avoid name collisions", async () => {
+  it("should allow different name mangling schemes to avoid name collisions", () => {
     const data = {
       a: "a",
       "c.d": "b",
@@ -40,7 +40,7 @@ describe("Test the treemap functionality", () => {
       },
     };
     const visitor = new ObjectVisitor(data, (p, c) => `${p}/${c}`);
-    const map = await TreeMap.create(visitor);
+    const map = TreeMap.create(visitor);
     expect([...map.ids]).toEqual([
       "$",
       "$/a",

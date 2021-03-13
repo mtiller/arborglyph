@@ -37,9 +37,9 @@ export class PureMap<K, V> extends Map<K, V> {
    * @param v
    * @returns
    */
-  setFirst(k: K, v: V) {
+  setFirst(k: K, v: V, msg?: string) {
     if (this.has(k))
-      throw new Error(`Map already contains an entry for this key`);
+      throw new Error(msg ?? `Map already contains an entry for this key`);
     return this.set(k, v);
   }
 

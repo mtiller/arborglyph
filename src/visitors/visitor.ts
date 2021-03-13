@@ -27,9 +27,20 @@ export type TreeHandler<T> = (event: TreeEvent<T>) => void;
 
 /**
  * The `TreeVisitor` interface is a very simple interface that can be
- * implemented to handle any data structure that can be mapped to a tree.
+ * implemented to handle any data structure that can be synchronously
+ * mapped to a tree.
  */
 export interface TreeVisitor<T> {
+  root: string;
+  walk(handler: TreeHandler<T>): void;
+}
+
+/**
+ * The `AsyncTreeVisitor` interface is a very simple interface that can be
+ * implemented to handle any data structure that can be asynchronously
+ * mapped to a tree.
+ */
+export interface AsyncTreeVisitor<T> {
   root: string;
   walk(handler: TreeHandler<T>): Promise<void>;
 }

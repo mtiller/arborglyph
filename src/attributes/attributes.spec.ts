@@ -20,14 +20,14 @@ describe("Create a few attributed trees", () => {
     g: 2,
     h: [9, 2, 3, 4, 5],
   };
-  it("should create a basic attributed tree with just built-in attributes", async () => {
-    const map = await TreeMap.create(new ObjectVisitor(data));
+  it("should create a basic attributed tree with just built-in attributes", () => {
+    const map = TreeMap.create(new ObjectVisitor(data));
     const attributes = new ArborGlyph(map);
 
     expect([...attributes.attrs]).toEqual([]);
   });
-  it("should create a derived attribute", async () => {
-    const map = await TreeMap.create(new ObjectVisitor(data));
+  it("should create a derived attribute", () => {
+    const map = TreeMap.create(new ObjectVisitor(data));
     const attributes = new ArborGlyph(map)
       .derived(({ node }) => typeof node)
       .named("typeof");
@@ -36,8 +36,8 @@ describe("Create a few attributed trees", () => {
     expect(attributes.query("typeof", "$.a")).toEqual("object");
     expect(attributes.query("typeof", "$.h.0")).toEqual("number");
   });
-  it("should create an attributed tree with a synthetic attribute", async () => {
-    const map = await TreeMap.create(new ObjectVisitor(data));
+  it("should create an attributed tree with a synthetic attribute", () => {
+    const map = TreeMap.create(new ObjectVisitor(data));
 
     const init = new ArborGlyph(map)
       .synthetic<number>(({ childIds }) => childIds.length)
@@ -58,8 +58,8 @@ describe("Create a few attributed trees", () => {
     expect(attributes.query("childCount", "$")).toEqual(4);
     expect(attributes.query("maxChild", "$")).toEqual(5);
   });
-  it("should create an attributed tree with an inherted attribute", async () => {
-    const map = await TreeMap.create(new ObjectVisitor(data));
+  it("should create an attributed tree with an inherted attribute", () => {
+    const map = TreeMap.create(new ObjectVisitor(data));
     const attributes = new ArborGlyph(map)
       .inherited<number>(({ parentValue }) =>
         parentValue.map((_) => _ + 1).orDefault(0)
@@ -72,8 +72,8 @@ describe("Create a few attributed trees", () => {
     expect(attributes.query("depth", "$.h")).toEqual(1);
   });
 
-  it("should honor memoize flag evaluations", async () => {
-    const map = await TreeMap.create(new ObjectVisitor(data));
+  it("should honor memoize flag evaluations", () => {
+    const map = TreeMap.create(new ObjectVisitor(data));
     const calls: string[] = [];
     let attributes = new ArborGlyph(map)
       .inherited<number>(
@@ -121,10 +121,10 @@ describe("Create a few attributed trees", () => {
     ]);
   });
 
-  it("should create an attributed tree with a repmin attribute", async () => {
+  it("should create an attributed tree with a repmin attribute", () => {
     const data = fork(leaf(3), fork(leaf(2), leaf(10)));
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
-    const map = await TreeMap.create(new GenericVisitor(data, treeChildren));
+    const map = TreeMap.create(new GenericVisitor(data, treeChildren));
 
     const attributes = new ArborGlyph(map)
       .synthetic<number>(({ childAttrs, node }) =>

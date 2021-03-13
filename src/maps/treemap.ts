@@ -1,6 +1,6 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { PureMap } from "./puremap";
-import { TreeVisitor } from "../visitors/visitor";
+import { AsyncTreeVisitor, TreeVisitor } from "../visitors/visitor";
 
 /**
  * This class generates a tree map which is simply a representation of the
@@ -11,7 +11,22 @@ import { TreeVisitor } from "../visitors/visitor";
  */
 export class TreeMap<T> {
   /**
-   * Because the `TreeVisitor` is potentially operating asynchronously, we use a
+   * Use a synchronous `TreeVisitor` to create the map.  It would be ideal if this
+   * could (at some point) be made part of the constructor.  But, unfortunately,
+   * the current API makes it difficult to deal with synchrnous and asynchrnous
+   * mapping.  This is a potential are of improvement.
+   *
+   * @param visitor
+   * @returns
+   */
+  static create<T>(visitor: TreeVisitor<T>): TreeMap<T> {
+    const ret = new TreeMap<T>(visitor);
+    populateSync(visitor, ret.parentMap, ret.nodeMap, ret.childMap);
+    return ret;
+  }
+
+  /**
+   * Because the `AsyncTreeVisitor` is operating asynchronously, we use a
    * static method that returns a `Promise` to a constructoed `TreeMap` once the
    * traversal is complete.
    *
@@ -21,9 +36,11 @@ export class TreeMap<T> {
    * @param visitor
    * @returns
    */
-  static async create<T>(visitor: TreeVisitor<T>): Promise<TreeMap<T>> {
+  static async createAsync<T>(
+    visitor: AsyncTreeVisitor<T>
+  ): Promise<TreeMap<T>> {
     const ret = new TreeMap<T>(visitor);
-    await ret.populate();
+    await populateAsync(visitor, ret.parentMap, ret.nodeMap, ret.childMap);
     return ret;
   }
 
@@ -45,29 +62,6 @@ export class TreeMap<T> {
    */
   protected constructor(protected visitor: TreeVisitor<T>) {}
 
-  /**
-   * A protected method that invokes the `visitor`'s `walk` method
-   * and records information it receives during the walk.
-   * @returns
-   */
-  protected populate(): Promise<void> {
-    return this.visitor.walk((event) => {
-      switch (event.type) {
-        case "parent": {
-          this.parentMap.setFirst(event.id, event.parent);
-          break;
-        }
-        case "node": {
-          this.nodeMap.setFirst(event.id, event.node);
-          break;
-        }
-        case "children": {
-          this.childMap.setFirst(event.id, event.children);
-          break;
-        }
-      }
-    });
-  }
   /** ids of all nodes in the tree */
   get ids() {
     return this.nodeMap.keys();
@@ -131,4 +125,86 @@ export class TreeMap<T> {
       new Error(`Node ${n} does not exist in this tree`)
     );
   }
+}
+
+/**
+ * A function that invokes the synchronous `visitor`'s `walk` method
+ * and records information it receives during the walk.
+ * @returns
+ */
+function populateSync<T>(
+  visitor: TreeVisitor<T>,
+  parentMap: PureMap<string, string>,
+  nodeMap: PureMap<string, T>,
+  childMap: PureMap<string, string[]>
+): void {
+  return visitor.walk((event) => {
+    switch (event.type) {
+      case "parent": {
+        parentMap.setFirst(
+          event.id,
+          event.parent,
+          `Setting parent node for ${event.id} to ${event.parent} when it already has a parent`
+        );
+        break;
+      }
+      case "node": {
+        nodeMap.setFirst(
+          event.id,
+          event.node,
+          `Node ${event.id} is being associated with a node when it already has a node associated with it`
+        );
+        break;
+      }
+      case "children": {
+        childMap.setFirst(
+          event.id,
+          event.children,
+          `Setting children of ${event.id} when it has already been associated with children`
+        );
+        break;
+      }
+    }
+  });
+}
+
+/**
+ * A function that invokes the asynchronous `visitor`'s `walk` method
+ * and records information it receives during the walk.
+ * @returns
+ */
+async function populateAsync<T>(
+  visitor: AsyncTreeVisitor<T>,
+  parentMap: PureMap<string, string>,
+  nodeMap: PureMap<string, T>,
+  childMap: PureMap<string, string[]>
+): Promise<void> {
+  return visitor.walk((event) => {
+    switch (event.type) {
+      case "parent": {
+        parentMap.setFirst(
+          event.id,
+          event.parent,
+          `Setting parent node for ${event.id} to ${event.parent} when it already has a parent`
+        );
+        break;
+      }
+      case "node": {
+        nodeMap.setFirst(
+          event.id,
+          event.node,
+          `Node ${event.id} is being associated with a node when it already has a node associated with it`
+        );
+        break;
+      }
+      case "children": {
+        childMap.setFirst(
+          event.id,
+          event.children,
+          `Setting children of ${event.id} when it has already been associated with children`
+        );
+        break;
+      }
+    }
+  });
 }
