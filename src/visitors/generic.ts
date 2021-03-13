@@ -54,6 +54,7 @@ function walkGeneric<T>(
 
   /** Iterate over the children and... */
   for (const { child, childId } of children) {
+    if (child === undefined) continue;
     /** Notify the `handler` of the parentage of this node... */
     handler({ type: "parent", id: childId, parent: id });
     /** ...and then recurse into the children */
@@ -146,7 +147,7 @@ async function walkAsyncGeneric<T>(
     /** Notify the `handler` of the parentage of this node... */
     handler({ type: "parent", id: childId, parent: id });
     /** ...and then recurse into the children */
-    walkGeneric(
+    walkAsyncGeneric(
       child,
       childId,
       handler,
