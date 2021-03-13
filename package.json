@@ -7,11 +7,14 @@
     "build": "tsc",
     "test": "jest"
   },
+  "files": [
+    "lib"
+  ],
   "keywords": [
     "attribute",
     "grammar",
     "tree",
-    "annotation"
+    "annotations"
   ],
   "author": "Michael M. Tiller",
   "license": "MIT",

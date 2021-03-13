@@ -10,7 +10,7 @@ export type Tree =
 const fork = (l: Tree, r: Tree): Tree => ({ type: "fork", left: l, right: r });
 const leaf = (n: number): Tree => ({ type: "leaf", value: n });
 
-const treeChildren: NamedChildren<Tree> = (x: Tree): { [key: string]: Tree } =>
+const treeChildren: NamedChildren<Tree> = (x) =>
   x.type === "leaf" ? {} : { left: x.left, right: x.right };
 
 describe("Create a few attributed trees", () => {

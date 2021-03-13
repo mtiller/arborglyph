@@ -54,10 +54,8 @@ Now we can map out this tree and create our initial `ArborGlyph` instance as fol
 
 ```typescript
 const map = await TreeMap.create(
-  new GenericVisitor(
-    data,
-    (x): Record<string, Tree> =>
-      x.type === "leaf" ? {} : { left: x.left, right: x.right }
+  new GenericVisitor<Tree>(data, (x) =>
+    x.type === "leaf" ? {} : { left: x.left, right: x.right }
   )
 );
 
