@@ -8,6 +8,7 @@ import { memoizeEvaluator } from "./memoize";
 export interface SyntheticArg<T, R, A extends AttributeTypes = {}> {
   childAttrs: (x: T) => R;
   childIds: string[];
+  childValues: () => R[];
   attrs: DefinedAttributes<A>;
   node: T;
   nid: string;
@@ -55,12 +56,15 @@ export function syntheticAttribute<T, A, R>(
     const childIds = tree.children(nid);
 
     const childNodes = childIds.map((x) => tree.node(x));
+    const childValues = () => {
+      return childIds.map((n) => ret(n));
+    };
     const childAttrs = (x: T): R => {
       const idx = childNodes.indexOf(x);
       if (idx === -1) throw new Error(`Requested index of non-child node`);
       return ret(childIds[idx]);
     };
-    return evaluate({ childIds, childAttrs, attrs, node, nid });
+    return evaluate({ childIds, childValues, childAttrs, attrs, node, nid });
   }, memoize);
   return ret;
 }
