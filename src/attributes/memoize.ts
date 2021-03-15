@@ -20,12 +20,14 @@ export function memoizeEvaluator<R>(
     const ret = function (x: string): R {
       return f(x);
     };
+    ret.invalidate = () => undefined;
     return ret;
   } else {
     const map = new PureMap<string, R>();
     const ret = function (x: string): R {
       return map.getMaybe(x).orDefaultLazy(() => map.setRet(x, f(x)));
     };
+    ret.invalidate = () => map.clear();
     return ret;
   }
 }

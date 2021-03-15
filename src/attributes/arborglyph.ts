@@ -86,6 +86,11 @@ export class ArborGlyph<T, A extends AttributeTypes = {}> {
   get attrs(): Set<keyof A> {
     return new Set(Object.keys(this.attributes));
   }
+
+  /** Extract the underlying attribute */
+  attr<K extends keyof A>(attr: K): Attribute<A[K]> {
+    return this.attributes[attr];
+  }
   /** Request the value of an attribute on a given node id */
   query<N extends keyof A>(attr: N, nid: string): A[N] {
     return this.attributes[attr](nid);

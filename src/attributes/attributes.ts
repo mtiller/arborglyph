@@ -5,6 +5,8 @@
  */
 export interface Attribute<R> {
   (nid: string): R;
+  // TODO: Get rid of this
+  invalidate(): void;
 }
 
 /**
