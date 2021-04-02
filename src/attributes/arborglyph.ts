@@ -39,7 +39,25 @@ export class ArborGlyph<T, A extends AttributeTypes = {}> {
    * @param options
    * @returns
    */
-  synthetic<R>(f: SyntheticFunction<T, A, R>, options: SyntheticOptions = {}) {
+  synthetic<N extends string, R>(
+    name: N,
+    f: SyntheticFunction<T, A, R>,
+    options: SyntheticOptions = {}
+  ) {
+    const attr = syntheticAttribute<T, A, R>(
+      f,
+      this.tree,
+      this.attributes,
+      options.memoize ?? true
+    );
+    const attrs: DefinedAttributes<A & Record<N, R>> = {
+      ...this.attributes,
+      [name]: attr,
+    };
+    return new ArborGlyph(this.tree, attrs);
+  }
+
+  synthetic2<R>(f: SyntheticFunction<T, A, R>, options: SyntheticOptions = {}) {
     const attr = syntheticAttribute<T, A, R>(
       f,
       this.tree,

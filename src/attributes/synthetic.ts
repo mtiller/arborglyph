@@ -22,6 +22,27 @@ export type SyntheticFunction<T, A extends AttributeTypes, R> = (
   r?: R
 ) => R;
 
+export interface NamedSyntheticFunction<
+  N extends string,
+  T,
+  A extends AttributeTypes,
+  R
+> {
+  name: N;
+  f: SyntheticFunction<T, A, R>;
+}
+
+export function namedSynthetic<N extends string>(key: N) {
+  return <T, A extends AttributeTypes, R>(
+    f: (args: SyntheticArg<T, R, A>) => R
+  ): NamedSyntheticFunction<N, T, A, R> => {
+    return {
+      name: key,
+      f: f,
+    };
+  };
+}
+
 /**
  * Options associated with computed synthetic attributes.
  */

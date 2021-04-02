@@ -36,22 +36,44 @@ describe("Create a few attributed trees", () => {
     expect(attributes.query("typeof", "$.a")).toEqual("object");
     expect(attributes.query("typeof", "$.h.0")).toEqual("number");
   });
-  it("should create an attributed tree with a synthetic attribute", () => {
+  it("should create an attributed tree with an old style synthetic attribute", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
 
-    const init = new ArborGlyph(map)
-      .synthetic<number>(({ childIds }) => childIds.length)
-      .named("childCount");
+    const init = new ArborGlyph(map).synthetic<"childCount", number>(
+      "childCount",
+      ({ childIds }) => childIds.length
+    );
 
-    const attributes = init
-      .synthetic(({ childIds, attrs }) =>
+    const attributes = init.synthetic<"maxChild", number>(
+      "maxChild",
+      ({ childIds, attrs }) =>
         childIds.reduce(
           (p, id): number =>
             attrs.childCount(id) > p ? attrs.childCount(id) : p,
           0
         )
+    );
+
+    expect(attributes.attrs).toContain("childCount");
+    expect(attributes.attrs).toContain("maxChild");
+    expect(attributes.query("childCount", "$")).toEqual(4);
+    expect(attributes.query("maxChild", "$")).toEqual(5);
+  });
+  it("should create an attributed tree with a synthetic attribute", () => {
+    const map = TreeMap.create(new ObjectVisitor(data));
+
+    const init = new ArborGlyph(map).synthetic<"childCount", number>(
+      "childCount",
+      ({ childIds }) => childIds.length
+    );
+
+    const attributes = init.synthetic("maxChild", ({ childIds, attrs }) =>
+      childIds.reduce(
+        (p, id): number =>
+          attrs.childCount(id) > p ? attrs.childCount(id) : p,
+        0
       )
-      .named("maxChild");
+    );
 
     expect(attributes.attrs).toContain("childCount");
     expect(attributes.attrs).toContain("maxChild");
@@ -127,22 +149,20 @@ describe("Create a few attributed trees", () => {
     const map = TreeMap.create(new GenericVisitor(data, treeChildren));
 
     const attributes = new ArborGlyph(map)
-      .synthetic<number>(({ childAttrs, node }) =>
+      .synthetic<"min", number>("min", ({ childAttrs, node }) =>
         node.type === "leaf"
           ? node.value
           : Math.min(childAttrs(node.left), childAttrs(node.right))
       )
-      .named("min")
       .inherited<number>(({ parentValue, attrs, nid }) =>
         parentValue.orDefault(attrs.min(nid))
       )
       .named("globmin")
-      .synthetic<Tree>(({ childAttrs, node, attrs, nid }) =>
+      .synthetic<"repmin", Tree>("repmin", ({ childAttrs, node, attrs, nid }) =>
         node.type === "leaf"
           ? leaf(attrs.globmin(nid))
           : fork(childAttrs(node.left), childAttrs(node.right))
-      )
-      .named("repmin");
+      );
 
     expect(attributes.query("min", "$")).toEqual(2);
     expect(attributes.query("globmin", "$.right.left")).toEqual(2);
