@@ -37,4 +37,7 @@ export type AttributeConstructor<
   T,
   A extends AttributeTypes,
   R
-> = (tree: TreeMap<T>, base: DefinedAttributes<A>) => ExtendedBy<A, N, R>;
+> = <A2 extends A>(
+  tree: TreeMap<T>,
+  base: DefinedAttributes<A2>
+) => ExtendedBy<A2, N, R>;

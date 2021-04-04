@@ -9,7 +9,7 @@ import {
   reaction,
 } from "mobx";
 
-describe("Test compatibility with mobx", () => {
+describe.skip("Test compatibility with mobx", () => {
   it("should allow adding computed via a new object", () => {
     const data = observable({ a: 5, b: 7 });
     let count = 0;
@@ -79,7 +79,7 @@ describe("Test compatibility with mobx", () => {
     expect(aug.c).toEqual(12);
   });
   it("should observe changes in tree attributes", () => {
-    const data = observable({
+    const data = makeAutoObservable({
       a: [[{ b: 5 }]],
       c: { d: [{ e: 7, f: 8 }] },
       g: 2,
@@ -93,19 +93,23 @@ describe("Test compatibility with mobx", () => {
     const attributes = new ArborGlyph(map).synthetic<"sum", number>(
       "sum",
       ({ childValues, node }) => {
-        // console.log("Calling for " + JSON.stringify(node));
-        return typeof node === "number"
-          ? node
-          : childValues().reduce((sum, n) => sum + n, 0);
-      }
+        const ret =
+          typeof node === "number"
+            ? node
+            : childValues().reduce((sum, n) => sum + n, 0);
+        console.log("Calling for " + JSON.stringify(node));
+        console.log("sum = ", ret);
+        return ret;
+      },
+      { memoize: false }
     );
 
-    const sum = attributes.attr("sum");
-    expect(attributes.queryNode("sum", data)).toEqual(45);
-    data.g = 3;
+    expect(attributes.anno(data).sum).toEqual(45);
     console.log("Reset");
+    data.a = [[{ b: 6 }]];
     // sum.invalidate();
-    expect(attributes.queryNode("sum", data)).toEqual(46);
+    expect(attributes.anno(data).sum).toEqual(46);
+    // expect(attributes.queryNode("sum", data)).toEqual(46);
   });
 
   it("should handle proxy objects", () => {

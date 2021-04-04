@@ -155,21 +155,32 @@ describe("Create a few attributed trees", () => {
           ? node.value
           : Math.min(childAttrs(node.left), childAttrs(node.right))
     );
-    const attributes = new ArborGlyph(map)
-      .synthetic<"min", number>("min", ({ childAttrs, node }) =>
+
+    const repmin = synthetic<"repmin", Tree, { globmin: number }, Tree>(
+      "repmin",
+      ({ childAttrs, node, attrs, nid }) =>
         node.type === "leaf"
-          ? node.value
-          : Math.min(childAttrs(node.left), childAttrs(node.right))
-      )
+          ? leaf(attrs.globmin(nid))
+          : fork(childAttrs(node.left), childAttrs(node.right))
+    );
+
+    const attributes = new ArborGlyph(map)
+      .add(min)
+      // .synthetic<"min", number>("min", ({ childAttrs, node }) =>
+      //   node.type === "leaf"
+      //     ? node.value
+      //     : Math.min(childAttrs(node.left), childAttrs(node.right))
+      // )
       .inherited<number>(({ parentValue, attrs, nid }) =>
         parentValue.orDefault(attrs.min(nid))
       )
       .named("globmin")
-      .synthetic<"repmin", Tree>("repmin", ({ childAttrs, node, attrs, nid }) =>
-        node.type === "leaf"
-          ? leaf(attrs.globmin(nid))
-          : fork(childAttrs(node.left), childAttrs(node.right))
-      );
+      .add(repmin);
+    // .synthetic<"repmin", Tree>("repmin", ({ childAttrs, node, attrs, nid }) =>
+    //   node.type === "leaf"
+    //     ? leaf(attrs.globmin(nid))
+    //     : fork(childAttrs(node.left), childAttrs(node.right))
+    // );
 
     expect(attributes.query("min", "$")).toEqual(2);
     expect(attributes.query("globmin", "$.right.left")).toEqual(2);
