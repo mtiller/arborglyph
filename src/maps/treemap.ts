@@ -70,6 +70,15 @@ export class TreeMap<T> {
   get root() {
     return this.visitor.root;
   }
+
+  /** Determine if a given (potential) node is in this tree */
+  contains(n: T): boolean {
+    for (const [id, node] of this.nodeMap.entries()) {
+      if (node === n) return true;
+    }
+    return false;
+  }
+
   /**
    * Find a given node of type `T` and return its id.  Note that this search is
    * not (currently) optimized and it is (at least) O(n) since it is being done

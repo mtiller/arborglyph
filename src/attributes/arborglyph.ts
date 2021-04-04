@@ -1,5 +1,11 @@
 import { TreeMap } from "../maps/treemap";
-import { Attribute, AttributeTypes, DefinedAttributes } from "./attributes";
+import {
+  Attribute,
+  AttributeConstructor,
+  AttributeTypes,
+  DefinedAttributes,
+  ExtendedBy,
+} from "./attributes";
 import { derivedAttribute, DerivedFunction, DerivedOptions } from "./derived";
 import {
   inheritedAttribute,
@@ -20,7 +26,7 @@ import {
  * possible which allow ambiguous attributes to be type annotated (without
  * triggering the need to annotate everything).
  */
-export class ArborGlyph<T, A extends AttributeTypes = {}> {
+export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
   /**
    * Manage a given tree with a set of attributes associated with it.  Normally,
    * this constructor is invoked with only the first argument and additional
@@ -28,8 +34,15 @@ export class ArborGlyph<T, A extends AttributeTypes = {}> {
    */
   constructor(
     protected tree: TreeMap<T>,
-    protected attributes: DefinedAttributes<A> = {} as any
+    protected attributes: DefinedAttributes<A> = {} as any,
+    protected unique: Symbol = Symbol()
   ) {}
+  add<N extends string, R>(
+    acon: AttributeConstructor<N, T, A, R>
+  ): ArborGlyph<T, ExtendedBy<A, N, R>> {
+    const attrs = acon(this.tree, this.attributes);
+    return new ArborGlyph(this.tree, attrs, this.unique);
+  }
   /**
    * This is the first step in creating a synthetic attribute.  Synthetic attributes are
    * attributes that depend only on the contents of the node and the value of *this* attribute
@@ -54,7 +67,7 @@ export class ArborGlyph<T, A extends AttributeTypes = {}> {
       ...this.attributes,
       [name]: attr,
     };
-    return new ArborGlyph(this.tree, attrs);
+    return new ArborGlyph(this.tree, attrs, this.unique);
   }
 
   synthetic2<R>(f: SyntheticFunction<T, A, R>, options: SyntheticOptions = {}) {
@@ -103,6 +116,89 @@ export class ArborGlyph<T, A extends AttributeTypes = {}> {
   /** All attributes currently associated with this `ArborGlyph` */
   get attrs(): Set<keyof A> {
     return new Set(Object.keys(this.attributes));
+  }
+  anno(n: T): T & A {
+    const nid = this.tree.find(n);
+    if (nid.isNothing())
+      throw new Error(`Node cannot be annotated, it isn't in the tree`);
+    const id = nid.unsafeCoerce();
+    if (n.hasOwnProperty(this.unique.valueOf())) {
+      // Already annotated
+      return n as T & A;
+    }
+    for (const [key, attr] of Object.entries(this.attributes)) {
+      Object.defineProperty(n, key, {
+        get: function () {
+          return attr(id);
+        },
+      });
+    }
+    Object.defineProperty(n, this.unique.valueOf(), {
+      get: function () {
+        return true;
+      },
+    });
+
+    return n as T & A;
+  }
+  proxy(n: T): T {
+    if ((n as any)[this.unique.valueOf()] !== undefined) {
+      console.log("Was already a proxy!");
+      return n;
+    }
+    return new Proxy<T>(n, {
+      get: (target, prop, receiver) => {
+        /** The 'unique' property reveals the underlying target */
+        if (prop === this.unique.valueOf()) return target;
+        /**
+         * Check if the property is a string (attributes
+         * are named only by strings)
+         **/
+        if (typeof prop === "string") {
+          /**
+           * Find the id for the given target (if it exists
+           * in the tree at all)
+           **/
+          const n = this.tree.find(target);
+          if (n.isJust() && this.attributes.hasOwnProperty(prop)) {
+            /** If it exists, extract the named attribute */
+            const attr = this.attributes[prop];
+            if (attr !== undefined) {
+              /**
+               * If the attribute exists (and the id exists),
+               * then evaluate the attribute and return the
+               * result.
+               **/
+              const nid = n.unsafeCoerce();
+              return attr(nid);
+            }
+          }
+        }
+        /**
+         * This isn't an attribute, so use the Reflect API to get
+         * the result of a 'get' on this target.
+         */
+        const possibleChild = Reflect.get(target, prop, receiver);
+
+        /** If this isn't an object, then it cannot be a child. */
+        if (typeof possibleChild !== "object") return possibleChild;
+
+        /** Check to see if this is a child (exists in the tree)... */
+        const child = this.tree.find(possibleChild);
+        return child
+          .map((c) => this.proxy(possibleChild)) // If so, return a proxy around it.
+          .orDefault(possibleChild); // If not, just return its normal value.
+      },
+      set: (obj, prop, value) => {
+        return Reflect.set(obj, prop, value);
+      },
+    });
+  }
+
+  /**  */
+  find(n: T) {
+    const base = (n as any)[this.unique.valueOf()] ?? n;
+    if (this.tree.contains(base)) return this.proxy(n);
   }
 
   /** Extract the underlying attribute */
@@ -165,7 +261,7 @@ export class ArborGlyph<T, A extends AttributeTypes = {}> {
           ...attributes,
           [n]: attr,
         };
-        return new ArborGlyph(map, attrs);
+        return new ArborGlyph(map, attrs, this.unique);
       },
     };
   }

@@ -1,3 +1,5 @@
+import { TreeMap } from "../maps";
+
 /**
  * An attribute is simply a function that we can call passing in the node
  * identifier and getting back some value.  The details of how the value
@@ -23,3 +25,16 @@ export type AttributeTypes = Record<string, any>;
 export type DefinedAttributes<A extends AttributeTypes> = {
   [P in keyof A]: Attribute<A[P]>;
 };
+
+export type ExtendedBy<
+  A extends AttributeTypes,
+  N extends string,
+  R
+> = DefinedAttributes<A & Record<N, R>>;
+
+export type AttributeConstructor<
+  N extends string,
+  T,
+  A extends AttributeTypes,
+  R
+> = (tree: TreeMap<T>, base: DefinedAttributes<A>) => ExtendedBy<A, N, R>;

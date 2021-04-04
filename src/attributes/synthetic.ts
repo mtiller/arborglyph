@@ -1,5 +1,12 @@
 import { TreeMap } from "../maps/treemap";
-import { DefinedAttributes, AttributeTypes, Attribute } from "./attributes";
+import { ArborGlyph } from "./arborglyph";
+import {
+  DefinedAttributes,
+  AttributeTypes,
+  Attribute,
+  ExtendedBy,
+  AttributeConstructor,
+} from "./attributes";
 import { memoizeEvaluator } from "./memoize";
 
 /**
@@ -88,4 +95,22 @@ export function syntheticAttribute<T, A, R>(
     return evaluate({ childIds, childValues, childAttrs, attrs, node, nid });
   }, memoize);
   return ret;
+}
+
+export function synthetic<N extends string, T, A extends AttributeTypes, R>(
+  name: N,
+  f: SyntheticFunction<T, A, R>,
+  memoize: boolean = false
+): AttributeConstructor<N, T, A, R> {
+  return (
+    tree: TreeMap<T>,
+    base: DefinedAttributes<A>
+  ): ExtendedBy<A, N, R> => {
+    const attr = syntheticAttribute<T, A, R>(f, tree, base, memoize);
+    const attrs: DefinedAttributes<A & Record<N, R>> = {
+      ...base,
+      [name]: attr,
+    };
+    return attrs;
+  };
 }

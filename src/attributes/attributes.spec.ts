@@ -2,16 +2,8 @@ import { TreeMap } from "../maps/treemap";
 import { GenericVisitor, NamedChildren } from "../visitors/generic";
 import { ObjectVisitor } from "../visitors/object";
 import { ArborGlyph } from "./arborglyph";
-
-export type Tree =
-  | { type: "fork"; left: Tree; right: Tree }
-  | { type: "leaf"; value: number };
-
-const fork = (l: Tree, r: Tree): Tree => ({ type: "fork", left: l, right: r });
-const leaf = (n: number): Tree => ({ type: "leaf", value: n });
-
-const treeChildren: NamedChildren<Tree> = (x) =>
-  x.type === "leaf" ? {} : { left: x.left, right: x.right };
+import { synthetic } from "./synthetic";
+import { fork, leaf, Tree, treeChildren } from "./testing/tree";
 
 describe("Create a few attributed trees", () => {
   const data = {
@@ -21,7 +13,7 @@ describe("Create a few attributed trees", () => {
     h: [9, 2, 3, 4, 5],
   };
   it("should create a basic attributed tree with just built-in attributes", () => {
-    const map = TreeMap.create(new ObjectVisitor(data));
+    const map = TreeMap.create<object>(new ObjectVisitor(data));
     const attributes = new ArborGlyph(map);
 
     expect([...attributes.attrs]).toEqual([]);
@@ -148,6 +140,21 @@ describe("Create a few attributed trees", () => {
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
     const map = TreeMap.create(new GenericVisitor(data, treeChildren));
 
+    // const min2 = synthetic
+    //   .named("min")
+    //   .dependsOn<{ childCount: number }>()
+    //   .computedBy(({ node: Tree, childAttrs }) => {
+    //     node.type === "leaf"
+    //       ? node.value
+    //       : Math.min(childAttrs(node.left), childAttrs(node.right));
+    //   });
+    const min = synthetic<"min", Tree, {}, number>(
+      "min",
+      ({ node, childAttrs }): number =>
+        node.type === "leaf"
+          ? node.value
+          : Math.min(childAttrs(node.left), childAttrs(node.right))
+    );
     const attributes = new ArborGlyph(map)
       .synthetic<"min", number>("min", ({ childAttrs, node }) =>
         node.type === "leaf"
