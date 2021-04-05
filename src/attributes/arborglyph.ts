@@ -1,24 +1,27 @@
 import { TreeMap } from "../maps/treemap";
 import {
-  Attribute,
   AttributeConstructor,
   AttributeTypes,
   DefinedAttributes,
 } from "./attributes";
 
 /**
- * This class is responsible for annotating an underlying tree (`tree`)
- * with attributes.  For each attribute type, we first define the attribute
- * via an evaluation function and then we name it using the `named` method.
- * This "currying" was necessary to maximize the amount of type inferencing
- * possible which allow ambiguous attributes to be type annotated (without
- * triggering the need to annotate everything).
+ * This class is responsible for annotating an underlying tree (`tree`) with
+ * attributes.  For each attribute type, we first define the attribute by its
+ * name and associated evaluation function.
+ *
+ * Each attribute is defined simply by a function that ultimately adds an
+ * attribute to the `attributes` collection.  Once the ArborGlyph class is closed
+ * via the `done` method, all nodes in the tree are annotated with the additional
+ * attributes as (getter properties).
  */
 export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
   /**
    * Manage a given tree with a set of attributes associated with it.  Normally,
    * this constructor is invoked with only the first argument and additional
-   * attributes are added via the methods in this class.
+   * attributes are added via the methods in this class.  Once each attribute
+   * is added (or when the ArborGlyph is closed), a new ArborGlyph instance
+   * (with updated attributes) is created.
    */
   constructor(
     protected tree: TreeMap<T>,
@@ -26,6 +29,16 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     protected unique: Symbol = Symbol(),
     protected closed: boolean = false
   ) {}
+
+  /**
+   * This method is used to add attributes.  This method is agnostic as to
+   * the kind of attribute (inherited, synthetic, etc).  This is because how
+   * each attribute is evaluated is _external_ this this method and encapsulated
+   * in the provided `AttributeConstructor` function.
+   *
+   * @param acon The function to construct a new `attributes` value.
+   * @returns A new `ArborGlyph` with the additional attribute included.
+   */
   add<N extends string, R>(
     acon: AttributeConstructor<N, T, A, R>
   ): ArborGlyph<T, A & Record<N, R>> {
@@ -35,18 +48,50 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     const attrs = acon<A>(this.tree, deps, deps);
     return new ArborGlyph(this.tree, attrs, this.unique, false);
   }
-  /** All attributes currently associated with this `ArborGlyph` */
+
+  /** The names of all attributes currently associated with this `ArborGlyph` */
   get attrs(): Set<keyof A> {
     return new Set(Object.keys(this.attributes));
   }
+
+  /**
+   * This method is invoked once all attributes have been added
+   * to the ArborGlyph.  At that point, the tree is annotated with
+   * the attributes defined here (by adding new getter properties
+   * to each node).
+   *
+   * @returns A new, closed ArborGlyph
+   */
   done() {
     const ret = new ArborGlyph(this.tree, this.attributes, this.unique, true);
     for (const node of ret.tree.nodes) {
-      ret.anno(node);
+      ret.annotateNode(node);
     }
     return ret;
   }
+
+  /**
+   * This method returns the "annotated" version of the given node.  Assuming the
+   * `ArborGlyph` is closed (which this method checks), the node has already been
+   * annotated with all attributes.  As a result, this method doesn't need to
+   * actually do anything except a type cast.
+   *
+   * @param n The node to "annotate"
+   * @returns Version of the node with attributes defined
+   */
   anno(n: T): T & A {
+    if (!this.closed)
+      throw new Error(
+        `Cannot annotate nodes until all attributes have been defined`
+      );
+    return n as T & A;
+  }
+  /**
+   * This method is the method that actually does the node annotation.  It
+   * does this be adding additional getter properties to the specified node.
+   * @param n Node to annotate
+   */
+  protected annotateNode(n: T): void {
     /**
      * If this ArborGlyph hasn't already been closed, the
      * nodes cannot (yet) be annotated.
@@ -56,13 +101,14 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
         `Cannot annotate nodes until all attributes have been defined`
       );
     /**
-     * This method is normally called just once for each node.  Each
-     * subsequent time, we can just return the node since it has already
-     * been annotated (as evidenced by the presence of the `unique` symbol)
+     * This method is normally called just once for each node.  This
+     * detects if the same node has already been annotated **by this
+     * `ArborGlyph`**.
      */
     if (n.hasOwnProperty(this.unique.valueOf())) {
-      // Already annotated
-      return n as T & A;
+      throw new Error(
+        `Found a node that has already been annotated even though the ArborGlyph was just closed (duplicate?)`
+      );
     }
 
     /**
@@ -76,19 +122,18 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
         },
       });
     }
+
+    /**
+     * We add this property so we know the node has been annotated
+     * (**by this ArborGlyph**).
+     */
     Object.defineProperty(n, this.unique.valueOf(), {
       get: function () {
         return true;
       },
     });
-
-    return n as T & A;
   }
 
-  /** Extract the underlying attribute */
-  attr<K extends keyof A>(attr: K): Attribute<T, A[K]> {
-    return this.attributes[attr];
-  }
   /**
    * This method is useful in trying to understand what is going on with evaluation.
    * It traverses the tree and evaluates a given attribute for every node.

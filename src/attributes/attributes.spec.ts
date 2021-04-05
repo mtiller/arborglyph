@@ -64,25 +64,10 @@ describe("Create a few attributed trees", () => {
     expect(attributes.attrs).toContain("childCount");
     expect(attributes.attrs).toContain("maxChild");
     expect(map.nodes.size).toEqual(9);
-    // expect([...map.ids]).toEqual([
-    //   "$",
-    //   "$.a",
-    //   "$.a.0",
-    //   "$.a.0.0",
-    //   "$.a.1",
-    //   "$.c",
-    //   "$.c.d",
-    //   "$.c.d.0",
-    //   "$.h",
-    // ]);
     expect(attributes.anno(data).childCount).toEqual(3);
     expect(attributes.anno(data.a).childCount).toEqual(2);
     expect(attributes.anno(data.a[0]).childCount).toEqual(1);
     expect(attributes.anno(data).maxChild).toEqual(2);
-    // expect(attributes.query("childCount", "$")).toEqual(3);
-    // expect(attributes.query("childCount", "$.a")).toEqual(2);
-    // expect(attributes.query("childCount", "$.a.0")).toEqual(1);
-    // expect(attributes.query("maxChild", "$")).toEqual(2);
   });
 
   it("should honor memoize flag evaluations", () => {
