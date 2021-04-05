@@ -67,7 +67,7 @@ export interface SyntheticOptions {
  * @param memoize
  * @returns
  */
-export function syntheticAttribute<T, A, R>(
+export function syntheticAttribute<T extends object, A, R>(
   f: SyntheticFunction<T, A, R>,
   tree: TreeMap<T>,
   attrs: DefinedAttributes<A>,
@@ -103,7 +103,12 @@ export function syntheticAttribute<T, A, R>(
   return ret;
 }
 
-export function synthetic<N extends string, T, D extends AttributeTypes, R>(
+export function synthetic<
+  N extends string,
+  T extends object,
+  D extends AttributeTypes,
+  R
+>(
   name: N,
   f: SyntheticFunction<T, D, R>,
   memoize: boolean = false

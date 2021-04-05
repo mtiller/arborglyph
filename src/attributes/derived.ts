@@ -47,7 +47,7 @@ export interface DerivedOptions {
  * @param memoize
  * @returns
  */
-export function derivedAttribute<T, A, R>(
+export function derivedAttribute<T extends object, A, R>(
   evaluate: DerivedFunction<T, A, R>,
   tree: TreeMap<T>,
   attrs: DefinedAttributes<A>,
@@ -63,7 +63,12 @@ export function derivedAttribute<T, A, R>(
   return ret;
 }
 
-export function derived<N extends string, T, D extends AttributeTypes, R>(
+export function derived<
+  N extends string,
+  T extends object,
+  D extends AttributeTypes,
+  R
+>(
   name: N,
   f: DerivedFunction<T, D, R>,
   memoize: boolean = false

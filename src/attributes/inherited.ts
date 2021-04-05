@@ -47,7 +47,7 @@ export interface InheritedOptions {
  * @param memoize
  * @returns
  */
-export function inheritedAttribute<T, A, R>(
+export function inheritedAttribute<T extends object, A, R>(
   evaluate: InheritedFunction<T, A, R>,
   map: TreeMap<T>,
   attrs: DefinedAttributes<A>,
@@ -64,7 +64,12 @@ export function inheritedAttribute<T, A, R>(
   return ret;
 }
 
-export function inherited<N extends string, T, D extends AttributeTypes, R>(
+export function inherited<
+  N extends string,
+  T extends object,
+  D extends AttributeTypes,
+  R
+>(
   name: N,
   f: InheritedFunction<T, D, R>,
   memoize: boolean = false

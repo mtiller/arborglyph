@@ -9,7 +9,7 @@ import { AsyncTreeVisitor, TreeVisitor } from "../visitors/visitor";
  * that occur as the tree is traverse and cache that information for easy
  * retrieval later.
  */
-export class TreeMap<T> {
+export class TreeMap<T extends object> {
   /**
    * Use a synchronous `TreeVisitor` to create the map.  It would be ideal if this
    * could (at some point) be made part of the constructor.  But, unfortunately,
@@ -19,7 +19,7 @@ export class TreeMap<T> {
    * @param visitor
    * @returns
    */
-  static create<T>(visitor: TreeVisitor<T>): TreeMap<T> {
+  static create<T extends object>(visitor: TreeVisitor<T>): TreeMap<T> {
     const ret = new TreeMap<T>(visitor);
     populateSync(visitor, ret.parentMap, ret.nodeMap, ret.childMap);
     return ret;
@@ -36,7 +36,7 @@ export class TreeMap<T> {
    * @param visitor
    * @returns
    */
-  static async createAsync<T>(
+  static async createAsync<T extends object>(
     visitor: AsyncTreeVisitor<T>
   ): Promise<TreeMap<T>> {
     const ret = new TreeMap<T>(visitor);

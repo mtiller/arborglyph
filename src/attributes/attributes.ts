@@ -34,7 +34,7 @@ export type ExtendedBy<
 
 export type AttributeConstructor<
   N extends string,
-  T,
+  T extends object,
   D extends AttributeTypes, // What this function **depends** on, it can be passed more than this
   R
 > = <A extends D>(
