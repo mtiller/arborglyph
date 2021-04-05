@@ -30,50 +30,40 @@ export type NamedAsyncChildren<T> = (
  * @param getChildren
  * @param namer
  */
-function walkGeneric<T>(
+function walkGeneric<T extends object>(
   cur: T,
-  id: string,
   handler: TreeHandler<T>,
   visited: Set<T>,
-  getChildren: NamedChildren<T>,
-  namer: Namer
+  getChildren: NamedChildren<T>
 ): void {
   /** If we find a node we've already visited, throw an error. */
   if (visited.has(cur))
     throw new Error(`Circular reference found in ObjectVisitor`);
 
   /** Record this node and its name */
-  handler({ type: "node", id: id, node: cur });
+  handler({ type: "node", node: cur });
 
   /** Now, find all children and map them into a data structure per child */
   const children = Object.entries(getChildren(cur)).map(
     ([childName, child]) => ({
       childName,
       child,
-      childId: namer(id, childName),
     })
   );
 
   /** Iterate over the children and... */
-  for (const { child, childId } of children) {
+  for (const { child } of children) {
     if (child === undefined) continue;
     /** Notify the `handler` of the parentage of this node... */
-    handler({ type: "parent", id: childId, parent: id });
+    handler({ type: "parent", parent: cur, node: child });
     /** ...and then recurse into the children */
-    walkGeneric(
-      child,
-      childId,
-      handler,
-      new Set([...visited, cur]),
-      getChildren,
-      namer
-    );
+    walkGeneric(child, handler, new Set([...visited, cur]), getChildren);
   }
   /** Once we've walked all the children, report all children found to the `handler` */
   handler({
     type: "children",
-    id: id,
-    children: children.map((x) => x.childId),
+    node: cur,
+    children: children.map((x) => x.child),
   });
 }
 
@@ -81,30 +71,19 @@ function walkGeneric<T>(
  * An implementation of the `TreeVisitor` interface that works for any data
  * structure that provides a `NamedChildren` type function.
  */
-export class GenericVisitor<T> implements TreeVisitor<T> {
+export class GenericVisitor<T extends object> implements TreeVisitor<T> {
   constructor(
     /** The root node of the tree */
     protected rootNode: T,
     /** The function that identifies children */
-    protected children: NamedChildren<T>,
-    /** A function used to formulate hierarchical names */
-    protected namer: Namer = (parent, child) => `${parent}.${child}`,
-    /** The name given to the root node */
-    protected rootName: string = "$"
+    protected children: NamedChildren<T>
   ) {}
-  get root(): string {
-    return this.rootName;
+  get root(): T {
+    return this.rootNode;
   }
   /** Invoke the generic walker and wrap the result in a `Promise` */
   walk(handler: TreeHandler<any>): void {
-    return walkGeneric(
-      this.rootNode,
-      this.rootName,
-      handler,
-      new Set(),
-      this.children,
-      this.namer
-    );
+    return walkGeneric(this.rootNode, handler, new Set(), this.children);
   }
 }
 
@@ -120,49 +99,39 @@ export class GenericVisitor<T> implements TreeVisitor<T> {
  * @param getChildren
  * @param namer
  */
-async function walkAsyncGeneric<T>(
+async function walkAsyncGeneric<T extends object>(
   cur: T,
-  id: string,
   handler: TreeHandler<T>,
   visited: Set<T>,
-  getChildren: NamedAsyncChildren<T>,
-  namer: Namer
+  getChildren: NamedAsyncChildren<T>
 ): Promise<void> {
   /** If we find a node we've already visited, throw an error. */
   if (visited.has(cur))
     throw new Error(`Circular reference found in ObjectVisitor`);
 
   /** Record this node and its name */
-  handler({ type: "node", id: id, node: cur });
+  handler({ type: "node", node: cur });
 
   /** Now, find all children and map them into a data structure per child */
   const children = Object.entries(await getChildren(cur)).map(
     ([childName, child]) => ({
       childName,
       child,
-      childId: namer(id, childName),
     })
   );
 
   /** Iterate over the children and... */
-  for (const { child, childId } of children) {
+  for (const { child } of children) {
     /** Notify the `handler` of the parentage of this node... */
-    handler({ type: "parent", id: childId, parent: id });
+    handler({ type: "parent", parent: cur, node: child });
     /** ...and then recurse into the children */
-    walkAsyncGeneric(
-      child,
-      childId,
-      handler,
-      new Set([...visited, cur]),
-      getChildren,
-      namer
-    );
+    walkAsyncGeneric(child, handler, new Set([...visited, cur]), getChildren);
   }
   /** Once we've walked all the children, report all children found to the `handler` */
   handler({
     type: "children",
-    id: id,
-    children: children.map((x) => x.childId),
+    node: cur,
+    children: children.map((x) => x.child),
   });
 }
 
@@ -171,29 +140,19 @@ async function walkAsyncGeneric<T>(
  * structure that provides a `NamedChildren` type function but needs to
  * make async calls to identify children.
  */
-export class GenericAsyncVisitor<T> implements AsyncTreeVisitor<T> {
+export class GenericAsyncVisitor<T extends object>
+  implements AsyncTreeVisitor<T> {
   constructor(
     /** The root node of the tree */
     protected rootNode: T,
     /** The function that identifies children */
-    protected children: NamedAsyncChildren<T>,
-    /** A function used to formulate hierarchical names */
-    protected namer: Namer = (parent, child) => `${parent}.${child}`,
-    /** The name given to the root node */
-    protected rootName: string = "$"
+    protected children: NamedAsyncChildren<T>
   ) {}
-  get root(): string {
-    return this.rootName;
+  get root(): T {
+    return this.rootNode;
   }
   /** Invoke the generic walker and wrap the result in a `Promise` */
   walk(handler: TreeHandler<any>): Promise<void> {
-    return walkAsyncGeneric(
-      this.rootNode,
-      this.rootName,
-      handler,
-      new Set(),
-      this.children,
-      this.namer
-    );
+    return walkAsyncGeneric(this.rootNode, handler, new Set(), this.children);
   }
 }

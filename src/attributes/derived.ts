@@ -14,8 +14,6 @@ import { memoizeEvaluator } from "./memoize";
  */
 export interface DerivedArgs<T, A extends AttributeTypes, R> {
   node: T & A;
-  attrs: DefinedAttributes<A>;
-  nid: string;
 }
 
 /**
@@ -50,14 +48,13 @@ export interface DerivedOptions {
 export function derivedAttribute<T extends object, A, R>(
   evaluate: DerivedFunction<T, A, R>,
   tree: TreeMap<T>,
-  attrs: DefinedAttributes<A>,
+  attrs: DefinedAttributes<T, A>,
   memoize: boolean
-): Attribute<R> {
+): Attribute<T, R> {
   const ret = memoizeEvaluator(
-    (nid: string): R => {
+    (node: T): R => {
       // We assume the nodes have all been annotated at this point
-      const node = tree.node(nid) as T & A;
-      return evaluate({ node, attrs, nid });
+      return evaluate({ node: node as T & A });
     }
   );
   return ret;
@@ -84,11 +81,11 @@ export function derived<
    */
   return <A extends D>(
     tree: TreeMap<T>,
-    base: DefinedAttributes<D>,
-    ext: DefinedAttributes<A>
-  ): ExtendedBy<A, N, R> => {
+    base: DefinedAttributes<T, D>,
+    ext: DefinedAttributes<T, A>
+  ): ExtendedBy<T, A, N, R> => {
     const attr = derivedAttribute<T, D, R>(f, tree, base, memoize);
-    const attrs: DefinedAttributes<A & Record<N, R>> = {
+    const attrs: DefinedAttributes<T, A & Record<N, R>> = {
       ...ext,
       [name]: attr,
     };

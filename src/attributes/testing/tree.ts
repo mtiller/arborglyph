@@ -18,21 +18,21 @@ export const treeChildren: NamedChildren<Tree> = (x) =>
 
 export const min = synthetic<"min", Tree, {}, number>(
   "min",
-  ({ node, childAttrs }): number =>
+  ({ node, anno }): number =>
     node.type === "leaf"
       ? node.value
-      : Math.min(childAttrs(node.left), childAttrs(node.right))
+      : Math.min(anno(node.left).min, anno(node.right).min)
 );
 
 export const globmin = inherited<"globmin", Tree, { min: number }, number>(
   "globmin",
-  ({ parentValue, attrs, nid }) => parentValue.orDefault(attrs.min(nid))
+  ({ parent, node }) => parent.map((p) => p.min).orDefault(node.min)
 );
 
 export const repmin = synthetic<"repmin", Tree, { globmin: number }, Tree>(
   "repmin",
-  ({ childAttrs, node, attrs, nid }) =>
+  ({ node, anno }) =>
     node.type === "leaf"
-      ? leaf(attrs.globmin(nid))
-      : fork(childAttrs(node.left), childAttrs(node.right))
+      ? leaf(node.globmin)
+      : fork(anno(node.left).repmin, anno(node.right).repmin)
 );

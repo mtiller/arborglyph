@@ -9,6 +9,7 @@ import {
   reaction,
 } from "mobx";
 import { synthetic } from "./synthetic";
+import { isObject } from "../util";
 
 describe.skip("Test compatibility with mobx", () => {
   it("should allow adding computed via a new object", () => {
@@ -86,20 +87,21 @@ describe.skip("Test compatibility with mobx", () => {
       g: 2,
       h: [9, 2, 3, 4, 5],
     });
-    const map = TreeMap.create(new ObjectVisitor(data));
+    const map = TreeMap.create(new ObjectVisitor(data, isObject));
 
     autorun(() => {
       console.log("Change");
     });
-    const sum = synthetic<"sum", {}, {}, number>(
+    const sum = synthetic<"sum", any, {}, number>(
       "sum",
-      ({ childValues, node }) => {
-        const ret =
-          typeof node === "number"
-            ? node
-            : childValues().reduce((sum, n) => sum + n, 0);
-        console.log("Calling for " + JSON.stringify(node));
-        console.log("sum = ", ret);
+      ({ children, node }) => {
+        let ret = 0;
+        for (const p in node) {
+          if (typeof node[p] === "number") ret += node[p];
+        }
+        for (const c of children) {
+          ret += c.sum;
+        }
         return ret;
       }
     );

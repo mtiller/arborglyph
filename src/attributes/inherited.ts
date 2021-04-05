@@ -14,12 +14,8 @@ import { memoizeEvaluator } from "./memoize";
  */
 export interface InheritedArgs<T, A extends AttributeTypes, R> {
   root: boolean;
-  // parent: Maybe<T & A>;
-  parentValue: Maybe<R>;
-  parentId: Maybe<string>;
-  attrs: DefinedAttributes<A>;
+  parent: Maybe<T & A>;
   node: T & A;
-  nid: string;
 }
 
 /**
@@ -50,16 +46,18 @@ export interface InheritedOptions {
 export function inheritedAttribute<T extends object, A, R>(
   evaluate: InheritedFunction<T, A, R>,
   map: TreeMap<T>,
-  attrs: DefinedAttributes<A>,
+  attrs: DefinedAttributes<T, A>,
   memoize: boolean
-): Attribute<R> {
-  const ret = memoizeEvaluator((nid: string): R => {
+): Attribute<T, R> {
+  const ret = memoizeEvaluator((node: T): R => {
     // We assume the nodes have all been annotated at this point
-    const node = map.node(nid) as T & A;
-    const parentId = map.parent(nid);
-    const parentValue = parentId.map((_) => ret(_));
-    const root = parentId.isNothing();
-    return evaluate({ root, parentValue, parentId, attrs, node, nid });
+    const parent = map.parent(node);
+    const root = parent.isNothing();
+    return evaluate({
+      root,
+      parent: parent as Maybe<T & A>,
+      node: node as T & A,
+    });
   }, memoize);
   return ret;
 }
@@ -85,11 +83,11 @@ export function inherited<
    */
   return <A extends D>(
     tree: TreeMap<T>,
-    base: DefinedAttributes<D>,
-    ext: DefinedAttributes<A>
-  ): ExtendedBy<A, N, R> => {
+    base: DefinedAttributes<T, D>,
+    ext: DefinedAttributes<T, A>
+  ): ExtendedBy<T, A, N, R> => {
     const attr = inheritedAttribute<T, D, R>(f, tree, base, memoize);
-    const attrs: DefinedAttributes<A & Record<N, R>> = {
+    const attrs: DefinedAttributes<T, A & Record<N, R>> = {
       ...ext,
       [name]: attr,
     };

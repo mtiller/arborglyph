@@ -11,22 +11,21 @@ import { memoizeEvaluator } from "./memoize";
 /**
  * Arguments available when computing a synthetic attribute.
  */
-export interface SyntheticArg<T, R, A extends AttributeTypes = {}> {
-  childAttrs: (x: T) => R;
-  childIds: string[];
-  childValues: () => R[];
-  attrs: DefinedAttributes<A>;
+export interface SyntheticArg<T, A extends AttributeTypes = {}> {
+  children: Array<T & A>;
   node: T & A;
-  nid: string;
+  anno: (n: T) => T & A;
 }
 
 /**
  * Type signature of the function that computes synthetic attributes.
  */
-export type SyntheticFunction<T, A extends AttributeTypes, R> = (
-  args: SyntheticArg<T, R, A>,
-  r?: R
-) => R;
+export type SyntheticFunction<
+  N extends string,
+  T,
+  A extends AttributeTypes,
+  R
+> = (args: SyntheticArg<T, A & Record<N, R>>) => R;
 
 export interface NamedSyntheticFunction<
   N extends string,
@@ -35,12 +34,12 @@ export interface NamedSyntheticFunction<
   R
 > {
   name: N;
-  f: SyntheticFunction<T, A, R>;
+  f: SyntheticFunction<N, T, A, R>;
 }
 
 export function namedSynthetic<N extends string>(key: N) {
   return <T, A extends AttributeTypes, R>(
-    f: (args: SyntheticArg<T, R, A>) => R
+    f: (args: SyntheticArg<T, A>) => R
   ): NamedSyntheticFunction<N, T, A, R> => {
     return {
       name: key,
@@ -67,37 +66,23 @@ export interface SyntheticOptions {
  * @param memoize
  * @returns
  */
-export function syntheticAttribute<T extends object, A, R>(
-  f: SyntheticFunction<T, A, R>,
+export function syntheticAttribute<N extends string, T extends object, A, R>(
+  f: SyntheticFunction<N, T, A, R>,
   tree: TreeMap<T>,
-  attrs: DefinedAttributes<A>,
+  attrs: DefinedAttributes<T, A>,
   memoize: boolean
-): Attribute<R> {
+): Attribute<T, R> {
   /**
    * This case is necessary because we lied to the TypeScript compiler about
    * the fact that `R` and `CV` are different types.  But they aren't really.
    */
-  const evaluate: SyntheticFunction<T, A, R> = f as any;
-  const ret = memoizeEvaluator((nid: string): R => {
-    const node = tree.node(nid) as T & A;
-    const childIds = tree.children(nid);
-
-    const childNodes = childIds.map((x) => tree.node(x));
-    const childValues = () => {
-      return childIds.map((n) => ret(n));
-    };
-    const childAttrs = (x: T): R => {
-      const idx = childNodes.indexOf(x);
-      if (idx === -1) throw new Error(`Requested index of non-child node`);
-      return ret(childIds[idx]);
-    };
+  const evaluate: SyntheticFunction<N, T, A, R> = f as any;
+  const ret = memoizeEvaluator((node: T): R => {
+    const children = tree.children(node).map((x) => x as T & A & Record<N, R>);
     return evaluate({
-      childIds,
-      childValues,
-      childAttrs,
-      attrs,
-      node,
-      nid,
+      node: node as T & A & Record<N, R>,
+      children,
+      anno: (n) => n as T & A & Record<N, R>,
     });
   }, memoize);
   return ret;
@@ -110,7 +95,7 @@ export function synthetic<
   R
 >(
   name: N,
-  f: SyntheticFunction<T, D, R>,
+  f: SyntheticFunction<N, T, D, R>,
   memoize: boolean = false
 ): AttributeConstructor<N, T, D, R> {
   /**
@@ -124,11 +109,11 @@ export function synthetic<
    */
   return <A extends D>(
     tree: TreeMap<T>,
-    base: DefinedAttributes<D>,
-    ext: DefinedAttributes<A>
-  ): ExtendedBy<A, N, R> => {
-    const attr = syntheticAttribute<T, D, R>(f, tree, base, memoize);
-    const attrs: DefinedAttributes<A & Record<N, R>> = {
+    base: DefinedAttributes<T, D>,
+    ext: DefinedAttributes<T, A>
+  ): ExtendedBy<T, A, N, R> => {
+    const attr = syntheticAttribute<N, T, D, R>(f, tree, base, memoize);
+    const attrs: DefinedAttributes<T, A & Record<N, R>> = {
       ...ext,
       [name]: attr,
     };

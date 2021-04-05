@@ -55,7 +55,7 @@ export class TreeMap<T extends object> {
   /**
    * The set of nodes in the tree
    */
-  protected nodeSet = new WeakSet<T>();
+  protected nodeSet = new Set<T>();
   /**
    * A constructor that is only invoked by the `TreeMap.create` method.
    * @param visitor

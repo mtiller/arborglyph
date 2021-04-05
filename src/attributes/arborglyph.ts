@@ -22,7 +22,7 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
    */
   constructor(
     protected tree: TreeMap<T>,
-    protected attributes: DefinedAttributes<A> = {} as any,
+    protected attributes: DefinedAttributes<T, A> = {} as any,
     protected unique: Symbol = Symbol(),
     protected closed: boolean = false
   ) {}
@@ -31,7 +31,7 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
   ): ArborGlyph<T, A & Record<N, R>> {
     if (this.closed)
       throw new Error(`Cannot add attributes to a closed ArborGlyph instance`);
-    const deps: DefinedAttributes<A> = this.attributes;
+    const deps: DefinedAttributes<T, A> = this.attributes;
     const attrs = acon<A>(this.tree, deps, deps);
     return new ArborGlyph(this.tree, attrs, this.unique, false);
   }
@@ -69,14 +69,10 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
      * If we get here, we are being asked to annotate a node
      * for the first time.
      */
-    const nid = this.tree.find(n);
-    if (nid.isNothing())
-      throw new Error(`Node cannot be annotated, it isn't in the tree`);
-    const id = nid.unsafeCoerce();
     for (const [key, attr] of Object.entries(this.attributes)) {
       Object.defineProperty(n, key, {
         get: function () {
-          return attr(id);
+          return attr(n);
         },
       });
     }
@@ -90,7 +86,7 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
   }
 
   /** Extract the underlying attribute */
-  attr<K extends keyof A>(attr: K): Attribute<A[K]> {
+  attr<K extends keyof A>(attr: K): Attribute<T, A[K]> {
     return this.attributes[attr];
   }
   /**

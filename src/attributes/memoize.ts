@@ -1,4 +1,4 @@
-import { PureMap } from "../maps/puremap";
+import { PureMap, PureWeakMap } from "../maps/puremap";
 import { Attribute } from "./attributes";
 
 /**
@@ -12,22 +12,20 @@ import { Attribute } from "./attributes";
  * @param memoize
  * @returns
  */
-export function memoizeEvaluator<R>(
-  f: (x: string) => R,
+export function memoizeEvaluator<T extends object, R>(
+  f: (x: T) => R,
   memoize: boolean = true
-): Attribute<R> {
+): Attribute<T, R> {
   if (!memoize) {
-    const ret = function (x: string): R {
+    const ret = function (x: T): R {
       return f(x);
     };
-    ret.invalidate = () => undefined;
     return ret;
   } else {
-    const map = new PureMap<string, R>();
-    const ret = function (x: string): R {
+    const map = new PureWeakMap<T, R>();
+    const ret = function (x: T): R {
       return map.getMaybe(x).orDefaultLazy(() => map.setRet(x, f(x)));
     };
-    ret.invalidate = () => map.clear();
     return ret;
   }
 }
