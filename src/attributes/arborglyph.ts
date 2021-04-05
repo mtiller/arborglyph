@@ -75,81 +75,18 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     return n as T & A;
   }
 
-  proxy(n: T): T {
-    if (!this.closed)
-      throw new Error(
-        `Cannot generate proxy nodes until all attributes have been defined`
-      );
-
-    if ((n as any)[this.unique.valueOf()] !== undefined) {
-      console.log("Was already a proxy!");
-      return n;
-    }
-    return new Proxy<T>(n, {
-      get: (target, prop, receiver) => {
-        /** The 'unique' property reveals the underlying target */
-        if (prop === this.unique.valueOf()) return target;
-        /**
-         * Check if the property is a string (attributes
-         * are named only by strings)
-         **/
-        if (typeof prop === "string") {
-          /**
-           * Find the id for the given target (if it exists
-           * in the tree at all)
-           **/
-          const n = this.tree.find(target);
-          if (n.isJust() && this.attributes.hasOwnProperty(prop)) {
-            /** If it exists, extract the named attribute */
-            const attr = this.attributes[prop];
-            if (attr !== undefined) {
-              /**
-               * If the attribute exists (and the id exists),
-               * then evaluate the attribute and return the
-               * result.
-               **/
-              const nid = n.unsafeCoerce();
-              return attr(nid);
-            }
-          }
-        }
-        /**
-         * This isn't an attribute, so use the Reflect API to get
-         * the result of a 'get' on this target.
-         */
-        const possibleChild = Reflect.get(target, prop, receiver);
-
-        /** If this isn't an object, then it cannot be a child. */
-        if (typeof possibleChild !== "object") return possibleChild;
-
-        /** Check to see if this is a child (exists in the tree)... */
-        const child = this.tree.find(possibleChild);
-        return child
-          .map((c) => this.proxy(possibleChild)) // If so, return a proxy around it.
-          .orDefault(possibleChild); // If not, just return its normal value.
-      },
-      set: (obj, prop, value) => {
-        return Reflect.set(obj, prop, value);
-      },
-    });
-  }
-
   /**  */
-  find(n: T) {
+  private find(n: T) {
     const base = (n as any)[this.unique.valueOf()] ?? n;
-    if (this.tree.contains(base)) return this.proxy(n);
+    if (this.tree.contains(base)) return this.anno(n);
   }
 
   /** Extract the underlying attribute */
   attr<K extends keyof A>(attr: K): Attribute<A[K]> {
     return this.attributes[attr];
   }
-  /** Request the value of an attribute on a given node id */
-  query<N extends keyof A>(attr: N, nid: string): A[N] {
-    return this.attributes[attr](nid);
-  }
   /** Request the value of an attribute on a given node */
-  queryNode<N extends keyof A>(attr: N, n: T): A[N] {
+  private queryNode<N extends keyof A>(attr: N, n: T): A[N] {
     return this.tree
       .find(n)
       .map((nid) => this.attributes[attr](nid))
