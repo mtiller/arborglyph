@@ -40,7 +40,11 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     return new Set(Object.keys(this.attributes));
   }
   done() {
-    return new ArborGlyph(this.tree, this.attributes, this.unique, true);
+    const ret = new ArborGlyph(this.tree, this.attributes, this.unique, true);
+    for (const node of ret.tree.nodes) {
+      ret.anno(node);
+    }
+    return ret;
   }
   anno(n: T): T & A {
     if (!this.closed)

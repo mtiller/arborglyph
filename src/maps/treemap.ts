@@ -66,6 +66,10 @@ export class TreeMap<T> {
   get ids() {
     return this.nodeMap.keys();
   }
+
+  get nodes() {
+    return this.nodeMap.values();
+  }
   /** Id of the root node */
   get root() {
     return this.visitor.root;

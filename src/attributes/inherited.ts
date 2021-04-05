@@ -14,10 +14,11 @@ import { memoizeEvaluator } from "./memoize";
  */
 export interface InheritedArgs<T, A extends AttributeTypes, R> {
   root: boolean;
+  // parent: Maybe<T & A>;
   parentValue: Maybe<R>;
   parentId: Maybe<string>;
   attrs: DefinedAttributes<A>;
-  node: T;
+  node: T & A;
   nid: string;
 }
 
@@ -53,7 +54,8 @@ export function inheritedAttribute<T, A, R>(
   memoize: boolean
 ): Attribute<R> {
   const ret = memoizeEvaluator((nid: string): R => {
-    const node = map.node(nid);
+    // We assume the nodes have all been annotated at this point
+    const node = map.node(nid) as T & A;
     const parentId = map.parent(nid);
     const parentValue = parentId.map((_) => ret(_));
     const root = parentId.isNothing();

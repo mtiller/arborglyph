@@ -49,7 +49,7 @@ describe("Create a few attributed trees", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
 
     const type = derived("type", ({ node }) => typeof node);
-    const attributes = new ArborGlyph(map).add(type);
+    const attributes = new ArborGlyph(map).add(type).done();
     expect(attributes.query("type", "$")).toEqual("object");
     expect(attributes.query("type", "$.a")).toEqual("object");
   });
@@ -58,7 +58,7 @@ describe("Create a few attributed trees", () => {
 
     const init = new ArborGlyph(map).add(childCount);
 
-    const attributes = init.add(maxChild);
+    const attributes = init.add(maxChild).done();
 
     expect(attributes.attrs).toContain("childCount");
     expect(attributes.attrs).toContain("maxChild");
@@ -101,7 +101,7 @@ describe("Create a few attributed trees", () => {
       true
     );
 
-    let attributes = new ArborGlyph(map).add(depth).add(depthMemo);
+    let attributes = new ArborGlyph(map).add(depth).add(depthMemo).done();
 
     expect(attributes.query("depth", "$")).toEqual(0);
     expect(attributes.query("depth", "$")).toEqual(0);
@@ -140,7 +140,7 @@ describe("Create a few attributed trees", () => {
     const wmin = base.add(min);
     const wgmin = wmin.add(globmin);
     const wrmin = wgmin.add(repmin);
-    const attributes = wrmin;
+    const attributes = wrmin.done();
 
     expect(attributes.query("min", "$")).toEqual(2);
     expect(attributes.query("globmin", "$.right.left")).toEqual(2);

@@ -16,7 +16,7 @@ export interface SyntheticArg<T, R, A extends AttributeTypes = {}> {
   childIds: string[];
   childValues: () => R[];
   attrs: DefinedAttributes<A>;
-  node: T;
+  node: T & A;
   nid: string;
 }
 
@@ -77,9 +77,9 @@ export function syntheticAttribute<T, A, R>(
    * This case is necessary because we lied to the TypeScript compiler about
    * the fact that `R` and `CV` are different types.  But they aren't really.
    */
-  const evaluate: SyntheticFunction<T, any, R> = f as any;
+  const evaluate: SyntheticFunction<T, A, R> = f as any;
   const ret = memoizeEvaluator((nid: string): R => {
-    const node = tree.node(nid);
+    const node = tree.node(nid) as T & A;
     const childIds = tree.children(nid);
 
     const childNodes = childIds.map((x) => tree.node(x));
@@ -91,7 +91,14 @@ export function syntheticAttribute<T, A, R>(
       if (idx === -1) throw new Error(`Requested index of non-child node`);
       return ret(childIds[idx]);
     };
-    return evaluate({ childIds, childValues, childAttrs, attrs, node, nid });
+    return evaluate({
+      childIds,
+      childValues,
+      childAttrs,
+      attrs,
+      node,
+      nid,
+    });
   }, memoize);
   return ret;
 }

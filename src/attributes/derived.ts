@@ -1,4 +1,5 @@
 import { TreeMap } from "../maps/treemap";
+import { ArborGlyph } from "./arborglyph";
 import {
   Attribute,
   AttributeConstructor,
@@ -12,7 +13,7 @@ import { memoizeEvaluator } from "./memoize";
  * Arguments available when computing a derived attribute.
  */
 export interface DerivedArgs<T, A extends AttributeTypes, R> {
-  node: T;
+  node: T & A;
   attrs: DefinedAttributes<A>;
   nid: string;
 }
@@ -54,7 +55,8 @@ export function derivedAttribute<T, A, R>(
 ): Attribute<R> {
   const ret = memoizeEvaluator(
     (nid: string): R => {
-      const node = tree.node(nid);
+      // We assume the nodes have all been annotated at this point
+      const node = tree.node(nid) as T & A;
       return evaluate({ node, attrs, nid });
     }
   );
