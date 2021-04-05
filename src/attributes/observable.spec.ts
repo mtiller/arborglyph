@@ -8,6 +8,7 @@ import {
   observable,
   reaction,
 } from "mobx";
+import { synthetic } from "./synthetic";
 
 describe.skip("Test compatibility with mobx", () => {
   it("should allow adding computed via a new object", () => {
@@ -90,7 +91,7 @@ describe.skip("Test compatibility with mobx", () => {
     autorun(() => {
       console.log("Change");
     });
-    const attributes = new ArborGlyph(map).synthetic<"sum", number>(
+    const sum = synthetic<"sum", {}, {}, number>(
       "sum",
       ({ childValues, node }) => {
         const ret =
@@ -100,9 +101,10 @@ describe.skip("Test compatibility with mobx", () => {
         console.log("Calling for " + JSON.stringify(node));
         console.log("sum = ", ret);
         return ret;
-      },
-      { memoize: false }
+      }
     );
+
+    const attributes = new ArborGlyph(map).add(sum);
 
     expect(attributes.anno(data).sum).toEqual(45);
     console.log("Reset");

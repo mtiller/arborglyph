@@ -1,7 +1,15 @@
 import { TreeMap } from "../maps/treemap";
-import { GenericVisitor, ObjectVisitor } from "../visitors";
+import { GenericVisitor } from "../visitors";
 import { ArborGlyph } from "./arborglyph";
-import { fork, leaf, Tree, treeChildren } from "./testing/tree";
+import {
+  fork,
+  leaf,
+  min,
+  globmin,
+  repmin,
+  Tree,
+  treeChildren,
+} from "./testing/tree";
 
 describe("Test proxy functionality", () => {
   it("should proxy all normal requests", () => {
@@ -9,21 +17,7 @@ describe("Test proxy functionality", () => {
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
     const map = TreeMap.create(new GenericVisitor(data, treeChildren));
 
-    const attributes = new ArborGlyph(map)
-      .synthetic<"min", number>("min", ({ childAttrs, node }) =>
-        node.type === "leaf"
-          ? node.value
-          : Math.min(childAttrs(node.left), childAttrs(node.right))
-      )
-      .inherited<number>(({ parentValue, attrs, nid }) =>
-        parentValue.orDefault(attrs.min(nid))
-      )
-      .named("globmin")
-      .synthetic<"repmin", Tree>("repmin", ({ childAttrs, node, attrs, nid }) =>
-        node.type === "leaf"
-          ? leaf(attrs.globmin(nid))
-          : fork(childAttrs(node.left), childAttrs(node.right))
-      );
+    const attributes = new ArborGlyph(map).add(min).add(globmin).add(repmin);
 
     const root = attributes.proxy(data);
     const root2 = attributes.proxy(root);
@@ -37,21 +31,7 @@ describe("Test proxy functionality", () => {
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
     const map = TreeMap.create(new GenericVisitor(data, treeChildren));
 
-    const attributes = new ArborGlyph(map)
-      .synthetic<"min", number>("min", ({ childAttrs, node }) =>
-        node.type === "leaf"
-          ? node.value
-          : Math.min(childAttrs(node.left), childAttrs(node.right))
-      )
-      .inherited<number>(({ parentValue, attrs, nid }) =>
-        parentValue.orDefault(attrs.min(nid))
-      )
-      .named("globmin")
-      .synthetic<"repmin", Tree>("repmin", ({ childAttrs, node, attrs, nid }) =>
-        node.type === "leaf"
-          ? leaf(attrs.globmin(nid))
-          : fork(childAttrs(node.left), childAttrs(node.right))
-      );
+    const attributes = new ArborGlyph(map).add(min).add(globmin).add(repmin);
 
     const root = attributes.anno(data);
     const root2 = attributes.anno(root);

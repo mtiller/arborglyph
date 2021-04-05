@@ -2,9 +2,18 @@ import { TreeMap } from "../maps/treemap";
 import { GenericVisitor, NamedChildren } from "../visitors/generic";
 import { ObjectVisitor } from "../visitors/object";
 import { ArborGlyph } from "./arborglyph";
+import { derived, derivedAttribute } from "./derived";
 import { inherited } from "./inherited";
 import { synthetic } from "./synthetic";
-import { fork, leaf, Tree, treeChildren } from "./testing/tree";
+import {
+  fork,
+  leaf,
+  Tree,
+  treeChildren,
+  min,
+  globmin,
+  repmin,
+} from "./testing/tree";
 
 describe("Create a few attributed trees", () => {
   const data = {
@@ -13,6 +22,21 @@ describe("Create a few attributed trees", () => {
     g: 2,
     h: [9, 2, 3, 4, 5],
   };
+
+  const childCount = synthetic<"childCount", any, {}, number>(
+    "childCount",
+    ({ childIds }) => childIds.length
+  );
+  const maxChild = synthetic<"maxChild", any, { childCount: number }, number>(
+    "maxChild",
+    ({ childIds, attrs }) =>
+      childIds.reduce(
+        (p, id): number =>
+          attrs.childCount(id) > p ? attrs.childCount(id) : p,
+        0
+      )
+  );
+
   it("should create a basic attributed tree with just built-in attributes", () => {
     const map = TreeMap.create<object>(new ObjectVisitor(data));
     const attributes = new ArborGlyph(map);
@@ -21,31 +45,20 @@ describe("Create a few attributed trees", () => {
   });
   it("should create a derived attribute", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
-    const attributes = new ArborGlyph(map)
-      .derived(({ node }) => typeof node)
-      .named("typeof");
-    expect(attributes.query("typeof", "$")).toEqual("object");
-    expect(attributes.query("typeof", "$.g")).toEqual("number");
-    expect(attributes.query("typeof", "$.a")).toEqual("object");
-    expect(attributes.query("typeof", "$.h.0")).toEqual("number");
+
+    const type = derived("type", ({ node }) => typeof node);
+    const attributes = new ArborGlyph(map).add(type);
+    expect(attributes.query("type", "$")).toEqual("object");
+    expect(attributes.query("type", "$.g")).toEqual("number");
+    expect(attributes.query("type", "$.a")).toEqual("object");
+    expect(attributes.query("type", "$.h.0")).toEqual("number");
   });
   it("should create an attributed tree with an old style synthetic attribute", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
 
-    const init = new ArborGlyph(map).synthetic<"childCount", number>(
-      "childCount",
-      ({ childIds }) => childIds.length
-    );
+    const init = new ArborGlyph(map).add(childCount);
 
-    const attributes = init.synthetic<"maxChild", number>(
-      "maxChild",
-      ({ childIds, attrs }) =>
-        childIds.reduce(
-          (p, id): number =>
-            attrs.childCount(id) > p ? attrs.childCount(id) : p,
-          0
-        )
-    );
+    const attributes = init.add(maxChild);
 
     expect(attributes.attrs).toContain("childCount");
     expect(attributes.attrs).toContain("maxChild");
@@ -55,18 +68,8 @@ describe("Create a few attributed trees", () => {
   it("should create an attributed tree with a synthetic attribute", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
 
-    const init = new ArborGlyph(map).synthetic<"childCount", number>(
-      "childCount",
-      ({ childIds }) => childIds.length
-    );
-
-    const attributes = init.synthetic("maxChild", ({ childIds, attrs }) =>
-      childIds.reduce(
-        (p, id): number =>
-          attrs.childCount(id) > p ? attrs.childCount(id) : p,
-        0
-      )
-    );
+    const init = new ArborGlyph(map).add(childCount);
+    const attributes = init.add(maxChild);
 
     expect(attributes.attrs).toContain("childCount");
     expect(attributes.attrs).toContain("maxChild");
@@ -75,11 +78,12 @@ describe("Create a few attributed trees", () => {
   });
   it("should create an attributed tree with an inherted attribute", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
-    const attributes = new ArborGlyph(map)
-      .inherited<number>(({ parentValue }) =>
-        parentValue.map((_) => _ + 1).orDefault(0)
-      )
-      .named("depth");
+
+    const depth = inherited<"depth", any, {}, number>(
+      "depth",
+      ({ parentValue }) => parentValue.map((_) => _ + 1).orDefault(0)
+    );
+    const attributes = new ArborGlyph(map).add(depth);
 
     expect(attributes.query("depth", "$")).toEqual(0);
     expect(attributes.query("depth", "$.a")).toEqual(1);
@@ -90,23 +94,26 @@ describe("Create a few attributed trees", () => {
   it("should honor memoize flag evaluations", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
     const calls: string[] = [];
-    let attributes = new ArborGlyph(map)
-      .inherited<number>(
-        ({ parentValue, nid }) => {
-          calls.push(`nomemo:${nid}`);
-          return parentValue.map((_) => _ + 1).orDefault(0);
-        },
-        { memoize: false }
-      )
-      .named("depth")
-      .inherited<number>(
-        ({ parentValue, nid }) => {
-          calls.push(`memo:${nid}`);
-          return parentValue.map((_) => _ + 1).orDefault(0);
-        },
-        { memoize: true }
-      )
-      .named("depthMemo");
+
+    const depth = inherited<"depth", any, {}, number>(
+      "depth",
+      ({ parentValue, nid }) => {
+        calls.push(`nomemo:${nid}`);
+        return parentValue.map((_) => _ + 1).orDefault(0);
+      },
+      false
+    );
+
+    const depthMemo = inherited<"depthMemo", any, {}, number>(
+      "depthMemo",
+      ({ parentValue, nid }) => {
+        calls.push(`memo:${nid}`);
+        return parentValue.map((_) => _ + 1).orDefault(0);
+      },
+      true
+    );
+
+    let attributes = new ArborGlyph(map).add(depth).add(depthMemo);
 
     expect(attributes.query("depth", "$")).toEqual(0);
     expect(attributes.query("depth", "$")).toEqual(0);
@@ -140,27 +147,6 @@ describe("Create a few attributed trees", () => {
     const data = fork(leaf(3), fork(leaf(2), leaf(10)));
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
     const map = TreeMap.create<Tree>(new GenericVisitor(data, treeChildren));
-
-    const min = synthetic<"min", Tree, {}, number>(
-      "min",
-      ({ node, childAttrs }): number =>
-        node.type === "leaf"
-          ? node.value
-          : Math.min(childAttrs(node.left), childAttrs(node.right))
-    );
-
-    const globmin = inherited<"globmin", Tree, { min: number }, number>(
-      "globmin",
-      ({ parentValue, attrs, nid }) => parentValue.orDefault(attrs.min(nid))
-    );
-
-    const repmin = synthetic<"repmin", Tree, { globmin: number }, Tree>(
-      "repmin",
-      ({ childAttrs, node, attrs, nid }) =>
-        node.type === "leaf"
-          ? leaf(attrs.globmin(nid))
-          : fork(childAttrs(node.left), childAttrs(node.right))
-    );
 
     const base = new ArborGlyph(map);
     // This should be an error if uncommented...

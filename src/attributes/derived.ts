@@ -1,5 +1,11 @@
 import { TreeMap } from "../maps/treemap";
-import { Attribute, AttributeTypes, DefinedAttributes } from "./attributes";
+import {
+  Attribute,
+  AttributeConstructor,
+  AttributeTypes,
+  DefinedAttributes,
+  ExtendedBy,
+} from "./attributes";
 import { memoizeEvaluator } from "./memoize";
 
 /**
@@ -53,4 +59,32 @@ export function derivedAttribute<T, A, R>(
     }
   );
   return ret;
+}
+
+export function derived<N extends string, T, D extends AttributeTypes, R>(
+  name: N,
+  f: DerivedFunction<T, D, R>,
+  memoize: boolean = false
+): AttributeConstructor<N, T, D, R> {
+  /**
+   * The A parameter here represents some superset of D.  In other words,
+   * this function can be pass a value for `ext` that has **more** attributes
+   * than D (the set of attributes we require).  That's fine.  So the type of
+   * the attributes actually passed in `A` which is some superset of `D`.  But
+   * we need this type here to imply the constraint that what we return will
+   * also contain `A` plus whatever attribute we are adding (and not just return
+   * the requires set `D` plus what we are adding).
+   */
+  return <A extends D>(
+    tree: TreeMap<T>,
+    base: DefinedAttributes<D>,
+    ext: DefinedAttributes<A>
+  ): ExtendedBy<A, N, R> => {
+    const attr = derivedAttribute<T, D, R>(f, tree, base, memoize);
+    const attrs: DefinedAttributes<A & Record<N, R>> = {
+      ...ext,
+      [name]: attr,
+    };
+    return attrs;
+  };
 }

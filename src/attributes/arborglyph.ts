@@ -4,19 +4,7 @@ import {
   AttributeConstructor,
   AttributeTypes,
   DefinedAttributes,
-  ExtendedBy,
 } from "./attributes";
-import { derivedAttribute, DerivedFunction, DerivedOptions } from "./derived";
-import {
-  inheritedAttribute,
-  InheritedFunction,
-  InheritedOptions,
-} from "./inherited";
-import {
-  syntheticAttribute,
-  SyntheticFunction,
-  SyntheticOptions,
-} from "./synthetic";
 
 /**
  * This class is responsible for annotating an underlying tree (`tree`)
@@ -43,76 +31,6 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     const deps: DefinedAttributes<A> = this.attributes;
     const attrs = acon<A>(this.tree, deps, deps);
     return new ArborGlyph(this.tree, attrs, this.unique);
-  }
-  /**
-   * This is the first step in creating a synthetic attribute.  Synthetic attributes are
-   * attributes that depend only on the contents of the node and the value of *this* attribute
-   * associated with each child.  Note, any given attribute can depend on the value of
-   * *any* previously defined attributes for any node in the tree.
-   * @param f synthetic attribute evaluation function
-   * @param options
-   * @returns
-   */
-  synthetic<N extends string, R>(
-    name: N,
-    f: SyntheticFunction<T, A, R>,
-    options: SyntheticOptions = {}
-  ) {
-    const attr = syntheticAttribute<T, A, R>(
-      f,
-      this.tree,
-      this.attributes,
-      options.memoize ?? true
-    );
-    const attrs: DefinedAttributes<A & Record<N, R>> = {
-      ...this.attributes,
-      [name]: attr,
-    };
-    return new ArborGlyph(this.tree, attrs, this.unique);
-  }
-
-  synthetic2<R>(f: SyntheticFunction<T, A, R>, options: SyntheticOptions = {}) {
-    const attr = syntheticAttribute<T, A, R>(
-      f,
-      this.tree,
-      this.attributes,
-      options.memoize ?? true
-    );
-    return this.deferNaming(this.attributes, attr, this.tree);
-  }
-  /**
-   * This creates a derived attribute.  A derived attribute is one that simply depends on
-   * the information contained in the node itself and any previously defined attributes.
-   * @param f
-   * @param options
-   * @returns
-   */
-  derived<R>(f: DerivedFunction<T, A, R>, options: DerivedOptions = {}) {
-    const attr = derivedAttribute<T, A, R>(
-      f,
-      this.tree,
-      this.attributes,
-      options.memoize ?? true
-    );
-    return this.deferNaming(this.attributes, attr, this.tree);
-  }
-  /**
-   * This is the first step in creating an inherited attribute.  Inherited attributes are
-   * attributes that depend only on the contents of the node and the value of *this* attribute
-   * on the parent node (if it exists).  Note, any given attribute can depend on the value of
-   * *any* previously defined attributes for any node in the tree.
-   * @param f synthetic attribute evaluation function
-   * @param options
-   * @returns
-   */
-  inherited<R>(f: InheritedFunction<T, A, R>, options: InheritedOptions = {}) {
-    const attr = inheritedAttribute<T, A, R>(
-      f,
-      this.tree,
-      this.attributes,
-      options.memoize ?? true
-    );
-    return this.deferNaming<R>(this.attributes, attr, this.tree);
   }
   /** All attributes currently associated with this `ArborGlyph` */
   get attrs(): Set<keyof A> {
@@ -239,31 +157,5 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     for (const child of this.tree.children(cur)) {
       this.debug(attr, child, subprefix);
     }
-  }
-
-  /**
-   * This is a helper method that takes a given, already formulated attribute,
-   * and returns an object with a single method `named` that, when executed,
-   * injects that attribute into an existing set of attributes and then creates
-   * an ArborGlyph with the new attribute in it.
-   * @param attributes
-   * @param attr
-   * @param map
-   * @returns
-   */
-  private deferNaming<R>(
-    attributes: DefinedAttributes<A>,
-    attr: Attribute<R>,
-    map: TreeMap<T>
-  ) {
-    return {
-      named: <N extends string>(n: N) => {
-        const attrs: DefinedAttributes<A & Record<N, R>> = {
-          ...attributes,
-          [n]: attr,
-        };
-        return new ArborGlyph(map, attrs, this.unique);
-      },
-    };
   }
 }

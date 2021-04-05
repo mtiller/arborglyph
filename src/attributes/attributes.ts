@@ -35,7 +35,7 @@ export type ExtendedBy<
 export type AttributeConstructor<
   N extends string,
   T,
-  D extends AttributeTypes, // What this function depends on
+  D extends AttributeTypes, // What this function **depends** on, it can be passed more than this
   R
 > = <A extends D>(
   tree: TreeMap<T>,

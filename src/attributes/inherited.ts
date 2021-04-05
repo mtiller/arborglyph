@@ -66,13 +66,13 @@ export function inherited<N extends string, T, D extends AttributeTypes, R>(
   memoize: boolean = false
 ): AttributeConstructor<N, T, D, R> {
   /**
-   * The SA parameter here represents some superset of A.  In other words,
-   * this function can be pass a value for `base` that has **more** attributes
-   * than A (the set of attributes we require).  That's fine.  So the type of
-   * the attributes actually passed in `SA` which is some superset of `A`.  But
+   * The A parameter here represents some superset of D.  In other words,
+   * this function can be pass a value for `ext` that has **more** attributes
+   * than D (the set of attributes we require).  That's fine.  So the type of
+   * the attributes actually passed in `A` which is some superset of `D`.  But
    * we need this type here to imply the constraint that what we return will
-   * also contain `SA` plus whatever attribute we are adding (and not just return
-   * the requires set `A` plus what we are adding).
+   * also contain `A` plus whatever attribute we are adding (and not just return
+   * the requires set `D` plus what we are adding).
    */
   return <A extends D>(
     tree: TreeMap<T>,
