@@ -38,9 +38,10 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     protected unique: Symbol = Symbol()
   ) {}
   add<N extends string, R>(
-    acon: AttributeConstructor<N, T, Partial<A>, R>
+    acon: AttributeConstructor<N, T, A, R>
   ): ArborGlyph<T, A & Record<N, R>> {
-    const attrs = acon(this.tree, this.attributes);
+    const deps: DefinedAttributes<A> = this.attributes;
+    const attrs = acon<A>(this.tree, deps, deps);
     return new ArborGlyph(this.tree, attrs, this.unique);
   }
   /**

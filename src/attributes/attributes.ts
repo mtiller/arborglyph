@@ -35,9 +35,10 @@ export type ExtendedBy<
 export type AttributeConstructor<
   N extends string,
   T,
-  A extends AttributeTypes,
+  D extends AttributeTypes, // What this function depends on
   R
-> = <A2 extends A>(
+> = <A extends D>(
   tree: TreeMap<T>,
-  base: DefinedAttributes<A2>
-) => ExtendedBy<A2, N, R>;
+  base: DefinedAttributes<D>,
+  ext: DefinedAttributes<A>
+) => ExtendedBy<A, N, R>;

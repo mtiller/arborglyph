@@ -1,6 +1,12 @@
 import { Maybe } from "purify-ts/Maybe";
 import { TreeMap } from "../maps/treemap";
-import { Attribute, AttributeTypes, DefinedAttributes } from "./attributes";
+import {
+  Attribute,
+  AttributeConstructor,
+  AttributeTypes,
+  DefinedAttributes,
+  ExtendedBy,
+} from "./attributes";
 import { memoizeEvaluator } from "./memoize";
 
 /**
@@ -52,4 +58,32 @@ export function inheritedAttribute<T, A, R>(
     return evaluate({ parentValue, parentId, attrs, node, nid });
   }, memoize);
   return ret;
+}
+
+export function inherited<N extends string, T, D extends AttributeTypes, R>(
+  name: N,
+  f: InheritedFunction<T, D, R>,
+  memoize: boolean = false
+): AttributeConstructor<N, T, D, R> {
+  /**
+   * The SA parameter here represents some superset of A.  In other words,
+   * this function can be pass a value for `base` that has **more** attributes
+   * than A (the set of attributes we require).  That's fine.  So the type of
+   * the attributes actually passed in `SA` which is some superset of `A`.  But
+   * we need this type here to imply the constraint that what we return will
+   * also contain `SA` plus whatever attribute we are adding (and not just return
+   * the requires set `A` plus what we are adding).
+   */
+  return <A extends D>(
+    tree: TreeMap<T>,
+    base: DefinedAttributes<D>,
+    ext: DefinedAttributes<A>
+  ): ExtendedBy<A, N, R> => {
+    const attr = inheritedAttribute<T, D, R>(f, tree, base, memoize);
+    const attrs: DefinedAttributes<A & Record<N, R>> = {
+      ...ext,
+      [name]: attr,
+    };
+    return attrs;
+  };
 }

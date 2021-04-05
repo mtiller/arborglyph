@@ -96,11 +96,11 @@ export function syntheticAttribute<T, A, R>(
   return ret;
 }
 
-export function synthetic<N extends string, T, A extends AttributeTypes, R>(
+export function synthetic<N extends string, T, D extends AttributeTypes, R>(
   name: N,
-  f: SyntheticFunction<T, A, R>,
+  f: SyntheticFunction<T, D, R>,
   memoize: boolean = false
-): AttributeConstructor<N, T, A, R> {
+): AttributeConstructor<N, T, D, R> {
   /**
    * The SA parameter here represents some superset of A.  In other words,
    * this function can be pass a value for `base` that has **more** attributes
@@ -110,13 +110,14 @@ export function synthetic<N extends string, T, A extends AttributeTypes, R>(
    * also contain `SA` plus whatever attribute we are adding (and not just return
    * the requires set `A` plus what we are adding).
    */
-  return <SA extends A>(
+  return <A extends D>(
     tree: TreeMap<T>,
-    base: DefinedAttributes<SA>
-  ): ExtendedBy<SA, N, R> => {
-    const attr = syntheticAttribute<T, A, R>(f, tree, base, memoize);
-    const attrs: DefinedAttributes<SA & Record<N, R>> = {
-      ...base,
+    base: DefinedAttributes<D>,
+    ext: DefinedAttributes<A>
+  ): ExtendedBy<A, N, R> => {
+    const attr = syntheticAttribute<T, D, R>(f, tree, base, memoize);
+    const attrs: DefinedAttributes<A & Record<N, R>> = {
+      ...ext,
       [name]: attr,
     };
     return attrs;
