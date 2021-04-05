@@ -2,6 +2,9 @@ import { isObject } from "../util";
 import { Namer } from "./namer";
 import { TreeHandler, TreeVisitor } from "./visitor";
 
+export type UnknownObject = { [key: string]: unknown };
+export type UnkonwnArray = Array<unknown>;
+
 /**
  * This is a helper function that recursively walks any Javascript value treating it like a tree.
  * @param cur
@@ -10,11 +13,11 @@ import { TreeHandler, TreeVisitor } from "./visitor";
  * @param visited
  * @param namer
  */
-function walkObject<T>(
-  cur: T,
+function walkObject(
+  cur: object,
   id: string,
-  handler: TreeHandler<T>,
-  visited: Set<T>,
+  handler: TreeHandler<object>,
+  visited: Set<object>,
   namer: Namer
 ) {
   /** Ensure we haven't visited this node before during our traversal. */
@@ -29,27 +32,31 @@ function walkObject<T>(
   /** Figure out how to traverse this.  Check for aggregate values, otherwise treat it as a leaf. */
   if (isObject(cur)) {
     /** If this is an object, treat each "entry" as a child */
-    const entries = [...Object.entries(cur)];
+    const entries = [...Object.entries(cur as UnknownObject)];
     for (const [key, child] of entries) {
-      const childId = namer(id, key);
-      /** Record the child's parentage */
-      handler({ type: "parent", id: childId, parent: id });
-      /** Recurse */
-      walkObject(child, childId, handler, new Set([...visited, cur]), namer);
-      /** Push this child's `id` into the list of children. */
-      children.push(childId);
+      if (typeof child === "object" && child !== null) {
+        const childId = namer(id, key);
+        /** Record the child's parentage */
+        handler({ type: "parent", id: childId, parent: id });
+        /** Recurse */
+        walkObject(child, childId, handler, new Set([...visited, cur]), namer);
+        /** Push this child's `id` into the list of children. */
+        children.push(childId);
+      }
     }
   } else if (Array.isArray(cur)) {
     /** If this is an array, treat each element in the array as a child */
     for (let i = 0; i < cur.length; i++) {
-      const child = cur[i];
-      const childId = namer(id, i.toString());
-      /** Record the child's parentage */
-      handler({ type: "parent", id: childId, parent: id });
-      /** Recurse */
-      walkObject(child, childId, handler, new Set([...visited, cur]), namer);
-      /** Push the child's `id` into the list of children */
-      children.push(childId);
+      const child = cur[i] as unknown;
+      if (typeof child === "object" && child !== null) {
+        const childId = namer(id, i.toString());
+        /** Record the child's parentage */
+        handler({ type: "parent", id: childId, parent: id });
+        /** Recurse */
+        walkObject(child, childId, handler, new Set([...visited, cur]), namer);
+        /** Push the child's `id` into the list of children */
+        children.push(childId);
+      }
     }
   } else {
     // If we get here, this is a leaf node, so there are no children to traverse or add.
@@ -63,10 +70,10 @@ function walkObject<T>(
  * This is an implementation of the `TreeVisitor` interface that traverses any
  * Javascript value as a tree.
  */
-export class ObjectVisitor implements TreeVisitor<any> {
+export class ObjectVisitor implements TreeVisitor<object> {
   constructor(
     /** The root node (value) */
-    protected rootNode: any,
+    protected rootNode: object,
     /** The function used to hierarchically name the children. */
     protected namer: Namer = (parent, child) => `${parent}.${child}`,
     /** The name of the root node. */

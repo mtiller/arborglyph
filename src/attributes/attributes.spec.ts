@@ -17,24 +17,26 @@ import {
 
 describe("Create a few attributed trees", () => {
   const data = {
-    a: [[{ b: 5 }]],
+    a: [[{ b: 5 }], { j: 5 }],
     c: { d: [{ e: 7, f: 8 }] },
     g: 2,
     h: [9, 2, 3, 4, 5],
   };
 
-  const childCount = synthetic<"childCount", any, {}, number>(
+  const childCount = synthetic<"childCount", object, {}, number>(
     "childCount",
     ({ childIds }) => childIds.length
   );
-  const maxChild = synthetic<"maxChild", any, { childCount: number }, number>(
+  const maxChild = synthetic<
     "maxChild",
-    ({ childIds, attrs }) =>
-      childIds.reduce(
-        (p, id): number =>
-          attrs.childCount(id) > p ? attrs.childCount(id) : p,
-        0
-      )
+    object,
+    { childCount: number },
+    number
+  >("maxChild", ({ childIds, attrs }) =>
+    childIds.reduce(
+      (p, id): number => (attrs.childCount(id) > p ? attrs.childCount(id) : p),
+      0
+    )
   );
 
   it("should create a basic attributed tree with just built-in attributes", () => {
@@ -49,11 +51,9 @@ describe("Create a few attributed trees", () => {
     const type = derived("type", ({ node }) => typeof node);
     const attributes = new ArborGlyph(map).add(type);
     expect(attributes.query("type", "$")).toEqual("object");
-    expect(attributes.query("type", "$.g")).toEqual("number");
     expect(attributes.query("type", "$.a")).toEqual("object");
-    expect(attributes.query("type", "$.h.0")).toEqual("number");
   });
-  it("should create an attributed tree with an old style synthetic attribute", () => {
+  it("should create an attributed tree with asynthetic attribute", () => {
     const map = TreeMap.create(new ObjectVisitor(data));
 
     const init = new ArborGlyph(map).add(childCount);
@@ -62,33 +62,21 @@ describe("Create a few attributed trees", () => {
 
     expect(attributes.attrs).toContain("childCount");
     expect(attributes.attrs).toContain("maxChild");
-    expect(attributes.query("childCount", "$")).toEqual(4);
-    expect(attributes.query("maxChild", "$")).toEqual(5);
-  });
-  it("should create an attributed tree with a synthetic attribute", () => {
-    const map = TreeMap.create(new ObjectVisitor(data));
-
-    const init = new ArborGlyph(map).add(childCount);
-    const attributes = init.add(maxChild);
-
-    expect(attributes.attrs).toContain("childCount");
-    expect(attributes.attrs).toContain("maxChild");
-    expect(attributes.query("childCount", "$")).toEqual(4);
-    expect(attributes.query("maxChild", "$")).toEqual(5);
-  });
-  it("should create an attributed tree with an inherted attribute", () => {
-    const map = TreeMap.create(new ObjectVisitor(data));
-
-    const depth = inherited<"depth", any, {}, number>(
-      "depth",
-      ({ parentValue }) => parentValue.map((_) => _ + 1).orDefault(0)
-    );
-    const attributes = new ArborGlyph(map).add(depth);
-
-    expect(attributes.query("depth", "$")).toEqual(0);
-    expect(attributes.query("depth", "$.a")).toEqual(1);
-    expect(attributes.query("depth", "$.c.d.0.e")).toEqual(4);
-    expect(attributes.query("depth", "$.h")).toEqual(1);
+    expect([...map.ids]).toEqual([
+      "$",
+      "$.a",
+      "$.a.0",
+      "$.a.0.0",
+      "$.a.1",
+      "$.c",
+      "$.c.d",
+      "$.c.d.0",
+      "$.h",
+    ]);
+    expect(attributes.query("childCount", "$")).toEqual(3);
+    expect(attributes.query("childCount", "$.a")).toEqual(2);
+    expect(attributes.query("childCount", "$.a.0")).toEqual(1);
+    expect(attributes.query("maxChild", "$")).toEqual(2);
   });
 
   it("should honor memoize flag evaluations", () => {
@@ -121,25 +109,23 @@ describe("Create a few attributed trees", () => {
     expect(attributes.query("depthMemo", "$")).toEqual(0);
     expect(attributes.query("depthMemo", "$")).toEqual(0);
     expect(calls).toEqual(["nomemo:$", "nomemo:$", "memo:$"]);
-    expect(attributes.query("depthMemo", "$.c.d.0.e")).toEqual(4);
+    expect(attributes.query("depthMemo", "$.a.0.0")).toEqual(3);
     expect(calls).toEqual([
       "nomemo:$",
       "nomemo:$",
       "memo:$",
-      "memo:$.c",
-      "memo:$.c.d",
-      "memo:$.c.d.0",
-      "memo:$.c.d.0.e",
+      "memo:$.a",
+      "memo:$.a.0",
+      "memo:$.a.0.0",
     ]);
-    expect(attributes.query("depthMemo", "$.c.d")).toEqual(2);
+    expect(attributes.query("depthMemo", "$.a.0")).toEqual(2);
     expect(calls).toEqual([
       "nomemo:$",
       "nomemo:$",
       "memo:$",
-      "memo:$.c",
-      "memo:$.c.d",
-      "memo:$.c.d.0",
-      "memo:$.c.d.0.e",
+      "memo:$.a",
+      "memo:$.a.0",
+      "memo:$.a.0.0",
     ]);
   });
 
