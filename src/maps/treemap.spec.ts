@@ -1,5 +1,6 @@
 import { ObjectVisitor } from "../visitors/object";
 import { TreeMap } from "./treemap";
+import { isObject } from "../util";
 
 describe("Test the treemap functionality", () => {
   it("should populate itself from an object", () => {
@@ -11,23 +12,12 @@ describe("Test the treemap functionality", () => {
         e: "e",
       },
     };
-    const visitor = new ObjectVisitor(data);
+    const visitor = new ObjectVisitor(data, isObject);
     const map = TreeMap.create(visitor);
-    expect([...map.ids]).toEqual(["$", "$.c"]);
+    expect(map.nodes.has(data)).toEqual(true);
+    expect(map.nodes.has(data.c)).toEqual(true);
   });
 
-  it("should catch funny names that produce duplicate entries", () => {
-    const data = {
-      "c.d": { d: "d" },
-      c: {
-        d: { x: "x" },
-      },
-    };
-    const visitor = new ObjectVisitor(data);
-    expect(() => TreeMap.create(visitor)).toThrowError(
-      "Setting parent node for $.c.d to $.c when it already has a parent"
-    );
-  });
   it("should allow different name mangling schemes to avoid name collisions", () => {
     const data = {
       "c.d": { d: "d" },
@@ -35,8 +25,14 @@ describe("Test the treemap functionality", () => {
         d: { x: "x" },
       },
     };
-    const visitor = new ObjectVisitor(data, (p, c) => `${p}/${c}`);
+    const visitor = new ObjectVisitor<object>(
+      data,
+      (n): n is object => typeof n === "object"
+    );
     const map = TreeMap.create(visitor);
-    expect([...map.ids]).toEqual(["$", "$/c.d", "$/c", "$/c/d"]);
+    expect(map.nodes.has(data)).toEqual(true);
+    expect(map.nodes.has(data["c.d"])).toEqual(true);
+    expect(map.nodes.has(data.c)).toEqual(true);
+    expect(map.nodes.has(data.c.d)).toEqual(true);
   });
 });

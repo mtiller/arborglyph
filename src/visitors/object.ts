@@ -1,5 +1,4 @@
-import { isObject } from "../util";
-import { Namer } from "./namer";
+import { isExactlyObject } from "../util";
 import { TreeHandler, TreeVisitor } from "./visitor";
 
 export type UnknownObject = { [key: string]: unknown };
@@ -13,49 +12,46 @@ export type UnkonwnArray = Array<unknown>;
  * @param visited
  * @param namer
  */
-function walkObject(
-  cur: object,
-  id: string,
-  handler: TreeHandler<object>,
-  visited: Set<object>,
-  namer: Namer
+function walkObject<T extends object>(
+  cur: T,
+  handler: TreeHandler<T>,
+  visited: Set<T>,
+  pred: (n: any) => n is T
 ) {
   /** Ensure we haven't visited this node before during our traversal. */
   if (visited.has(cur))
     throw new Error(`Circular reference found in ObjectVisitor`);
   /** Record this node and its associated id */
-  handler({ type: "node", id: id, node: cur });
+  handler({ type: "node", node: cur });
 
   /** Initialize a list of children */
-  const children: string[] = [];
+  const children: T[] = [];
 
   /** Figure out how to traverse this.  Check for aggregate values, otherwise treat it as a leaf. */
-  if (isObject(cur)) {
+  if (isExactlyObject(cur)) {
     /** If this is an object, treat each "entry" as a child */
     const entries = [...Object.entries(cur as UnknownObject)];
     for (const [key, child] of entries) {
-      if (typeof child === "object" && child !== null) {
-        const childId = namer(id, key);
+      if (pred(child) && child !== null) {
         /** Record the child's parentage */
-        handler({ type: "parent", id: childId, parent: id });
+        handler({ type: "parent", parent: cur, node: child });
         /** Recurse */
-        walkObject(child, childId, handler, new Set([...visited, cur]), namer);
+        walkObject(child, handler, new Set([...visited, cur]), pred);
         /** Push this child's `id` into the list of children. */
-        children.push(childId);
+        children.push(child);
       }
     }
   } else if (Array.isArray(cur)) {
     /** If this is an array, treat each element in the array as a child */
     for (let i = 0; i < cur.length; i++) {
       const child = cur[i] as unknown;
-      if (typeof child === "object" && child !== null) {
-        const childId = namer(id, i.toString());
+      if (pred(child) && child !== null) {
         /** Record the child's parentage */
-        handler({ type: "parent", id: childId, parent: id });
+        handler({ type: "parent", parent: cur, node: child });
         /** Recurse */
-        walkObject(child, childId, handler, new Set([...visited, cur]), namer);
+        walkObject(child, handler, new Set([...visited, cur]), pred);
         /** Push the child's `id` into the list of children */
-        children.push(childId);
+        children.push(child);
       }
     }
   } else {
@@ -63,29 +59,26 @@ function walkObject(
   }
 
   /** Record all the children found */
-  handler({ type: "children", id: id, children: children });
+  handler({ type: "children", node: cur, children: children });
 }
 
 /**
  * This is an implementation of the `TreeVisitor` interface that traverses any
  * Javascript value as a tree.
  */
-export class ObjectVisitor implements TreeVisitor<object> {
+export class ObjectVisitor<T extends object> implements TreeVisitor<T> {
   constructor(
     /** The root node (value) */
-    protected rootNode: object,
-    /** The function used to hierarchically name the children. */
-    protected namer: Namer = (parent, child) => `${parent}.${child}`,
-    /** The name of the root node. */
-    protected rootName: string = "$"
+    protected rootNode: T,
+    protected pred: (n: T) => n is T
   ) {}
-  get root(): string {
-    return this.rootName;
+  get root(): T {
+    return this.rootNode;
   }
   /** Call the `walkObject` helper and wrap the result in a `Promise` */
   walk(handler: TreeHandler<any>): Promise<void> {
     return Promise.resolve(
-      walkObject(this.rootNode, this.rootName, handler, new Set(), this.namer)
+      walkObject(this.rootNode, handler, new Set(), this.pred)
     );
   }
 }

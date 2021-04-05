@@ -1,37 +1,39 @@
 /** An event announcing the parent of a particular node */
-export interface ParentEvent {
+export interface ParentEvent<T extends object> {
   type: "parent";
-  id: string;
-  parent: string;
+  parent: T;
+  node: T;
 }
 
 /** An event announcing the name of a particular node. */
-export interface NodeEvent<T> {
+export interface NodeEvent<T extends object> {
   type: "node";
-  id: string;
   node: T;
 }
 
 /** An event announcing the names of all children associated with a given node. */
-export interface ChildrenEvent {
+export interface ChildrenEvent<T> {
   type: "children";
-  id: string;
-  children: string[];
+  node: T;
+  children: T[];
 }
 
 /** The union of all possible events */
-export type TreeEvent<T> = ParentEvent | ChildrenEvent | NodeEvent<T>;
+export type TreeEvent<T extends object> =
+  | ParentEvent<T>
+  | ChildrenEvent<T>
+  | NodeEvent<T>;
 
 /** A type for functions that handle these tree events */
-export type TreeHandler<T> = (event: TreeEvent<T>) => void;
+export type TreeHandler<T extends object> = (event: TreeEvent<T>) => void;
 
 /**
  * The `TreeVisitor` interface is a very simple interface that can be
  * implemented to handle any data structure that can be synchronously
  * mapped to a tree.
  */
-export interface TreeVisitor<T> {
-  root: string;
+export interface TreeVisitor<T extends object> {
+  root: T;
   walk(handler: TreeHandler<T>): void;
 }
 
@@ -40,7 +42,7 @@ export interface TreeVisitor<T> {
  * implemented to handle any data structure that can be asynchronously
  * mapped to a tree.
  */
-export interface AsyncTreeVisitor<T> {
-  root: string;
+export interface AsyncTreeVisitor<T extends object> {
+  root: T;
   walk(handler: TreeHandler<T>): Promise<void>;
 }

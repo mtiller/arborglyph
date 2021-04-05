@@ -89,12 +89,6 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     return n as T & A;
   }
 
-  /**  */
-  private find(n: T) {
-    const base = (n as any)[this.unique.valueOf()] ?? n;
-    if (this.tree.contains(base)) return this.anno(n);
-  }
-
   /** Extract the underlying attribute */
   attr<K extends keyof A>(attr: K): Attribute<A[K]> {
     return this.attributes[attr];
