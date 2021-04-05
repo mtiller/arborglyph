@@ -47,18 +47,32 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
     return ret;
   }
   anno(n: T): T & A {
+    /**
+     * If this ArborGlyph hasn't already been closed, the
+     * nodes cannot (yet) be annotated.
+     */
     if (!this.closed)
       throw new Error(
         `Cannot annotate nodes until all attributes have been defined`
       );
-    const nid = this.tree.find(n);
-    if (nid.isNothing())
-      throw new Error(`Node cannot be annotated, it isn't in the tree`);
-    const id = nid.unsafeCoerce();
+    /**
+     * This method is normally called just once for each node.  Each
+     * subsequent time, we can just return the node since it has already
+     * been annotated (as evidenced by the presence of the `unique` symbol)
+     */
     if (n.hasOwnProperty(this.unique.valueOf())) {
       // Already annotated
       return n as T & A;
     }
+
+    /**
+     * If we get here, we are being asked to annotate a node
+     * for the first time.
+     */
+    const nid = this.tree.find(n);
+    if (nid.isNothing())
+      throw new Error(`Node cannot be annotated, it isn't in the tree`);
+    const id = nid.unsafeCoerce();
     for (const [key, attr] of Object.entries(this.attributes)) {
       Object.defineProperty(n, key, {
         get: function () {
@@ -84,15 +98,6 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
   /** Extract the underlying attribute */
   attr<K extends keyof A>(attr: K): Attribute<A[K]> {
     return this.attributes[attr];
-  }
-  /** Request the value of an attribute on a given node */
-  private queryNode<N extends keyof A>(attr: N, n: T): A[N] {
-    return this.tree
-      .find(n)
-      .map((nid) => this.attributes[attr](nid))
-      .orDefaultLazy(() => {
-        throw new Error(`Specified node does not exist in the tree`);
-      });
   }
   /**
    * This method is useful in trying to understand what is going on with evaluation.
