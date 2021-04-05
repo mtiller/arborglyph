@@ -17,7 +17,11 @@ describe("Test proxy functionality", () => {
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
     const map = TreeMap.create(new GenericVisitor(data, treeChildren));
 
-    const attributes = new ArborGlyph(map).add(min).add(globmin).add(repmin);
+    const attributes = new ArborGlyph(map)
+      .add(min)
+      .add(globmin)
+      .add(repmin)
+      .done();
 
     const root = attributes.proxy(data);
     const root2 = attributes.proxy(root);
@@ -31,7 +35,11 @@ describe("Test proxy functionality", () => {
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
     const map = TreeMap.create(new GenericVisitor(data, treeChildren));
 
-    const attributes = new ArborGlyph(map).add(min).add(globmin).add(repmin);
+    const attributes = new ArborGlyph(map)
+      .add(min)
+      .add(globmin)
+      .add(repmin)
+      .done();
 
     const root = attributes.anno(data);
     const root2 = attributes.anno(root);

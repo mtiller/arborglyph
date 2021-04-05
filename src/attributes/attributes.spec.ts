@@ -1,8 +1,8 @@
 import { TreeMap } from "../maps/treemap";
-import { GenericVisitor, NamedChildren } from "../visitors/generic";
+import { GenericVisitor } from "../visitors/generic";
 import { ObjectVisitor } from "../visitors/object";
 import { ArborGlyph } from "./arborglyph";
-import { derived, derivedAttribute } from "./derived";
+import { derived } from "./derived";
 import { inherited } from "./inherited";
 import { synthetic } from "./synthetic";
 import {

@@ -23,20 +23,30 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
   constructor(
     protected tree: TreeMap<T>,
     protected attributes: DefinedAttributes<A> = {} as any,
-    protected unique: Symbol = Symbol()
+    protected unique: Symbol = Symbol(),
+    protected closed: boolean = false
   ) {}
   add<N extends string, R>(
     acon: AttributeConstructor<N, T, A, R>
   ): ArborGlyph<T, A & Record<N, R>> {
+    if (this.closed)
+      throw new Error(`Cannot add attributes to a closed ArborGlyph instance`);
     const deps: DefinedAttributes<A> = this.attributes;
     const attrs = acon<A>(this.tree, deps, deps);
-    return new ArborGlyph(this.tree, attrs, this.unique);
+    return new ArborGlyph(this.tree, attrs, this.unique, false);
   }
   /** All attributes currently associated with this `ArborGlyph` */
   get attrs(): Set<keyof A> {
     return new Set(Object.keys(this.attributes));
   }
+  done() {
+    return new ArborGlyph(this.tree, this.attributes, this.unique, true);
+  }
   anno(n: T): T & A {
+    if (!this.closed)
+      throw new Error(
+        `Cannot annotate nodes until all attributes have been defined`
+      );
     const nid = this.tree.find(n);
     if (nid.isNothing())
       throw new Error(`Node cannot be annotated, it isn't in the tree`);
@@ -60,7 +70,13 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
 
     return n as T & A;
   }
+
   proxy(n: T): T {
+    if (!this.closed)
+      throw new Error(
+        `Cannot generate proxy nodes until all attributes have been defined`
+      );
+
     if ((n as any)[this.unique.valueOf()] !== undefined) {
       console.log("Was already a proxy!");
       return n;

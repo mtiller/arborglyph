@@ -13,6 +13,7 @@ import { memoizeEvaluator } from "./memoize";
  * Arguments available when computing a inherited attribute.
  */
 export interface InheritedArgs<T, A extends AttributeTypes, R> {
+  root: boolean;
   parentValue: Maybe<R>;
   parentId: Maybe<string>;
   attrs: DefinedAttributes<A>;
@@ -55,7 +56,8 @@ export function inheritedAttribute<T, A, R>(
     const node = map.node(nid);
     const parentId = map.parent(nid);
     const parentValue = parentId.map((_) => ret(_));
-    return evaluate({ parentValue, parentId, attrs, node, nid });
+    const root = parentId.isNothing();
+    return evaluate({ root, parentValue, parentId, attrs, node, nid });
   }, memoize);
   return ret;
 }
