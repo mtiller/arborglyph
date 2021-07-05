@@ -71,6 +71,18 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
   }
 
   /**
+   * Redo the steps normally performaed when the ArborGlyph is marked as `done`.
+   * This is done in response to topology changes.
+   **/
+  redo() {
+    this.tree.rewalk()
+    for (const node of this.tree.nodes) {
+      if (node.hasOwnProperty(this.unique.valueOf())) continue;
+      this.annotateNode(node);
+    }
+  }
+
+  /**
    * This method returns the "annotated" version of the given node.  Assuming the
    * `ArborGlyph` is closed (which this method checks), the node has already been
    * annotated with all attributes.  As a result, this method doesn't need to
@@ -84,16 +96,16 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
       throw new Error(
         `Cannot annotate nodes until all attributes have been defined`
       );
-    return n as T & A;
+      if (n.hasOwnProperty(this.unique.valueOf())) return n as T & A;
+      throw new Error(`Node is not annotated.  Did you make a topological change and forget to run 'redo()?'`)
   }
+
   /**
    * This method is the method that actually does the node annotation.  It
    * does this be adding additional getter properties to the specified node.
    * @param n Node to annotate
    */
-  // TODO: Shouldn't need to be public, should find a way to call this
-  // from an event handler when tree structure is updated.
-  public annotateNode(n: T): void {
+  protected annotateNode(n: T): void {
     /**
      * If this ArborGlyph hasn't already been closed, the
      * nodes cannot (yet) be annotated.

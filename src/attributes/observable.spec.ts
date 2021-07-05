@@ -19,13 +19,9 @@ describe("Test compatibility with mobx", () => {
   it("should allow adding computed via a new object", () => {
     const data = observable({ a: 5, b: 7 });
     let count = 0;
-    autorun(() => {
-      console.log("running");
-    });
     reaction(
       () => data.a,
       () => {
-        console.log("reaction");
         count++;
       }
     );
@@ -43,7 +39,7 @@ describe("Test compatibility with mobx", () => {
       },
     });
     expect(foo.c).toEqual(14);
-    action(() => (foo.a = 5))();
+    action(() => { foo.a = 5} )();
     // expect(count).toEqual(2);
     expect(foo.c).toEqual(12);
   });
@@ -65,13 +61,9 @@ describe("Test compatibility with mobx", () => {
     expect(data.hasOwnProperty(unique.valueOf())).toEqual(true);
     const aug: typeof data & { c: number } = data as any;
     let count = 0;
-    autorun(() => {
-      console.log("running");
-    });
     reaction(
       () => data.a,
       () => {
-        console.log("reaction");
         count++;
       }
     );
@@ -96,7 +88,6 @@ describe("Test compatibility with mobx", () => {
     const sum = synthetic<"sum", any, {}, number>(
       "sum",
       ({ children, node }) => {
-        console.log("Evaluating sum for ", JSON.stringify(node));
         let ret = 0;
         for (const p in node) {
           if (typeof node[p] === "number") ret += node[p];
@@ -110,14 +101,9 @@ describe("Test compatibility with mobx", () => {
 
     const attributes = new ArborGlyph(map).add(sum).done()
 
-    autorun(() => {
-      console.log("Change");
-    });
-
     expect(data.a[0][0].b).toEqual(5)
     expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
     expect(attributes.anno(data).sum).toEqual(45);
-    console.log("Reset");
     data.a[0][0].b = 6;
     expect(data.a[0][0].b).toEqual(6)
     expect(attributes.anno(data.a[0][0]).sum).toEqual(6)
@@ -136,7 +122,6 @@ describe("Test compatibility with mobx", () => {
     const sum = synthetic<"sum", any, {}, number>(
       "sum",
       ({ children, node }) => {
-        console.log("Evaluating sum for ", JSON.stringify(node));
         let ret = 0;
         for (const p in node) {
           if (typeof node[p] === "number") ret += node[p];
@@ -150,42 +135,22 @@ describe("Test compatibility with mobx", () => {
 
     const attributes = new ArborGlyph(map).add(sum).done()
 
-    autorun(() => {
-      console.log("Change");
-    });
-
     expect(data.a[0][0].b).toEqual(5)
     expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
     expect(attributes.anno(data).sum).toEqual(45);
-    reaction(() => data, (v, pv, c) => {
-      console.log("data changed!");
-      console.log(v);
-    })
 
-    console.log("Reset");
-    // NB - Changes of this type really change the complete structure of the tree.
-    // Obviously, starting from scratch (re-walking the tree, identifying nodes,
-    // annotating nodes) is simplest.  But the lingering question is...is there some
-    // way we could "loop back" through the tree walking and retriggering annotations
-    // only for the nodes that changed?  We could perhaps use MobX to observe the 
-    // structural changes so we know the minimum amount of re-work required.  But
-    // that currently isn't implemented which is why this particular case fails.
-    const setA = action(() => { 
+    /** 
+     * What is essential here is that when we make a change
+     * to the **topology** of the tree, we must adjust the
+     * underlying tree map and ensure all "new" nodes in the
+     * tree are annotated.
+     */
+    action(() => {
       data.a = [[{ b: 6 }]]
-      map.rewalk();
-    })
-    setA();
+      attributes.redo()
+    })();
 
-    // NB - By rewalking (above) and then reannotating, this system handles the change.  So
-    // the challenge here is to find a way to handle this situation automatically.
-    attributes.annotateNode(data.a[0][0]);
-    attributes.annotateNode(data.a[0]);
-    attributes.annotateNode(data.a);
-    // data.a = [[{ b: 6 }]];
     expect(data.a[0][0].b).toEqual(6)
-    // This fails because data.a[0][0] isn't annotated.  Even if we attempt to
-    // manually re-annotate it, it isn't recognized as part of the (original)
-    // tree.
     expect(attributes.anno(data.a[0][0]).sum).toEqual(6)
     expect(attributes.anno(data.a[0]).sum).toEqual(6)
     expect(attributes.anno(data).sum).toEqual(46);

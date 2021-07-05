@@ -21,7 +21,7 @@ export class TreeMap<T extends object> {
    */
   static create<T extends object>(visitor: TreeVisitor<T>): TreeMap<T> {
     const ret = new TreeMap<T>(visitor);
-    populateSync(visitor, ret.parentMap, ret.nodeSet, ret.childMap);
+    ret.rewalk();
     return ret;
   }
 
@@ -32,6 +32,13 @@ export class TreeMap<T extends object> {
    *
    * As part of this process, each node in the tree will be given a unique
    * identifier.
+   * 
+   * TODO: I'm reconsidering the wisdom of supporting this.  It seems to me that
+   * perhaps a better approach would be to have an async step that builds a
+   * complete tree in memory rather than making the tree building itself async.
+   * The effect would be that we wouldn't need to treat async as a special case.
+   * 
+   * TODO: Make this a method of the Visitor?
    *
    * @param visitor
    * @returns
@@ -40,19 +47,27 @@ export class TreeMap<T extends object> {
     visitor: AsyncTreeVisitor<T>
   ): Promise<TreeMap<T>> {
     const ret = new TreeMap<T>(visitor);
-    await populateAsync(visitor, ret.parentMap, ret.nodeSet, ret.childMap);
+    await visitor.walk(eventProcessor(ret.parentMap, ret.nodeSet, ret.childMap));
     return ret;
   }
 
+  /** A method to clear the existing map in preparation for rewalking the tree. */
   protected clear() {
     this.parentMap = new PureWeakMap<T, T>();
     this.childMap = new PureWeakMap<T, T[]>();
     this.nodeSet = new Set<T>();
   }
 
-  public rewalk() {
+  /** 
+   * Trigger rewalking of the tree.
+   * 
+   * TODO: Optimize so we only rewalk the subtree that changed.  To do this,
+   * we'll need to clear out **only** the nodes affected from `parentMap`,
+   * `childMap` and `nodeSet` before rewalking.
+  */
+  public rewalk(from?: T) {
     this.clear();
-    return populateSync(this.visitor, this.parentMap, this.nodeSet, this.childMap);
+    return this.visitor.walk(eventProcessor(this.parentMap, this.nodeSet, this.childMap));
   }
 
   /**
@@ -137,19 +152,6 @@ function eventProcessor<T extends object>(
       }
     }
   };
-}
-/**
- * A function that invokes the synchronous `visitor`'s `walk` method
- * and records information it receives during the walk.
- * @returns
- */
-function populateSync<T extends object>(
-  visitor: TreeVisitor<T>,
-  parentMap: PureWeakMap<T, T>,
-  nodeSet: WeakSet<T>,
-  childMap: PureWeakMap<T, T[]>
-): void {
-  return visitor.walk(eventProcessor(parentMap, nodeSet, childMap));
 }
 
 /**
