@@ -76,14 +76,17 @@ export class GenericVisitor<T extends object> implements TreeVisitor<T> {
     /** The root node of the tree */
     protected rootNode: T,
     /** The function that identifies children */
-    protected children: NamedChildren<T>
+    protected namedChildren: NamedChildren<T>
   ) {}
   get root(): T {
     return this.rootNode;
   }
+  children(n: T): T[] {
+    return Object.entries(this.namedChildren(n)).map(x => x[1]);
+  }
   /** Invoke the generic walker and wrap the result in a `Promise` */
   walk(from: T, handler: TreeHandler<any>): void {
-    return walkGeneric(from, handler, new Set(), this.children);
+    return walkGeneric(from, handler, new Set(), this.namedChildren);
   }
 }
 
@@ -146,13 +149,17 @@ export class GenericAsyncVisitor<T extends object>
     /** The root node of the tree */
     protected rootNode: T,
     /** The function that identifies children */
-    protected children: NamedAsyncChildren<T>
+    protected namedChildren: NamedAsyncChildren<T>
   ) {}
   get root(): T {
     return this.rootNode;
   }
+  async children(n: T): Promise<T[]> {
+    const c = await this.namedChildren(n);
+    return Object.entries(c).map(x => x[1]);
+  }
   /** Invoke the generic walker and wrap the result in a `Promise` */
   walk(from: T, handler: TreeHandler<any>): Promise<void> {
-    return walkAsyncGeneric(from, handler, new Set(), this.children);
+    return walkAsyncGeneric(from, handler, new Set(), this.namedChildren);
   }
 }

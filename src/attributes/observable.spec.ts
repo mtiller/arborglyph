@@ -6,11 +6,7 @@ import {
   autorun,
   makeAutoObservable,
   observable,
-  extendObservable,
   reaction,
-  intercept,
-  observe,
-  when,
 } from "mobx";
 import { synthetic } from "./synthetic";
 import { isObject } from "../util";
@@ -188,12 +184,8 @@ describe("Test compatibility with mobx", () => {
     expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
     expect(attributes.anno(data).sum).toEqual(45);
 
-    // TODO: Figure out a way to automatically detected a structural
-    // change and then automatically reannotation from that node.
     [...map.nodes].forEach(n => {
-      // TODO: Need to change this to requesting children.  But current
-      // visitor doesn't expose children (which I should probably change)
-      reaction(() => Object.keys(n).map(k => n[k]), () => { 
+      reaction(() => visitor.children(n), () => { 
         attributes.reannotate(n);
       })
     })

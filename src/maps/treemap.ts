@@ -43,16 +43,16 @@ export class TreeMap<T extends object> {
    * @param visitor
    * @returns
    */
-  static async createAsync<T extends object>(
-    visitor: AsyncTreeVisitor<T>
-  ): Promise<TreeMap<T>> {
-    const ret = new TreeMap<T>(visitor);
-    await visitor.walk(
-      visitor.root,
-      eventProcessor(ret.parentMap, ret.nodeSet, ret.childMap)
-    );
-    return ret;
-  }
+  // static async createAsync<T extends object>(
+  //   visitor: AsyncTreeVisitor<T>
+  // ): Promise<TreeMap<T>> {
+  //   const ret = new TreeMap<T>(visitor);
+  //   await visitor.walk(
+  //     visitor.root,
+  //     eventProcessor(ret.parentMap, ret.nodeSet, ret.childMap)
+  //   );
+  //   return ret;
+  // }
 
   /** A method to clear the existing map in preparation for rewalking the tree. */
   protected clear(from: T) {

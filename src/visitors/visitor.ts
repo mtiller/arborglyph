@@ -34,6 +34,7 @@ export type TreeHandler<T extends object> = (event: TreeEvent<T>) => void;
  */
 export interface TreeVisitor<T extends object> {
   root: T;
+  children(n: T): T[];
   walk(from: T, handler: TreeHandler<T>): void;
 }
 
@@ -44,5 +45,6 @@ export interface TreeVisitor<T extends object> {
  */
 export interface AsyncTreeVisitor<T extends object> {
   root: T;
+  children(n: T): Promise<T[]>;
   walk(from: T, handler: TreeHandler<T>): Promise<void>;
 }
