@@ -116,7 +116,7 @@ describe("Test compatibility with mobx", () => {
       c: { d: [{ e: 7, f: 8 }] },
       g: 2,
       h: [9, 2, 3, 4, 5],
-    }, {}, { deep: true, proxy: true });
+    });
     const map = TreeMap.create(new ObjectVisitor(data, isObject));
 
     const sum = synthetic<"sum", any, {}, number>(
@@ -139,6 +139,7 @@ describe("Test compatibility with mobx", () => {
     expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
     expect(attributes.anno(data).sum).toEqual(45);
 
+    const nn = map.nodes.size;
     /** 
      * What is essential here is that when we make a change
      * to the **topology** of the tree, we must adjust the
@@ -146,9 +147,10 @@ describe("Test compatibility with mobx", () => {
      * tree are annotated.
      */
     action(() => {
-      data.a = [[{ b: 6 }]]
-      attributes.redo()
+      data.a[0] = [{ b: 6 }]
+      attributes.reannotate(data.a)
     })();
+    expect(map.nodes.size).toEqual(nn);
 
     expect(data.a[0][0].b).toEqual(6)
     expect(attributes.anno(data.a[0][0]).sum).toEqual(6)

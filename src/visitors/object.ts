@@ -76,9 +76,9 @@ export class ObjectVisitor<T extends object> implements TreeVisitor<T> {
     return this.rootNode;
   }
   /** Call the `walkObject` helper and wrap the result in a `Promise` */
-  walk(handler: TreeHandler<any>): Promise<void> {
+  walk(from: T, handler: TreeHandler<any>): Promise<void> {
     return Promise.resolve(
-      walkObject(this.rootNode, handler, new Set(), this.pred)
+      walkObject(from, handler, new Set(), this.pred)
     );
   }
 }

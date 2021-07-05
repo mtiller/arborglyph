@@ -82,8 +82,8 @@ export class GenericVisitor<T extends object> implements TreeVisitor<T> {
     return this.rootNode;
   }
   /** Invoke the generic walker and wrap the result in a `Promise` */
-  walk(handler: TreeHandler<any>): void {
-    return walkGeneric(this.rootNode, handler, new Set(), this.children);
+  walk(from: T, handler: TreeHandler<any>): void {
+    return walkGeneric(from, handler, new Set(), this.children);
   }
 }
 
@@ -152,7 +152,7 @@ export class GenericAsyncVisitor<T extends object>
     return this.rootNode;
   }
   /** Invoke the generic walker and wrap the result in a `Promise` */
-  walk(handler: TreeHandler<any>): Promise<void> {
-    return walkAsyncGeneric(this.rootNode, handler, new Set(), this.children);
+  walk(from: T, handler: TreeHandler<any>): Promise<void> {
+    return walkAsyncGeneric(from, handler, new Set(), this.children);
   }
 }

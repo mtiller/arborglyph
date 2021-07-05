@@ -74,8 +74,8 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
    * Redo the steps normally performaed when the ArborGlyph is marked as `done`.
    * This is done in response to topology changes.
    **/
-  redo() {
-    this.tree.rewalk()
+  reannotate(from: T) {
+    this.tree.rewalk(from)
     for (const node of this.tree.nodes) {
       if (node.hasOwnProperty(this.unique.valueOf())) continue;
       this.annotateNode(node);

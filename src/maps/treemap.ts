@@ -21,7 +21,7 @@ export class TreeMap<T extends object> {
    */
   static create<T extends object>(visitor: TreeVisitor<T>): TreeMap<T> {
     const ret = new TreeMap<T>(visitor);
-    ret.rewalk();
+    ret.rewalk(visitor.root);
     return ret;
   }
 
@@ -32,12 +32,12 @@ export class TreeMap<T extends object> {
    *
    * As part of this process, each node in the tree will be given a unique
    * identifier.
-   * 
+   *
    * TODO: I'm reconsidering the wisdom of supporting this.  It seems to me that
    * perhaps a better approach would be to have an async step that builds a
    * complete tree in memory rather than making the tree building itself async.
    * The effect would be that we wouldn't need to treat async as a special case.
-   * 
+   *
    * TODO: Make this a method of the Visitor?
    *
    * @param visitor
@@ -47,27 +47,44 @@ export class TreeMap<T extends object> {
     visitor: AsyncTreeVisitor<T>
   ): Promise<TreeMap<T>> {
     const ret = new TreeMap<T>(visitor);
-    await visitor.walk(eventProcessor(ret.parentMap, ret.nodeSet, ret.childMap));
+    await visitor.walk(
+      visitor.root,
+      eventProcessor(ret.parentMap, ret.nodeSet, ret.childMap)
+    );
     return ret;
   }
 
   /** A method to clear the existing map in preparation for rewalking the tree. */
-  protected clear() {
-    this.parentMap = new PureWeakMap<T, T>();
-    this.childMap = new PureWeakMap<T, T[]>();
-    this.nodeSet = new Set<T>();
+  protected clear(from: T) {
+    if (from == this.visitor.root) {
+      this.parentMap = new PureWeakMap<T, T>();
+      this.childMap = new PureWeakMap<T, T[]>();
+      this.nodeSet = new Set<T>();
+    } else {
+      const descendents = new Set<T>();
+      allChildren(from, this.childMap, descendents);
+      descendents.add(from);
+      for (const d of descendents) {
+        this.parentMap.delete(d);
+        this.childMap.delete(d);
+        this.nodeSet.delete(d);
+      }
+    }
   }
 
-  /** 
+  /**
    * Trigger rewalking of the tree.
-   * 
+   *
    * TODO: Optimize so we only rewalk the subtree that changed.  To do this,
    * we'll need to clear out **only** the nodes affected from `parentMap`,
    * `childMap` and `nodeSet` before rewalking.
-  */
-  public rewalk(from?: T) {
-    this.clear();
-    return this.visitor.walk(eventProcessor(this.parentMap, this.nodeSet, this.childMap));
+   */
+  public rewalk(from: T) {
+    this.clear(from);
+    return this.visitor.walk(
+      from,
+      eventProcessor(this.parentMap, this.nodeSet, this.childMap)
+    );
   }
 
   /**
@@ -121,6 +138,21 @@ export class TreeMap<T extends object> {
   }
 }
 
+/** Find all nodes that are children of `from`. */
+function allChildren<T extends object>(
+  from: T,
+  childMap: PureWeakMap<T, T[]>,
+  descendents: Set<T>
+): void {
+  const children = childMap.get(from);
+  if (children) {
+    for (const child of children) {
+      descendents.add(child);
+      allChildren(child, childMap, descendents);
+    }
+  }
+}
+
 function eventProcessor<T extends object>(
   parentMap: PureWeakMap<T, T>,
   nodeSet: WeakSet<T>,
@@ -152,18 +184,4 @@ function eventProcessor<T extends object>(
       }
     }
   };
-}
-
-/**
- * A function that invokes the asynchronous `visitor`'s `walk` method
- * and records information it receives during the walk.
- * @returns
- */
-async function populateAsync<T extends object>(
-  visitor: AsyncTreeVisitor<T>,
-  parentMap: PureWeakMap<T, T>,
-  nodeSet: WeakSet<T>,
-  childMap: PureWeakMap<T, T[]>
-): Promise<void> {
-  return visitor.walk(eventProcessor(parentMap, nodeSet, childMap));
 }
