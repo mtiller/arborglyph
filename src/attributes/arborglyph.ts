@@ -91,7 +91,9 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
    * does this be adding additional getter properties to the specified node.
    * @param n Node to annotate
    */
-  protected annotateNode(n: T): void {
+  // TODO: Shouldn't need to be public, should find a way to call this
+  // from an event handler when tree structure is updated.
+  public annotateNode(n: T): void {
     /**
      * If this ArborGlyph hasn't already been closed, the
      * nodes cannot (yet) be annotated.

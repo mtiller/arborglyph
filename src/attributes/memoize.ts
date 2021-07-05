@@ -1,4 +1,4 @@
-import { PureMap, PureWeakMap } from "../maps/puremap";
+import { PureWeakMap } from "../maps/puremap";
 import { Attribute } from "./attributes";
 
 /**

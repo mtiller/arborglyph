@@ -1,5 +1,5 @@
-import { Just, Maybe, Nothing } from "purify-ts/Maybe";
-import { PureMap, PureWeakMap } from "./puremap";
+import { Maybe } from "purify-ts/Maybe";
+import { PureWeakMap } from "./puremap";
 import { AsyncTreeVisitor, TreeEvent, TreeVisitor } from "../visitors/visitor";
 
 /**
@@ -42,6 +42,17 @@ export class TreeMap<T extends object> {
     const ret = new TreeMap<T>(visitor);
     await populateAsync(visitor, ret.parentMap, ret.nodeSet, ret.childMap);
     return ret;
+  }
+
+  protected clear() {
+    this.parentMap = new PureWeakMap<T, T>();
+    this.childMap = new PureWeakMap<T, T[]>();
+    this.nodeSet = new Set<T>();
+  }
+
+  public rewalk() {
+    this.clear();
+    return populateSync(this.visitor, this.parentMap, this.nodeSet, this.childMap);
   }
 
   /**
