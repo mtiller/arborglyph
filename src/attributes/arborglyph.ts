@@ -97,7 +97,7 @@ export class ArborGlyph<T extends object, A extends AttributeTypes = {}> {
         `Cannot annotate nodes until all attributes have been defined`
       );
       if (n.hasOwnProperty(this.unique.valueOf())) return n as T & A;
-      throw new Error(`Node is not annotated.  Did you make a topological change and forget to run 'redo()?'`)
+      throw new Error(`Node is not annotated.  Did you make a topological change and forget to run 'reannotate()?'`)
   }
 
   /**

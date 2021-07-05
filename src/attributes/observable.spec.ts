@@ -110,7 +110,7 @@ describe("Test compatibility with mobx", () => {
     expect(attributes.anno(data).sum).toEqual(46);
   });
 
-  it("should observe changes in tree structure", () => {
+  it("should allow changes in tree structure", () => {
     const data = makeAutoObservable({
       a: [[{ b: 5 }]],
       c: { d: [{ e: 7, f: 8 }] },
@@ -157,6 +157,112 @@ describe("Test compatibility with mobx", () => {
     expect(attributes.anno(data.a[0]).sum).toEqual(6)
     expect(attributes.anno(data).sum).toEqual(46);
   });
+
+  it("should observe changes in tree structure", () => {
+    const data = makeAutoObservable({
+      a: [[{ b: 5 }]],
+      c: { d: [{ e: 7, f: 8 }] },
+      g: 2,
+      h: [9, 2, 3, 4, 5],
+    }, {}, { deep: true, proxy: true });
+    const visitor = new ObjectVisitor(data, isObject);
+    const map = TreeMap.create(visitor);
+
+    const sum = synthetic<"sum", any, {}, number>(
+      "sum",
+      ({ children, node }) => {
+        let ret = 0;
+        for (const p in node) {
+          if (typeof node[p] === "number") ret += node[p];
+        }
+        for (const c of children) {
+          ret += c.sum;
+        }
+        return ret;
+      }
+    );
+
+    const attributes = new ArborGlyph(map).add(sum).done()
+
+    expect(data.a[0][0].b).toEqual(5)
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
+    expect(attributes.anno(data).sum).toEqual(45);
+
+    // TODO: Figure out a way to automatically detected a structural
+    // change and then automatically reannotation from that node.
+    [...map.nodes].forEach(n => {
+      // TODO: Need to change this to requesting children.  But current
+      // visitor doesn't expose children (which I should probably change)
+      reaction(() => Object.keys(n).map(k => n[k]), () => { 
+        attributes.reannotate(n);
+      })
+    })
+
+    const nn = map.nodes.size;
+    /** 
+     * What is essential here is that when we make a change
+     * to the **topology** of the tree, we must adjust the
+     * underlying tree map and ensure all "new" nodes in the
+     * tree are annotated.
+     */
+    action(() => {
+      data.a[0] = [{ b: 6 }]
+      // This works, but we want to find a way to automate this.
+      // attributes.reannotate(map.root);
+    })();
+    expect(map.nodes.size).toEqual(nn);
+
+    expect(data.a[0][0].b).toEqual(6)
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(6)
+    expect(attributes.anno(data.a[0]).sum).toEqual(6)
+    expect(attributes.anno(data).sum).toEqual(46);
+  });
+
+  it("should catch cases where the tree hasn't been properly reannotated", () => {
+    const data = makeAutoObservable({
+      a: [[{ b: 5 }]],
+      c: { d: [{ e: 7, f: 8 }] },
+      g: 2,
+      h: [9, 2, 3, 4, 5],
+    }, {}, { deep: true, proxy: true });
+    const visitor = new ObjectVisitor(data, isObject);
+    const map = TreeMap.create(visitor);
+
+    const sum = synthetic<"sum", any, {}, number>(
+      "sum",
+      ({ children, node }) => {
+        let ret = 0;
+        for (const p in node) {
+          if (typeof node[p] === "number") ret += node[p];
+        }
+        for (const c of children) {
+          ret += c.sum;
+        }
+        return ret;
+      }
+    );
+
+    const attributes = new ArborGlyph(map).add(sum).done()
+
+    expect(data.a[0][0].b).toEqual(5)
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
+    expect(attributes.anno(data).sum).toEqual(45);
+
+    const nn = map.nodes.size;
+    /** 
+     * What is essential here is that when we make a change
+     * to the **topology** of the tree, we must adjust the
+     * underlying tree map and ensure all "new" nodes in the
+     * tree are annotated.
+     */
+    action(() => {
+      data.a[0] = [{ b: 6 }]
+    })();
+    expect(map.nodes.size).toEqual(nn);
+
+    expect(data.a[0][0].b).toEqual(6)
+    expect(() => attributes.anno(data.a[0][0]).sum).toThrow("Node is not annotated.  Did you make a topological change and forget to run 'reannotate()?");
+  })
 
   it.skip("should handle proxy objects", () => {
     const data = { x: 5, y: "hello" };
