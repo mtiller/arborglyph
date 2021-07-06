@@ -1,6 +1,6 @@
 import { Maybe } from "purify-ts/Maybe";
 import { PureWeakMap } from "./puremap";
-import { AsyncTreeVisitor, TreeEvent, TreeVisitor } from "../visitors/visitor";
+import { TreeEvent, TreeVisitor, walkTree } from "../visitors";
 
 /**
  * This class generates a tree map which is simply a representation of the
@@ -74,17 +74,10 @@ export class TreeMap<T extends object> {
 
   /**
    * Trigger rewalking of the tree.
-   *
-   * TODO: Optimize so we only rewalk the subtree that changed.  To do this,
-   * we'll need to clear out **only** the nodes affected from `parentMap`,
-   * `childMap` and `nodeSet` before rewalking.
    */
   public rewalk(from: T) {
     this.clear(from);
-    return this.visitor.walk(
-      from,
-      eventProcessor(this.parentMap, this.nodeSet, this.childMap)
-    );
+    walkTree(from, this.visitor, eventProcessor(this.parentMap, this.nodeSet, this.childMap), new Set());
   }
 
   /**

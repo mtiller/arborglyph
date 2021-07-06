@@ -4,6 +4,7 @@ import { ArborGlyph } from "./arborglyph";
 import {
   action,
   autorun,
+  IReactionDisposer,
   makeAutoObservable,
   observable,
   reaction,
@@ -184,10 +185,11 @@ describe("Test compatibility with mobx", () => {
     expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
     expect(attributes.anno(data).sum).toEqual(45);
 
+    const reactions: IReactionDisposer[] = [];
     [...map.nodes].forEach(n => {
-      reaction(() => visitor.children(n), () => { 
+      reactions.push(reaction(() => visitor.children(n), () => { 
         attributes.reannotate(n);
-      })
+      }));
     })
 
     const nn = map.nodes.size;
@@ -208,6 +210,8 @@ describe("Test compatibility with mobx", () => {
     expect(attributes.anno(data.a[0][0]).sum).toEqual(6)
     expect(attributes.anno(data.a[0]).sum).toEqual(6)
     expect(attributes.anno(data).sum).toEqual(46);
+
+    reactions.forEach(x => x());
   });
 
   it("should catch cases where the tree hasn't been properly reannotated", () => {
