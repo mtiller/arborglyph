@@ -27,7 +27,7 @@ describe("Test annotations functionality", () => {
     const root2 = attributes.anno(root);
     expect(root).toEqual(root2);
     expect(root.min).toEqual(2);
-    expect(attributes.anno(root.right.left).globmin).toEqual(2);
+    expect(attributes.anno((root as any).right.left).globmin).toEqual(2);
     expect(root.repmin).toEqual(solution);
   });
 });
