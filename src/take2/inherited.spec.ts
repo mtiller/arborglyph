@@ -1,5 +1,5 @@
-import { Maybe, Nothing } from "purify-ts/Maybe";
-import { InheritedAttribute, reifyInheritedAttribute } from "./inherited";
+import { Nothing } from "purify-ts/Maybe";
+import { ParentAttribute, reifyInheritedAttribute } from "./inherited";
 import {
   findChild,
   indexBinaryTree,
@@ -10,10 +10,8 @@ import {
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with indexed children", () => {
     const tree = indexBinaryTree(sampleTree1);
-    const parentFunc: InheritedAttribute<
-      SimpleBinaryTree,
-      Maybe<SimpleBinaryTree>
-    > = ({ parent }) => parent.map((x) => x.node);
+    const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) =>
+      parent.map((x) => x.node);
     const parentAttr = reifyInheritedAttribute(tree, parentFunc);
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
@@ -39,5 +37,45 @@ describe("Test inherited attribute functionalty", () => {
     if (rrrr.type === "leaf") {
       expect(rrrr.value).toEqual(8);
     }
+  });
+
+  it("should find the parents of a sample tree with indexed children and memoize them", () => {
+    const tree = indexBinaryTree(sampleTree1);
+    let count = 0;
+    const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
+      count++;
+      return parent.map((x) => x.node);
+    };
+
+    const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
+      memoize: "yes",
+    });
+
+    const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
+    const prrrr = parentAttr(rrrr);
+    expect(count).toEqual(1);
+    const prrrr2 = parentAttr(rrrr);
+    expect(prrrr.isJust()).toEqual(true);
+    expect(count).toEqual(1);
+  });
+
+  it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {
+    const tree = indexBinaryTree(sampleTree1);
+    let count = 0;
+    const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
+      count++;
+      return parent.map((x) => x.node);
+    };
+
+    const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
+      memoize: "pre",
+    });
+
+    const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
+    expect(count).toEqual(15);
+    const prrrr = parentAttr(rrrr);
+    const prrrr2 = parentAttr(rrrr);
+    expect(prrrr.isJust()).toEqual(true);
+    expect(count).toEqual(15);
   });
 });

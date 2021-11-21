@@ -5,6 +5,7 @@ export type ScalarFunction<T, R> = (x: T) => R;
 export type ParentFunc<T> = (x: T) => Maybe<T>;
 export type OptionalParentFunc<T> = null | ParentFunc<T>;
 export type InheritedAttribute<T, R> = (args: InheritedArgs<T, R>) => R;
+export type ParentAttribute<T> = InheritedAttribute<T, Maybe<T>>;
 
 export interface ParentInformation<T, R> {
   node: T;
@@ -22,6 +23,11 @@ export class NodeNotFoundError<T> extends Error {
   }
 }
 
+export interface InheritedOptions<T> {
+  p?: ParentFunc<T>;
+  memoize?: "no" | "yes" | "pre";
+}
+
 function parentInformation<T, R>(
   x: T,
   pf: ParentFunc<T>,
@@ -37,10 +43,10 @@ function parentInformation<T, R>(
   });
 }
 
-export function reifyInheritedAttribute<T, R>(
+export function reifyInheritedAttribute<T extends object, R>(
   tree: TreeType<T>,
   f: InheritedAttribute<T, R>,
-  p: OptionalParentFunc<T> = null
+  opts: InheritedOptions<T> = {}
 ): ScalarFunction<T, R> {
   /** This is a function that may call itself recursively */
   const ev = (
@@ -82,12 +88,12 @@ export function reifyInheritedAttribute<T, R>(
     return Nothing;
   };
 
-  return (x: T): R => {
+  const compute = (x: T): R => {
     /**
      * If a parent function was supplied, then this is very easy
      */
-    if (p) {
-      const information = parentInformation(x, p, f);
+    if (opts.p) {
+      const information = parentInformation(x, opts.p, f);
       return f({ node: x, parent: information });
     }
 
@@ -103,4 +109,38 @@ export function reifyInheritedAttribute<T, R>(
       Just: (x) => x,
     });
   };
+
+  const memo = opts.memoize ?? "no";
+  if (memo === "no") return compute;
+
+  const storage = new WeakMap<T, R>();
+  const memoed = (x: T): R => {
+    if (storage.has(x)) return storage.get(x) as R;
+    const ret = compute(x);
+    storage.set(x, ret);
+    return ret;
+  };
+
+  if (memo === "pre") {
+    // Walk the tree and invoke the function for every child
+    walk(tree.root, tree, memoed);
+  }
+
+  return memoed;
+}
+
+function walk<T>(cur: T, tree: TreeType<T>, f: (x: T) => void) {
+  f(cur);
+  const children = tree.children(cur);
+  if (Array.isArray(children)) {
+    /** If this is an indexed tree... */
+    for (const child of children) {
+      walk(child, tree, f);
+    }
+  } else {
+    /** If this tree has named children */
+    for (const child of Object.entries(children)) {
+      walk(child[1], tree, f);
+    }
+  }
 }
