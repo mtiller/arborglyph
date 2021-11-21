@@ -1,4 +1,4 @@
-import { Maybe } from "purify-ts/Maybe";
+import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { TreeMap } from "../maps/treemap";
 import {
   Attribute,

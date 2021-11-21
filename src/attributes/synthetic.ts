@@ -9,6 +9,24 @@ import {
 import { memoizeEvaluator } from "./memoize";
 
 /**
+ * Arguments passed when computing synthetic attributes
+ * when children are indexed.
+ */
+export interface SyntheticArgsIndexed<T> {
+  children: Array<T>;
+  node: T;
+}
+
+/**
+ * Arguments passed when computing synthetic attributes
+ * when children are named.
+ */
+export interface SyntheticArgsNamed<T> {
+  children: Record<string, T>;
+  node: T;
+}
+
+/**
  * Arguments available when computing a synthetic attribute.
  */
 export interface SyntheticArg<T, A extends AttributeTypes = {}> {

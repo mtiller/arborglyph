@@ -138,6 +138,11 @@ describe("Create a few attributed trees", () => {
     ]);
   });
 
+  it("should allow attributes to be defined outside the tree itself", () => {
+    const data = fork(leaf(3), fork(leaf(2), leaf(10)));
+    const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
+  });
+
   it("should create an attributed tree with a repmin attribute", () => {
     const data = fork(leaf(3), fork(leaf(2), leaf(10)));
     const solution = fork(leaf(2), fork(leaf(2), leaf(2)));
