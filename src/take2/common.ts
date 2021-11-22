@@ -1,4 +1,5 @@
 import { Maybe } from "purify-ts/Maybe";
+import { ScalarFunction } from "./attributes";
 import { InheritedAttributeEvaluator } from "./inherited";
 import { SyntheticAttributeEvaluator } from "./synthetic";
 

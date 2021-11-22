@@ -47,7 +47,7 @@ export function reifySyntheticAttribute<T extends object, R>(
 
   if (memo === "no") {
     /** Build a function that can compute our attribute */
-    return baseSyntheticAttributeCalculation(tree, evaluator, null);
+    return baseSyntheticAttributeCalculation(tree, evaluator);
   }
 
   /** If memoization is requested, first create storage for memoized values. */
@@ -65,11 +65,7 @@ export function reifySyntheticAttribute<T extends object, R>(
   };
 
   /** Create an attribute function using a memoizing attribute evaluator */
-  const memoed = baseSyntheticAttributeCalculation(
-    tree,
-    memoizeEvaluator,
-    null
-  );
+  const memoed = baseSyntheticAttributeCalculation(tree, memoizeEvaluator);
 
   /* If precomputing of the attribute for all nodes was selected... */
   if (memo === "pre") {
@@ -83,8 +79,7 @@ export function reifySyntheticAttribute<T extends object, R>(
 
 function baseSyntheticAttributeCalculation<T, R>(
   tree: TreeType<T>,
-  f: SyntheticAttributeEvaluator<T, R>,
-  map: Map<T, R> | null
+  f: SyntheticAttributeEvaluator<T, R>
 ): ScalarFunction<T, R> {
   const ret = (x: T): R => {
     const childNodes = childrenOfNode<T>(tree, x);
