@@ -1,10 +1,6 @@
-import { Maybe, Nothing } from "purify-ts/Maybe";
-import { evalParent, fevalParent, gevalParent, sevalParent } from "./common";
-import {
-  ParentAttribute,
-  reifyInheritedAttribute,
-  WrappedTree,
-} from "./inherited";
+import { Nothing } from "purify-ts/Maybe";
+import { evalParent } from "./common";
+import { ParentAttribute, reifyInheritedAttribute } from "./inherited";
 import {
   findChild,
   indexBinaryTree,
@@ -16,12 +12,7 @@ import {
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
     const tree = namedBinaryTree(sampleTree1);
-    const wp = new WrappedTree(tree);
-    const parentAttr = reifyInheritedAttribute(
-      fevalParent<SimpleBinaryTree>(),
-      tree
-    );
-    const pa = wp.inh(sevalParent);
+    const parentAttr = reifyInheritedAttribute(tree, evalParent(tree));
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -52,7 +43,7 @@ describe("Test inherited attribute functionalty", () => {
 
     const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) =>
       parent.map((x) => x.node);
-    const parentAttr = reifyInheritedAttribute(parentFunc, tree);
+    const parentAttr = reifyInheritedAttribute(tree, parentFunc);
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -87,7 +78,7 @@ describe("Test inherited attribute functionalty", () => {
       return parent.map((x) => x.node);
     };
 
-    const parentAttr = reifyInheritedAttribute(parentFunc, tree, {
+    const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
       memoize: "yes",
     });
 
@@ -107,7 +98,7 @@ describe("Test inherited attribute functionalty", () => {
       return parent.map((x) => x.node);
     };
 
-    const parentAttr = reifyInheritedAttribute(parentFunc, tree, {
+    const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
       memoize: "pre",
     });
 

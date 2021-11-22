@@ -55,7 +55,7 @@ export interface InheritedOptions<T> {
 export class WrappedTree<T extends object> {
   constructor(public tree: TreeType<T>) {}
   inh<R>(f: (args: InheritedArgs<T, R>) => R) {
-    return reifyInheritedAttribute<T, R>(f, this.tree, {});
+    return reifyInheritedAttribute<T, R>(this.tree, f, {});
   }
 }
 
@@ -70,8 +70,8 @@ export class WrappedTree<T extends object> {
  * @returns
  */
 export function reifyInheritedAttribute<T extends object, R>(
-  evaluator: InheritedAttributeEvaluator<T, R>,
   tree: TreeType<T>,
+  evaluator: InheritedAttributeEvaluator<T, R>,
   opts: InheritedOptions<T> = {}
 ): ScalarFunction<T, R> {
   /** Check what level of memoization is requested */
