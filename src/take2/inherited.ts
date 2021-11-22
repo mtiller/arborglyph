@@ -24,6 +24,19 @@ export type InheritedAttributeEvaluator<T, R> = (
 /** A parent attribute is a special case of an inherited attribute */
 export type ParentAttribute<T> = InheritedAttributeEvaluator<T, Maybe<T>>;
 
+export type InheritedNodeType<E> = E extends InheritedAttributeEvaluator<
+  infer T,
+  any
+>
+  ? T
+  : unknown;
+export type InheritedNodeValue<E> = E extends InheritedAttributeEvaluator<
+  any,
+  infer R
+>
+  ? R
+  : unknown;
+
 /**
  * This is the information the inherited attribute evaluator is given about the
  * parent node **if it exists**.
@@ -39,19 +52,26 @@ export interface InheritedOptions<T> {
   memoize?: "no" | "yes" | "pre";
 }
 
+export class WrappedTree<T extends object> {
+  constructor(public tree: TreeType<T>) {}
+  inh<R>(f: (args: InheritedArgs<T, R>) => R) {
+    return reifyInheritedAttribute<T, R>(f, this.tree, {});
+  }
+}
+
 /**
  * This is the function that takes a description of an inherited
  * attribute and returns an actual implementation capable of computing
  * the inherited attribute for any node in the tree.
  *
  * @param tree Tree we are associating this inherited attribute with
- * @param f The function that evaluates the inherited attribute
+ * @param evaluator The function that evaluates the inherited attribute
  * @param opts Various options we have when reifying
  * @returns
  */
 export function reifyInheritedAttribute<T extends object, R>(
+  evaluator: InheritedAttributeEvaluator<T, R>,
   tree: TreeType<T>,
-  f: InheritedAttributeEvaluator<T, R>,
   opts: InheritedOptions<T> = {}
 ): ScalarFunction<T, R> {
   /** Check what level of memoization is requested */
@@ -59,7 +79,7 @@ export function reifyInheritedAttribute<T extends object, R>(
 
   if (memo === "no") {
     /** Build a function that can compute our attribute */
-    return baseInheritedAttributeCalculation(tree, f, opts.p);
+    return baseInheritedAttributeCalculation(tree, evaluator, opts.p);
   }
 
   /** If memoization is requested, first create storage for memoized values. */
@@ -69,15 +89,19 @@ export function reifyInheritedAttribute<T extends object, R>(
    * Now create a special memoized wrapper that checks for memoized values and
    * caches any attributes actually evaluated.
    **/
-  const mf: InheritedAttributeEvaluator<T, R> = (args) => {
+  const memoizeEvaluator: InheritedAttributeEvaluator<T, R> = (args) => {
     if (storage.has(args.node)) return storage.get(args.node) as R;
-    const ret = f(args);
+    const ret = evaluator(args);
     storage.set(args.node, ret);
     return ret;
   };
 
   /** Create an attribute function using a memoizing attribute evaluator */
-  const memoed = baseInheritedAttributeCalculation(tree, mf, opts.p);
+  const memoed = baseInheritedAttributeCalculation(
+    tree,
+    memoizeEvaluator,
+    opts.p
+  );
 
   /* If precomputing of the attribute for all nodes was selected... */
   if (memo === "pre") {
@@ -125,6 +149,8 @@ function baseInheritedAttributeCalculation<T, R>(
 }
 
 /**
+ * This function searches the tree for node `x` and once it finds it, it
+ * evaluates the inherited attribute for it.
  *
  * @param tree Tree we are associating the inherited attribute with
  * @param f The function that evaluates the inherited attribute
