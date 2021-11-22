@@ -56,7 +56,6 @@ describe("Test synthetic attribute evaluation", () => {
       const ntotal = ndesc(itree.tree.root);
 
       expect(itotal).toEqual(ntotal);
-      console.log([...itotal]);
       expect(itotal.size).toEqual(14);
       expect(count).toEqual(15);
 
@@ -87,7 +86,6 @@ describe("Test synthetic attribute evaluation", () => {
       const ntotal = ndesc(itree.tree.root);
 
       expect(itotal).toEqual(ntotal);
-      console.log([...itotal]);
       expect(itotal.size).toEqual(14);
       expect(count).toEqual(15);
 
@@ -118,7 +116,6 @@ describe("Test synthetic attribute evaluation", () => {
       const ntotal = ndesc(itree.tree.root);
 
       expect(itotal).toEqual(ntotal);
-      console.log([...itotal]);
       expect(itotal.size).toEqual(14);
       expect(count).toEqual(15);
 
