@@ -15,9 +15,7 @@ import { TreeType } from "./treetypes";
  * type inferencing, but couldn't get it to work without having to specify lots
  * of explicit type parameters
  */
-export function evalParent<T>(
-  t: TreeType<T>
-): InheritedAttributeEvaluator<T, Maybe<T>> {
+export function evalParent<T>() {
   return (x: InheritedArgs<T, Maybe<T>>) => {
     return x.parent.map((v) => v.node);
   };

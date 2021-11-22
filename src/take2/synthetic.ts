@@ -15,3 +15,16 @@ export interface SyntheticArgsNamed<T> {
   children: Record<string, T>;
   node: T;
 }
+
+export interface ChildInformation<T, R> {
+  node: T;
+  attr: () => R;
+}
+/**
+ * Arguments available when computing a synthetic attribute.
+ */
+export interface SyntheticArg<T, R> {
+  // siblings: Array<ChildInformation<T, R>>;
+  node: T;
+  children: Array<ChildInformation<T, R>>;
+}

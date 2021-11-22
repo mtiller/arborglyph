@@ -1,6 +1,11 @@
-import { Nothing } from "purify-ts/Maybe";
+import { Maybe, Nothing } from "purify-ts/Maybe";
+import { ScalarFunction } from "./attributes";
 import { evalParent } from "./common";
-import { ParentAttribute, reifyInheritedAttribute } from "./inherited";
+import {
+  ParentAttribute,
+  reifyInheritedAttribute,
+  WrappedTree,
+} from "./inherited";
 import {
   findChild,
   indexBinaryTree,
@@ -12,7 +17,7 @@ import {
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
     const tree = namedBinaryTree(sampleTree1);
-    const parentAttr = reifyInheritedAttribute(tree, evalParent(tree));
+    const parentAttr = reifyInheritedAttribute(tree, evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -41,9 +46,8 @@ describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with indexed children", () => {
     const tree = indexBinaryTree(sampleTree1);
 
-    const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) =>
-      parent.map((x) => x.node);
-    const parentAttr = reifyInheritedAttribute(tree, parentFunc);
+    const wp = new WrappedTree(tree);
+    const parentAttr = wp.inh(evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
