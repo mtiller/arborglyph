@@ -1,11 +1,6 @@
-import { Maybe, Nothing } from "purify-ts/Maybe";
-import { ScalarFunction } from "./attributes";
+import { Nothing } from "purify-ts/Maybe";
 import { evalParent, gevalDepth } from "./common";
-import {
-  ParentAttribute,
-  reifyInheritedAttribute,
-  WrappedTree,
-} from "./inherited";
+import { ParentAttribute, reifyInheritedAttribute } from "./inherited";
 import {
   findChild,
   indexBinaryTree,
@@ -13,6 +8,7 @@ import {
   sampleTree1,
   SimpleBinaryTree,
 } from "./testing";
+import { WrappedTree } from "./wrapped";
 
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {

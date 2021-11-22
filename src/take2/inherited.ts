@@ -1,7 +1,7 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { ScalarFunction } from "./attributes";
 import { NodeNotFoundError } from "./errors";
-import { TreeType, walkTree } from "./treetypes";
+import { childrenOfNode, TreeType, walkTree } from "./treetypes";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;
@@ -50,13 +50,6 @@ export interface ParentInformation<T, R> {
 export interface InheritedOptions<T> {
   p?: ParentFunc<T>;
   memoize?: "no" | "yes" | "pre";
-}
-
-export class WrappedTree<T extends object> {
-  constructor(public tree: TreeType<T>) {}
-  inh<R>(f: (args: InheritedArgs<T, R>) => R) {
-    return reifyInheritedAttribute<T, R>(this.tree, f, {});
-  }
 }
 
 /**
@@ -178,7 +171,7 @@ function findNodeAnEvaluateInherited<T, R>(
   }
 
   /** Next consider all children of the current node */
-  const children = tree.children(cur);
+  const children = childrenOfNode(tree, cur);
 
   /**
    * Construct the parent information for the current node (since the current
@@ -191,37 +184,18 @@ function findNodeAnEvaluateInherited<T, R>(
     },
   };
 
-  /** If the children are presented as an array... */
-  if (Array.isArray(children)) {
-    /** ...loop over them. */
-    for (const child of children) {
-      /** Call this function recursively to continue the search for `x` */
-      const result = findNodeAnEvaluateInherited(
-        tree,
-        f,
-        x,
-        child,
-        Just(information)
-      );
-      if (result.isJust()) {
-        // I'd like to return result, but that doesn't work.
-        return Just(result.extract());
-      }
-    }
-  } else {
-    /** If this tree has named children */
-    for (const child of Object.entries(children)) {
-      const result = findNodeAnEvaluateInherited(
-        tree,
-        f,
-        x,
-        child[1],
-        Just(information)
-      );
-      if (result.isJust()) {
-        // I'd like to return result, but that doesn't work.
-        return Just(result.extract());
-      }
+  for (const child of children) {
+    /** Call this function recursively to continue the search for `x` */
+    const result = findNodeAnEvaluateInherited(
+      tree,
+      f,
+      x,
+      child,
+      Just(information)
+    );
+    if (result.isJust()) {
+      // I'd like to return result, but that doesn't work.
+      return Just(result.extract());
     }
   }
   return Nothing;

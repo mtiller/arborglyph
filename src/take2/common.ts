@@ -1,7 +1,6 @@
 import { Maybe } from "purify-ts/Maybe";
-import { InheritedArgs, InheritedAttributeEvaluator } from "./inherited";
-import { SimpleBinaryTree } from "./testing";
-import { TreeType } from "./treetypes";
+import { InheritedAttributeEvaluator } from "./inherited";
+import { SyntheticAttributeEvaluator } from "./synthetic";
 
 /**
  * This file contains definitions of common attributes.
@@ -32,3 +31,31 @@ export const gevalDepth: InheritedAttributeEvaluator<object, number> = (node) =>
     Nothing: () => 0,
     Just: (p) => p.attr + 1,
   });
+
+export function descendents<T>(): SyntheticAttributeEvaluator<T, Set<T>> {
+  return (node) => {
+    return node.children.reduce<Set<T>>((r, c) => {
+      const cdesc = c.attr;
+      cdesc.forEach((elem) => {
+        r.add(elem);
+      });
+      r.add(c.node);
+      return r;
+    }, new Set<T>());
+  };
+}
+
+export function conditionalDescendents<T, C extends T>(
+  pred: (elem: T) => elem is C
+): SyntheticAttributeEvaluator<T, Set<C>> {
+  return (node) => {
+    return node.children.reduce<Set<C>>((r, c) => {
+      c.attr.forEach((elem) => {
+        if (pred(elem)) {
+          r.add(elem);
+        }
+      });
+      return r;
+    }, new Set<C>());
+  };
+}

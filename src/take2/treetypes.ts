@@ -41,3 +41,10 @@ export function walkTree<T>(cur: T, tree: TreeType<T>, f: (x: T) => void) {
     }
   }
 }
+
+export function childrenOfNode<T>(tree: TreeType<T>, cur: T): Array<T> {
+  const children = tree.children(cur);
+  return Array.isArray(children)
+    ? children
+    : Object.entries(children).map((x) => x[1]);
+}
