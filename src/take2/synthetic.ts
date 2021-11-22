@@ -1,5 +1,5 @@
 import { ScalarFunction } from "./attributes";
-import { NodeSuchChild } from "./errors";
+import { NodeSuchChild as NoSuchChild } from "./errors";
 import { childrenOfNode, TreeType, walkTree } from "./treetypes";
 import LRUCache from "lru-cache";
 
@@ -81,6 +81,11 @@ function baseSyntheticAttributeCalculation<T, R>(
   f: SyntheticAttributeEvaluator<T, R>
 ): ScalarFunction<T, R> {
   const ret = (x: T): R => {
+    // TODO: If we *cached* the children of a given node and check if they
+    // changed, we could avoid all this recreation of args (ala React.memo(()
+    // => ..., [x, childNodes])) This in turn, would allow us to enable
+    // "weakmap" caching of IComputedValues from MobX (I think).  So, potential
+    // performance gain.
     const childNodes = childrenOfNode<T>(tree, x);
     const children = childNodes.map((c): ChildInformation<T, R> => {
       return {
@@ -96,7 +101,7 @@ function baseSyntheticAttributeCalculation<T, R>(
       children: children,
       attr: (n: T) => {
         const child = children.find((c) => c.node === n);
-        if (child === undefined) throw new NodeSuchChild(x, n, tree);
+        if (child === undefined) throw new NoSuchChild(x, n, tree);
         return child.attr;
       },
     };

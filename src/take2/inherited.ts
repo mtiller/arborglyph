@@ -3,7 +3,6 @@ import { ScalarFunction } from "./attributes";
 import { NodeNotFoundError } from "./errors";
 import { childrenOfNode, TreeType, walkTree } from "./treetypes";
 import LRUCache from "lru-cache";
-import { Options } from "lru-cache";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;
