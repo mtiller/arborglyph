@@ -1,6 +1,7 @@
 import { ScalarFunction } from "./attributes";
 import { NodeSuchChild } from "./errors";
 import { childrenOfNode, TreeType, walkTree } from "./treetypes";
+import LRUCache from "lru-cache";
 
 export interface ChildInformation<T, R> {
   node: T;
@@ -23,8 +24,9 @@ export interface SyntheticArg<T, R> {
 
 export type SyntheticAttributeEvaluator<T, R> = (x: SyntheticArg<T, R>) => R;
 
-export interface SyntheticOptions<T> {
-  memoize?: "no" | "yes" | "pre";
+export interface SyntheticOptions<T, R> {
+  memoize?: "no" | "weakmap" | "lru";
+  lru?: LRUCache.Options<T, R>;
 }
 
 /**
@@ -40,41 +42,38 @@ export interface SyntheticOptions<T> {
 export function reifySyntheticAttribute<T extends object, R>(
   tree: TreeType<T>,
   evaluator: SyntheticAttributeEvaluator<T, R>,
-  opts: SyntheticOptions<T> = {}
+  opts: SyntheticOptions<T, R> = {}
 ): ScalarFunction<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? "no";
 
-  if (memo === "no") {
-    /** Build a function that can compute our attribute */
-    return baseSyntheticAttributeCalculation(tree, evaluator);
+  if (memo === "weakmap" || memo === "lru") {
+    /** If memoization is requested, first create storage for memoized values. */
+    const storage =
+      memo === "weakmap" ? new WeakMap<T, R>() : new LRUCache<T, R>(opts.lru);
+
+    /**
+     * Now create a special memoized wrapper that checks for memoized values and
+     * caches any attributes actually evaluated.
+     **/
+    const memoizeEvaluator: SyntheticAttributeEvaluator<T, R> = (args) => {
+      if (storage.has(args.node)) return storage.get(args.node) as R;
+      const ret = evaluator(args);
+      storage.set(args.node, ret);
+      return ret;
+    };
+
+    /** Create an attribute function using a memoizing attribute evaluator */
+    const memoed = baseSyntheticAttributeCalculation(tree, memoizeEvaluator);
+
+    // NB - I don't see any value to precomputing of synthetic attributes.  It doesn't really
+    // avoid the search that precomputing inherited attributes does.
+
+    // Return the memoizing attribute function.
+    return memoed;
   }
-
-  /** If memoization is requested, first create storage for memoized values. */
-  const storage = new WeakMap<T, R>();
-
-  /**
-   * Now create a special memoized wrapper that checks for memoized values and
-   * caches any attributes actually evaluated.
-   **/
-  const memoizeEvaluator: SyntheticAttributeEvaluator<T, R> = (args) => {
-    if (storage.has(args.node)) return storage.get(args.node) as R;
-    const ret = evaluator(args);
-    storage.set(args.node, ret);
-    return ret;
-  };
-
-  /** Create an attribute function using a memoizing attribute evaluator */
-  const memoed = baseSyntheticAttributeCalculation(tree, memoizeEvaluator);
-
-  /* If precomputing of the attribute for all nodes was selected... */
-  if (memo === "pre") {
-    // Walk the tree and invoke the function for every child
-    walkTree(tree.root, tree, memoed);
-  }
-
-  // Return the memoizing attribute function.
-  return memoed;
+  /** Build a function that can compute our attribute */
+  return baseSyntheticAttributeCalculation(tree, evaluator);
 }
 
 function baseSyntheticAttributeCalculation<T, R>(

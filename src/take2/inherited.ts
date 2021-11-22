@@ -2,6 +2,8 @@ import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { ScalarFunction } from "./attributes";
 import { NodeNotFoundError } from "./errors";
 import { childrenOfNode, TreeType, walkTree } from "./treetypes";
+import LRUCache from "lru-cache";
+import { Options } from "lru-cache";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;
@@ -47,9 +49,12 @@ export interface ParentInformation<T, R> {
 }
 
 /** Options when reifying an inherited attribute */
-export interface InheritedOptions<T> {
+export interface InheritedOptions<T, R> {
   p?: ParentFunc<T>;
-  memoize?: "no" | "yes" | "pre";
+  memoize?: "no" | "weakmap" | "lru";
+  /** Pre-evaluate all nodes */
+  pre?: boolean;
+  lru?: LRUCache.Options<T, R>;
 }
 
 /**
@@ -65,45 +70,53 @@ export interface InheritedOptions<T> {
 export function reifyInheritedAttribute<T extends object, R>(
   tree: TreeType<T>,
   evaluator: InheritedAttributeEvaluator<T, R>,
-  opts: InheritedOptions<T> = {}
+  opts: InheritedOptions<T, R> = {}
 ): ScalarFunction<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? "no";
+  const pre = opts.pre ?? false;
 
-  if (memo === "no") {
-    /** Build a function that can compute our attribute */
-    return baseInheritedAttributeCalculation(tree, evaluator, opts.p);
+  if (memo === "weakmap" || memo === "lru") {
+    /** If memoization is requested, first create storage for memoized values. */
+    const storage =
+      memo === "weakmap" ? new WeakMap<T, R>() : new LRUCache<T, R>(opts.lru);
+
+    /**
+     * Now create a special memoized wrapper that checks for memoized values and
+     * caches any attributes actually evaluated.
+     **/
+    const memoizeEvaluator: InheritedAttributeEvaluator<T, R> = (args) => {
+      if (storage.has(args.node)) return storage.get(args.node) as R;
+      const ret = evaluator(args);
+      storage.set(args.node, ret);
+      return ret;
+    };
+
+    /** Create an attribute function using a memoizing attribute evaluator */
+    const memoed = baseInheritedAttributeCalculation(
+      tree,
+      memoizeEvaluator,
+      opts.p
+    );
+
+    /* If precomputing of the attribute for all nodes was selected... */
+    // TODO: Defer this until the very first time the attribute is evaluated? (e.g., lazier)
+    if (pre) {
+      if (memo === "lru") {
+        console.warn(
+          "Precomputing with LRU cache map lead to wasted evaluations"
+        );
+      }
+      // Walk the tree and invoke the function for every child
+      walkTree(tree.root, tree, memoed);
+    }
+
+    // Return the memoizing attribute function.
+    return memoed;
   }
 
-  /** If memoization is requested, first create storage for memoized values. */
-  const storage = new WeakMap<T, R>();
-
-  /**
-   * Now create a special memoized wrapper that checks for memoized values and
-   * caches any attributes actually evaluated.
-   **/
-  const memoizeEvaluator: InheritedAttributeEvaluator<T, R> = (args) => {
-    if (storage.has(args.node)) return storage.get(args.node) as R;
-    const ret = evaluator(args);
-    storage.set(args.node, ret);
-    return ret;
-  };
-
-  /** Create an attribute function using a memoizing attribute evaluator */
-  const memoed = baseInheritedAttributeCalculation(
-    tree,
-    memoizeEvaluator,
-    opts.p
-  );
-
-  /* If precomputing of the attribute for all nodes was selected... */
-  if (memo === "pre") {
-    // Walk the tree and invoke the function for every child
-    walkTree(tree.root, tree, memoed);
-  }
-
-  // Return the memoizing attribute function.
-  return memoed;
+  /** Build a function that can compute our attribute but doesn't use caching */
+  return baseInheritedAttributeCalculation(tree, evaluator, opts.p);
 }
 
 /**

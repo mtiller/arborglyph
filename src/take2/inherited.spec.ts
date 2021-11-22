@@ -79,7 +79,7 @@ describe("Test inherited attribute functionalty", () => {
     };
 
     const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
-      memoize: "yes",
+      memoize: "weakmap",
     });
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
@@ -99,7 +99,8 @@ describe("Test inherited attribute functionalty", () => {
     };
 
     const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
-      memoize: "pre",
+      memoize: "weakmap",
+      pre: true,
     });
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
