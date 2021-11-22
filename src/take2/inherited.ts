@@ -43,7 +43,7 @@ export type InheritedNodeValue<E> = E extends InheritedAttributeEvaluator<
  **/
 export interface ParentInformation<T, R> {
   node: T;
-  attr: () => R;
+  attr: R;
 }
 
 /** Options when reifying an inherited attribute */
@@ -186,7 +186,9 @@ function findNodeAnEvaluateInherited<T, R>(
    **/
   const information: ParentInformation<T, R> = {
     node: cur,
-    attr: attr,
+    get attr() {
+      return attr();
+    },
   };
 
   /** If the children are presented as an array... */
@@ -239,6 +241,11 @@ function parentInformation<T, R>(
       const info = parentInformation(parent, pf, f);
       return f({ parent: info, node: x });
     };
-    return { node: x, attr: attr };
+    return {
+      node: x,
+      get attr() {
+        return attr();
+      },
+    };
   });
 }

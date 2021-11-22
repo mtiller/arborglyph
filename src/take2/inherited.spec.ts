@@ -1,6 +1,6 @@
 import { Maybe, Nothing } from "purify-ts/Maybe";
 import { ScalarFunction } from "./attributes";
-import { evalParent } from "./common";
+import { evalParent, gevalDepth } from "./common";
 import {
   ParentAttribute,
   reifyInheritedAttribute,
@@ -112,5 +112,25 @@ describe("Test inherited attribute functionalty", () => {
     const prrrr2 = parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
     expect(count).toEqual(15);
+  });
+
+  it("should find the depth of a sample tree", () => {
+    const tree = namedBinaryTree(sampleTree1);
+    const parentAttr = reifyInheritedAttribute(tree, gevalDepth);
+
+    expect(parentAttr(tree.root)).toEqual(0);
+
+    const l = findChild(sampleTree1, ["left"]);
+
+    const dl = parentAttr(l);
+    expect(dl).toEqual(1);
+
+    const ll = findChild(sampleTree1, ["left", "left"]);
+    const dll = parentAttr(ll);
+    expect(dll).toEqual(2);
+
+    const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
+    const drrrr = parentAttr(rrrr);
+    expect(drrrr).toEqual(4);
   });
 });
