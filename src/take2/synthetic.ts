@@ -49,17 +49,26 @@ export function reifySyntheticAttribute<T extends object, R>(
 
   if (memo === "weakmap" || memo === "lru") {
     /** If memoization is requested, first create storage for memoized values. */
-    const storage =
+    const resultStorage =
       memo === "weakmap" ? new WeakMap<T, R>() : new LRUCache<T, R>(opts.lru);
+    const childStorage = memo === "weakmap" ? new WeakMap<T, T[]>() : null;
 
     /**
      * Now create a special memoized wrapper that checks for memoized values and
      * caches any attributes actually evaluated.
      **/
     const memoizeEvaluator: SyntheticAttributeEvaluator<T, R> = (args) => {
-      if (storage.has(args.node)) return storage.get(args.node) as R;
+      const children = args.children.map((c) => c.node);
+      const cachedChildren = childStorage?.get(args.node) ?? children;
+      if (
+        resultStorage.has(args.node) &&
+        children.length === cachedChildren.length &&
+        children.every((c, i) => c === cachedChildren[i])
+      )
+        return resultStorage.get(args.node) as R;
       const ret = evaluator(args);
-      storage.set(args.node, ret);
+      resultStorage.set(args.node, ret);
+      childStorage?.set(args.node, children);
       return ret;
     };
 
