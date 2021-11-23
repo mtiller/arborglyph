@@ -1,6 +1,6 @@
 import { computed, IComputedValue, IComputedValueOptions } from "mobx";
-import { InheritedArgs, InheritedAttributeEvaluator } from "./inherited";
-import { SyntheticArg, SyntheticAttributeEvaluator } from "./synthetic";
+import { InheritedArgs, InheritedAttributeEvaluator } from "./kinds/inherited";
+import { SyntheticArg, SyntheticAttributeEvaluator } from "./kinds/synthetic";
 
 /**
  * THE TRICK

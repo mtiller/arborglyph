@@ -1,6 +1,6 @@
 import { ScalarFunction } from "./attributes";
-import { NodeSuchChild as NoSuchChild } from "./errors";
-import { childrenOfNode, ListChildren } from "./arbor";
+import { NodeSuchChild as NoSuchChild } from "../errors";
+import { childrenOfNode, ListChildren } from "../arbor";
 import LRUCache from "lru-cache";
 
 export interface ChildInformation<T, R> {

@@ -2,12 +2,12 @@ import {
   InheritedAttributeEvaluator,
   InheritedOptions,
   reifyInheritedAttribute,
-} from "./inherited";
+} from "./kinds/inherited";
 import {
   reifySyntheticAttribute,
   SyntheticAttributeEvaluator,
   SyntheticOptions,
-} from "./synthetic";
+} from "./kinds/synthetic";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is

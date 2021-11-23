@@ -1,9 +1,9 @@
 /** An implementation of the repmin example */
 
 import { findChild, fork, indexedBinaryChildren, leaf } from "./testing";
-import { ScalarFunction } from "./attributes";
-import { InheritedAttributeEvaluator } from "./inherited";
-import { SyntheticAttributeEvaluator } from "./synthetic";
+import { ScalarFunction } from "./kinds/attributes";
+import { InheritedAttributeEvaluator } from "./kinds/inherited";
+import { SyntheticAttributeEvaluator } from "./kinds/synthetic";
 import { sampleTree1, SimpleBinaryTree } from "./testing";
 import { Arbor } from "./arbor";
 import { comparer, configure, observable } from "mobx";

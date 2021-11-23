@@ -1,13 +1,13 @@
 import { observable } from "mobx";
-import { descendents } from "./common";
 import {
   indexedBinaryChildren,
   namedBinaryChildren,
   sampleTree1,
   SimpleBinaryTree,
-} from "./testing";
-import { Arbor } from "./arbor";
-import { computeableSynthetic } from "./mobx-helpers";
+} from "../testing";
+import { Arbor } from "../arbor";
+import { computeableSynthetic } from "../mobx-helpers";
+import { descendents } from "../attributes/descendents";
 
 describe("Test synthetic attribute evaluation", () => {
   describe("Tests for descendent attribute", () => {

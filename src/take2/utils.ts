@@ -1,4 +1,4 @@
-import { ScalarFunction } from "./attributes";
+import { ScalarFunction } from "./kinds/attributes";
 import { childrenOfNode, ListChildren } from "./arbor";
 
 export function treeRepr<T, R>(

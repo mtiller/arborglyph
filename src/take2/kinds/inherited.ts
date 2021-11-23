@@ -1,7 +1,7 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { ScalarFunction } from "./attributes";
-import { NodeNotFoundError } from "./errors";
-import { childrenOfNode, ListChildren, walkTree } from "./arbor";
+import { NodeNotFoundError } from "../errors";
+import { childrenOfNode, ListChildren, walkTree } from "../arbor";
 import LRUCache from "lru-cache";
 
 /** A parent function takes a given node and returns its parent, if it has one. */

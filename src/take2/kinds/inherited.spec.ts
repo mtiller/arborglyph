@@ -1,5 +1,4 @@
 import { Nothing } from "purify-ts/Maybe";
-import { evalParent, gevalDepth } from "./common";
 import { ParentAttribute } from "./inherited";
 import {
   findChild,
@@ -7,8 +6,10 @@ import {
   namedBinaryChildren,
   sampleTree1,
   SimpleBinaryTree,
-} from "./testing";
-import { Arbor } from "./arbor";
+} from "../testing";
+import { Arbor } from "../arbor";
+import { evalParent } from "../attributes/parent";
+import { gevalDepth } from "../attributes/depth";
 
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
