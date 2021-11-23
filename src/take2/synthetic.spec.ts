@@ -6,14 +6,14 @@ import {
   sampleTree1,
   SimpleBinaryTree,
 } from "./testing";
-import { WrappedTree } from "./wrapped";
+import { Arbor } from "./arbor";
 import { computeableSynthetic } from "./mobx-helpers";
 
 describe("Test synthetic attribute evaluation", () => {
   describe("Tests for descendent attribute", () => {
     it("should find all descendents", () => {
-      const itree = new WrappedTree(sampleTree1, indexedBinaryChildren);
-      const ntree = new WrappedTree(sampleTree1, namedBinaryChildren);
+      const itree = new Arbor(sampleTree1, indexedBinaryChildren);
+      const ntree = new Arbor(sampleTree1, namedBinaryChildren);
 
       let count = 0;
       const desc = descendents<SimpleBinaryTree>();
@@ -42,7 +42,7 @@ describe("Test synthetic attribute evaluation", () => {
       // compare sets from index and named trees
     });
     it("should find all descendents with caching", () => {
-      const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+      const tree = new Arbor(sampleTree1, indexedBinaryChildren);
 
       let count = 0;
       const desc = descendents<SimpleBinaryTree>();
@@ -68,7 +68,7 @@ describe("Test synthetic attribute evaluation", () => {
       // compare sets from index and named trees
     });
     it("should find all descendents with large LRU cache", () => {
-      const itree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+      const itree = new Arbor(sampleTree1, indexedBinaryChildren);
 
       let count = 0;
       const desc = descendents<SimpleBinaryTree>();
@@ -94,7 +94,7 @@ describe("Test synthetic attribute evaluation", () => {
       // compare sets from index and named trees
     });
     it("should find all descendents with small LRU cache", () => {
-      const itree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+      const itree = new Arbor(sampleTree1, indexedBinaryChildren);
 
       let count = 0;
       const desc = descendents<SimpleBinaryTree>();
@@ -123,7 +123,7 @@ describe("Test synthetic attribute evaluation", () => {
 
     it("should find all descendents using computedFn", () => {
       const root = observable(sampleTree1);
-      const itree = new WrappedTree(root, indexedBinaryChildren);
+      const itree = new Arbor(root, indexedBinaryChildren);
 
       let count = 0;
       const desc = computeableSynthetic(descendents<SimpleBinaryTree>());

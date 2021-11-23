@@ -1,4 +1,4 @@
-import { IndexedChildren, NamedChildren } from "./treetypes";
+import { IndexedChildren, NamedChildren } from "./arbor";
 
 export type SimpleBinaryTree =
   | { type: "fork"; left: SimpleBinaryTree; right: SimpleBinaryTree }

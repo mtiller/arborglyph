@@ -5,7 +5,7 @@ import { ScalarFunction } from "./attributes";
 import { InheritedAttributeEvaluator } from "./inherited";
 import { SyntheticAttributeEvaluator } from "./synthetic";
 import { sampleTree1, SimpleBinaryTree } from "./testing";
-import { WrappedTree } from "./wrapped";
+import { Arbor } from "./arbor";
 import { comparer, configure, observable } from "mobx";
 import { computeableInherited, computeableSynthetic } from "./mobx-helpers";
 
@@ -37,7 +37,7 @@ describe("Run some repmin test cases", () => {
   configure({ enforceActions: "never" });
 
   it("should handle a basic repmin", () => {
-    const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+    const tree = new Arbor(sampleTree1, indexedBinaryChildren);
     const min = tree.syn(evalMin);
     const globmin = tree.inh(evalGlobmin(min));
     const repmin = tree.syn(evalRepmin(globmin));
@@ -68,7 +68,7 @@ describe("Run some repmin test cases", () => {
     if (minElem.type === "fork") throw new Error("Expected a leaf"); // This is just to narrow the type.
 
     /** Now create a wrapped tree around the observable tree */
-    const tree = new WrappedTree(root, indexedBinaryChildren);
+    const tree = new Arbor(root, indexedBinaryChildren);
     expect(tree.root).toEqual(root);
     expect(tree.root).toEqual(root);
 
@@ -211,7 +211,7 @@ describe("Run some repmin test cases", () => {
     if (minElem.type === "fork") throw new Error("Expected a leaf"); // This is just to narrow the type.
 
     /** Now create a wrapped tree around the observable tree */
-    const tree = new WrappedTree(root, indexedBinaryChildren);
+    const tree = new Arbor(root, indexedBinaryChildren);
     expect(tree.root).toEqual(root);
     expect(tree.root).toEqual(root);
 

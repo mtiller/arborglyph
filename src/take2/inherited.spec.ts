@@ -1,6 +1,6 @@
 import { Nothing } from "purify-ts/Maybe";
 import { evalParent, gevalDepth } from "./common";
-import { ParentAttribute, reifyInheritedAttribute } from "./inherited";
+import { ParentAttribute } from "./inherited";
 import {
   findChild,
   indexedBinaryChildren,
@@ -8,11 +8,11 @@ import {
   sampleTree1,
   SimpleBinaryTree,
 } from "./testing";
-import { WrappedTree } from "./wrapped";
+import { Arbor } from "./arbor";
 
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
-    const tree = new WrappedTree(sampleTree1, namedBinaryChildren);
+    const tree = new Arbor(sampleTree1, namedBinaryChildren);
     const parentAttr = tree.inh(evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
@@ -40,7 +40,7 @@ describe("Test inherited attribute functionalty", () => {
     }
   });
   it("should find the parents of a sample tree with indexed children", () => {
-    const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+    const tree = new Arbor(sampleTree1, indexedBinaryChildren);
     const parentAttr = tree.inh(evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
@@ -69,7 +69,7 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them", () => {
-    const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+    const tree = new Arbor(sampleTree1, indexedBinaryChildren);
     let count = 0;
     const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
       count++;
@@ -90,7 +90,7 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {
-    const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+    const tree = new Arbor(sampleTree1, indexedBinaryChildren);
     let count = 0;
     const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
       count++;
@@ -111,7 +111,7 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the depth of a sample tree", () => {
-    const tree = new WrappedTree(sampleTree1, namedBinaryChildren);
+    const tree = new Arbor(sampleTree1, namedBinaryChildren);
     const parentAttr = tree.inh(gevalDepth);
 
     expect(parentAttr(tree.root)).toEqual(0);

@@ -1,5 +1,5 @@
 import { ScalarFunction } from "./attributes";
-import { childrenOfNode, ListChildren } from "./treetypes";
+import { childrenOfNode, ListChildren } from "./arbor";
 
 export function treeRepr<T, R>(
   cur: T,
