@@ -164,6 +164,8 @@ describe("Run some repmin test cases", () => {
     expect(maxElem.type === "leaf" && maxElem.value === 9).toEqual(true);
     if (maxElem.type !== "leaf") throw new Error("Expected leaf"); // This is just to narrow the type
 
+    maxElem.value = 12;
+
     /** And even the repmin tree! */
     expect(rootRepmin.get()).toEqual(
       fork(

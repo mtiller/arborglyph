@@ -1,28 +1,18 @@
-import { Attribute } from "./attributes";
+import { Attribute, AttributeDefinition } from "./attributes";
 import { NodeSuchChild as NoSuchChild } from "../errors";
-import { childrenOfNode, ListChildren } from "../arbor";
+import { Arbor, childrenOfNode, ListChildren } from "../arbor";
 import LRUCache from "lru-cache";
 
-export interface ChildInformation<T, R> {
-  node: T;
-  attr: R;
+export function defineSynthetic<T extends object, R>(
+  evaluator: SyntheticAttributeEvaluator<T, R>,
+  opts: SyntheticOptions<T, R> = {}
+): AttributeDefinition<T, R> {
+  return {
+    attach: (a: Arbor<T>) => {
+      return reifySyntheticAttribute(a.root, a.list, evaluator, opts);
+    },
+  };
 }
-
-/**
- * Arguments available when computing a synthetic attribute.
- *
- * Sometimes we will want to request the attribute value for a specific
- * child.  In that case, we can use `attr`.  In other cases, we might wish
- * to iterate over the children.  In that case, we use `children`.
- */
-export interface SyntheticArg<T, R> {
-  // siblings: Array<ChildInformation<T, R>>;
-  node: T;
-  attr: (child: T) => R;
-  children: Array<ChildInformation<T, R>>;
-}
-
-export type SyntheticAttributeEvaluator<T, R> = (x: SyntheticArg<T, R>) => R;
 
 export interface SyntheticOptions<T, R> {
   memoize?: "no" | "weakmap" | "lru";
@@ -125,3 +115,24 @@ function baseSyntheticAttributeCalculation<T, R>(
   };
   return ret;
 }
+
+export interface ChildInformation<T, R> {
+  node: T;
+  attr: R;
+}
+
+/**
+ * Arguments available when computing a synthetic attribute.
+ *
+ * Sometimes we will want to request the attribute value for a specific
+ * child.  In that case, we can use `attr`.  In other cases, we might wish
+ * to iterate over the children.  In that case, we use `children`.
+ */
+export interface SyntheticArg<T, R> {
+  // siblings: Array<ChildInformation<T, R>>;
+  node: T;
+  attr: (child: T) => R;
+  children: Array<ChildInformation<T, R>>;
+}
+
+export type SyntheticAttributeEvaluator<T, R> = (x: SyntheticArg<T, R>) => R;

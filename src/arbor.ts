@@ -1,3 +1,4 @@
+import { DerivedEvaluator } from "./kinds/derived";
 import {
   InheritedAttributeEvaluator,
   InheritedOptions,
@@ -8,6 +9,7 @@ import {
   SyntheticAttributeEvaluator,
   SyntheticOptions,
 } from "./kinds/synthetic";
+import { Attribute } from "./kinds/attributes";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -37,14 +39,19 @@ export class Arbor<T extends object> {
   inh<R>(
     f: InheritedAttributeEvaluator<T, R>,
     opts: InheritedOptions<T, R> = {}
-  ) {
+  ): Attribute<T, R> {
     return reifyInheritedAttribute<T, R>(this.root, this.list, f, opts);
   }
   syn<R>(
     f: SyntheticAttributeEvaluator<T, R>,
     opts: SyntheticOptions<T, R> = {}
-  ) {
+  ): Attribute<T, R> {
     return reifySyntheticAttribute<T, R>(this.root, this.list, f, opts);
+  }
+  // There are no options here mainly because memoization probably isn't useful.
+  der<R>(f: DerivedEvaluator<T, R>): Attribute<T, R> {
+    // TODO: As attribute gets expanded, more will probably be needed here.
+    return (x: T) => f(x);
   }
 }
 

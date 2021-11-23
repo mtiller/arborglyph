@@ -1,8 +1,8 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { NodeNotFoundError } from "../errors";
-import { childrenOfNode, ListChildren, walkTree } from "../arbor";
+import { Arbor, childrenOfNode, ListChildren, walkTree } from "../arbor";
 import LRUCache from "lru-cache";
-import { Attribute } from "./attributes";
+import { Attribute, AttributeDefinition } from "./attributes";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;
@@ -54,6 +54,17 @@ export interface InheritedOptions<T, R> {
   /** Pre-evaluate all nodes */
   eager?: boolean;
   lru?: LRUCache.Options<T, R>;
+}
+
+export function defineInherited<T extends object, R>(
+  evaluator: InheritedAttributeEvaluator<T, R>,
+  opts: InheritedOptions<T, R> = {}
+): AttributeDefinition<T, R> {
+  return {
+    attach: (a: Arbor<T>) => {
+      return reifyInheritedAttribute(a.root, a.list, evaluator, opts);
+    },
+  };
 }
 
 /**

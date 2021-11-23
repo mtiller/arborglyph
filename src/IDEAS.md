@@ -12,6 +12,8 @@
 
 1. Conditional attribute "wrapper" (Either + transform)
 
+1. Merge memoized value and children into a single entry.
+
 Add attributes in bulk (related ones) using desctructuring to get them out. (passing them a tree)
 
 Add rerooting to attributes (support file parsing and `immer`)

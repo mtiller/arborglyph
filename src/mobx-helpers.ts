@@ -1,6 +1,16 @@
 import { computed, IComputedValue, IComputedValueOptions } from "mobx";
-import { InheritedArgs, InheritedAttributeEvaluator } from "./kinds/inherited";
-import { SyntheticArg, SyntheticAttributeEvaluator } from "./kinds/synthetic";
+import { Arbor } from "./arbor";
+import { AttributeDefinition } from "./kinds/attributes";
+import {
+  InheritedArgs,
+  InheritedAttributeEvaluator,
+  InheritedOptions,
+} from "./kinds/inherited";
+import {
+  SyntheticArg,
+  SyntheticAttributeEvaluator,
+  SyntheticOptions,
+} from "./kinds/synthetic";
 
 /**
  * THE TRICK
@@ -101,5 +111,33 @@ export function computeableInherited<T, R>(
     };
     /** And then wrap the evaluator with computed so it returns a computed value */
     return computed(() => f(nargs), options);
+  };
+}
+
+export function defineComputedSynthetic<T extends object, R>(
+  f: SyntheticAttributeEvaluator<T, R>,
+  sopts?: SyntheticOptions<T, IComputedValue<R>>,
+  options?: IComputedValueOptions<R>
+): AttributeDefinition<T, R> {
+  return {
+    attach: (a: Arbor<T>) => {
+      const cs = computeableSynthetic(f, options);
+      const attr = a.syn(cs, sopts);
+      return a.der((x) => attr(x).get());
+    },
+  };
+}
+
+export function defineComputedInherited<T extends object, R>(
+  f: InheritedAttributeEvaluator<T, R>,
+  sopts?: InheritedOptions<T, IComputedValue<R>>,
+  options?: IComputedValueOptions<R>
+): AttributeDefinition<T, R> {
+  return {
+    attach: (a: Arbor<T>) => {
+      const cs = computeableInherited(f, options);
+      const attr = a.inh(cs, sopts);
+      return a.der((x) => attr(x).get());
+    },
   };
 }
