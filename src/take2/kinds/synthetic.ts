@@ -1,4 +1,4 @@
-import { ScalarFunction } from "./attributes";
+import { Attribute } from "./attributes";
 import { NodeSuchChild as NoSuchChild } from "../errors";
 import { childrenOfNode, ListChildren } from "../arbor";
 import LRUCache from "lru-cache";
@@ -44,7 +44,7 @@ export function reifySyntheticAttribute<T extends object, R>(
   list: ListChildren<T>,
   evaluator: SyntheticAttributeEvaluator<T, R>,
   opts: SyntheticOptions<T, R> = {}
-): ScalarFunction<T, R> {
+): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? "no";
 
@@ -94,7 +94,7 @@ function baseSyntheticAttributeCalculation<T, R>(
   root: T,
   list: ListChildren<T>,
   f: SyntheticAttributeEvaluator<T, R>
-): ScalarFunction<T, R> {
+): Attribute<T, R> {
   const ret = (x: T): R => {
     // TODO: If we *cached* the children of a given node and check if they
     // changed, we could avoid all this recreation of args (ala React.memo(()

@@ -100,7 +100,7 @@ describe("Test inherited attribute functionalty", () => {
 
     const parentAttr = tree.inh(parentFunc, {
       memoize: "weakmap",
-      pre: true,
+      eager: true,
     });
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);

@@ -16,8 +16,6 @@ Add attributes in bulk (related ones) using desctructuring to get them out. (pas
 
 Add rerooting to attributes (support file parsing and `immer`)
 
-Rename `pre` to `eager`?
-
 Companion libraries for `mobx`, `immer`, ...?
 
 # Open Questions
@@ -32,3 +30,4 @@ Companion libraries for `mobx`, `immer`, ...?
 
 - Combine TreeType, WrappedTree into a single tree manager class.
 - Attribute<T,R> extendws ScalarFunction<T,R>
+- Rename `pre` to `eager`?

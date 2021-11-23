@@ -1,8 +1,8 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
-import { ScalarFunction } from "./attributes";
 import { NodeNotFoundError } from "../errors";
 import { childrenOfNode, ListChildren, walkTree } from "../arbor";
 import LRUCache from "lru-cache";
+import { Attribute } from "../../attributes/attributes";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;
@@ -52,7 +52,7 @@ export interface InheritedOptions<T, R> {
   p?: ParentFunc<T>;
   memoize?: "no" | "weakmap" | "lru";
   /** Pre-evaluate all nodes */
-  pre?: boolean;
+  eager?: boolean;
   lru?: LRUCache.Options<T, R>;
 }
 
@@ -71,10 +71,10 @@ export function reifyInheritedAttribute<T extends object, R>(
   list: ListChildren<T>,
   evaluator: InheritedAttributeEvaluator<T, R>,
   opts: InheritedOptions<T, R> = {}
-): ScalarFunction<T, R> {
+): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? "no";
-  const pre = opts.pre ?? false;
+  const pre = opts.eager ?? false;
 
   if (memo === "weakmap" || memo === "lru") {
     /** If memoization is requested, first create storage for memoized values. */
@@ -132,7 +132,7 @@ function baseInheritedAttributeCalculation<T, R>(
   list: ListChildren<T>,
   f: InheritedAttributeEvaluator<T, R>,
   p?: ParentFunc<T>
-): ScalarFunction<T, R> {
+): Attribute<T, R> {
   return (x: T): R => {
     /**
      * If a parent function was supplied, then this is very easy
