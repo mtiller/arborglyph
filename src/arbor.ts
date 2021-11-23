@@ -21,6 +21,33 @@ export type IndexedChildren<T> = (x: T) => T[];
 export type NamedChildren<T> = (x: T) => Record<string, T>;
 export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
 
+export interface ArborOptions<T> {
+  // wrappers
+  // inh (options, no R)
+  // syn (options, no R)
+}
+
+/** A potentially convenient class, not sure what I think about it yet. */
+export class Arbor<T extends object> {
+  constructor(
+    public root: T,
+    public list: ListChildren<T>,
+    opts: ArborOptions<T> = {}
+  ) {}
+  inh<R>(
+    f: InheritedAttributeEvaluator<T, R>,
+    opts: InheritedOptions<T, R> = {}
+  ) {
+    return reifyInheritedAttribute<T, R>(this.root, this.list, f, opts);
+  }
+  syn<R>(
+    f: SyntheticAttributeEvaluator<T, R>,
+    opts: SyntheticOptions<T, R> = {}
+  ) {
+    return reifySyntheticAttribute<T, R>(this.root, this.list, f, opts);
+  }
+}
+
 /**
  * Walk the specified tree starting at node `cur`
  * @param cur Node we start walking from
@@ -48,31 +75,4 @@ export function childrenOfNode<T>(list: ListChildren<T>, cur: T): Array<T> {
   return Array.isArray(children)
     ? children
     : Object.entries(children).map((x) => x[1]);
-}
-
-export interface ArborOptions<T> {
-  // wrappers
-  // inh (options, no R)
-  // syn (options, no R)
-}
-
-/** A potentially convenient class, not sure what I think about it yet. */
-export class Arbor<T extends object> {
-  constructor(
-    public root: T,
-    public list: ListChildren<T>,
-    opts: ArborOptions<T> = {}
-  ) {}
-  inh<R>(
-    f: InheritedAttributeEvaluator<T, R>,
-    opts: InheritedOptions<T, R> = {}
-  ) {
-    return reifyInheritedAttribute<T, R>(this.root, this.list, f, opts);
-  }
-  syn<R>(
-    f: SyntheticAttributeEvaluator<T, R>,
-    opts: SyntheticOptions<T, R> = {}
-  ) {
-    return reifySyntheticAttribute<T, R>(this.root, this.list, f, opts);
-  }
 }

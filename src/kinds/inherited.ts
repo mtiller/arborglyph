@@ -2,7 +2,7 @@ import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { NodeNotFoundError } from "../errors";
 import { childrenOfNode, ListChildren, walkTree } from "../arbor";
 import LRUCache from "lru-cache";
-import { Attribute } from "../../attributes/attributes";
+import { Attribute } from "./attributes";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;

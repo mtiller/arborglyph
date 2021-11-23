@@ -6,7 +6,7 @@
   "scripts": {
     "prepublish": "tsc && jest",
     "build": "tsc",
-    "test": "jest take2"
+    "test": "jest"
   },
   "files": [
     "lib"
