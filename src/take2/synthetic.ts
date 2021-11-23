@@ -1,6 +1,6 @@
 import { ScalarFunction } from "./attributes";
 import { NodeSuchChild as NoSuchChild } from "./errors";
-import { childrenOfNode, TreeType, walkTree } from "./treetypes";
+import { childrenOfNode, ListChildren } from "./treetypes";
 import LRUCache from "lru-cache";
 
 export interface ChildInformation<T, R> {
@@ -40,7 +40,8 @@ export interface SyntheticOptions<T, R> {
  * @returns
  */
 export function reifySyntheticAttribute<T extends object, R>(
-  tree: TreeType<T>,
+  root: T,
+  list: ListChildren<T>,
   evaluator: SyntheticAttributeEvaluator<T, R>,
   opts: SyntheticOptions<T, R> = {}
 ): ScalarFunction<T, R> {
@@ -73,7 +74,11 @@ export function reifySyntheticAttribute<T extends object, R>(
     };
 
     /** Create an attribute function using a memoizing attribute evaluator */
-    const memoed = baseSyntheticAttributeCalculation(tree, memoizeEvaluator);
+    const memoed = baseSyntheticAttributeCalculation(
+      root,
+      list,
+      memoizeEvaluator
+    );
 
     // NB - I don't see any value to precomputing of synthetic attributes.  It doesn't really
     // avoid the search that precomputing inherited attributes does.
@@ -82,11 +87,12 @@ export function reifySyntheticAttribute<T extends object, R>(
     return memoed;
   }
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(tree, evaluator);
+  return baseSyntheticAttributeCalculation(root, list, evaluator);
 }
 
 function baseSyntheticAttributeCalculation<T, R>(
-  tree: TreeType<T>,
+  root: T,
+  list: ListChildren<T>,
   f: SyntheticAttributeEvaluator<T, R>
 ): ScalarFunction<T, R> {
   const ret = (x: T): R => {
@@ -95,7 +101,7 @@ function baseSyntheticAttributeCalculation<T, R>(
     // => ..., [x, childNodes])) This in turn, would allow us to enable
     // "weakmap" caching of IComputedValues from MobX (I think).  So, potential
     // performance gain.
-    const childNodes = childrenOfNode<T>(tree, x);
+    const childNodes = childrenOfNode<T>(list, x);
     const children = childNodes.map((c): ChildInformation<T, R> => {
       return {
         node: c,
@@ -110,7 +116,7 @@ function baseSyntheticAttributeCalculation<T, R>(
       children: children,
       attr: (n: T) => {
         const child = children.find((c) => c.node === n);
-        if (child === undefined) throw new NoSuchChild(x, n, tree);
+        if (child === undefined) throw new NoSuchChild(x, n, root);
         return child.attr;
       },
     };

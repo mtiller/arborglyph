@@ -1,7 +1,7 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { ScalarFunction } from "./attributes";
 import { NodeNotFoundError } from "./errors";
-import { childrenOfNode, TreeType, walkTree } from "./treetypes";
+import { childrenOfNode, ListChildren, walkTree } from "./treetypes";
 import LRUCache from "lru-cache";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
@@ -67,7 +67,8 @@ export interface InheritedOptions<T, R> {
  * @returns
  */
 export function reifyInheritedAttribute<T extends object, R>(
-  tree: TreeType<T>,
+  root: T,
+  list: ListChildren<T>,
   evaluator: InheritedAttributeEvaluator<T, R>,
   opts: InheritedOptions<T, R> = {}
 ): ScalarFunction<T, R> {
@@ -93,7 +94,8 @@ export function reifyInheritedAttribute<T extends object, R>(
 
     /** Create an attribute function using a memoizing attribute evaluator */
     const memoed = baseInheritedAttributeCalculation(
-      tree,
+      root,
+      list,
       memoizeEvaluator,
       opts.p
     );
@@ -107,7 +109,7 @@ export function reifyInheritedAttribute<T extends object, R>(
         );
       }
       // Walk the tree and invoke the function for every child
-      walkTree(tree.root, tree, memoed);
+      walkTree(root, list, memoed);
     }
 
     // Return the memoizing attribute function.
@@ -115,7 +117,7 @@ export function reifyInheritedAttribute<T extends object, R>(
   }
 
   /** Build a function that can compute our attribute but doesn't use caching */
-  return baseInheritedAttributeCalculation(tree, evaluator, opts.p);
+  return baseInheritedAttributeCalculation(root, list, evaluator, opts.p);
 }
 
 /**
@@ -126,7 +128,8 @@ export function reifyInheritedAttribute<T extends object, R>(
  * @returns A function that takes a node and returns the attribute value
  */
 function baseInheritedAttributeCalculation<T, R>(
-  tree: TreeType<T>,
+  root: T,
+  list: ListChildren<T>,
   f: InheritedAttributeEvaluator<T, R>,
   p?: ParentFunc<T>
 ): ScalarFunction<T, R> {
@@ -143,10 +146,10 @@ function baseInheritedAttributeCalculation<T, R>(
      * Otherwise (e.g., if the inherited attribute is meant to compute parents), then this is
      * a bit tricker
      **/
-    const search = findNodeAnEvaluateInherited(tree, f, x, tree.root, Nothing);
+    const search = findNodeAnEvaluateInherited(root, list, f, x, root, Nothing);
     return search.caseOf({
       Nothing: () => {
-        throw new NodeNotFoundError<T>(x, tree);
+        throw new NodeNotFoundError<T>(x, root);
       },
       Just: (x) => x,
     });
@@ -165,7 +168,8 @@ function baseInheritedAttributeCalculation<T, R>(
  * @returns
  */
 function findNodeAnEvaluateInherited<T, R>(
-  tree: TreeType<T>,
+  root: T,
+  list: ListChildren<T>,
   f: InheritedAttributeEvaluator<T, R>,
   x: T,
   cur: T,
@@ -183,7 +187,7 @@ function findNodeAnEvaluateInherited<T, R>(
   }
 
   /** Next consider all children of the current node */
-  const children = childrenOfNode(tree, cur);
+  const children = childrenOfNode(list, cur);
 
   /**
    * Construct the parent information for the current node (since the current
@@ -199,7 +203,8 @@ function findNodeAnEvaluateInherited<T, R>(
   for (const child of children) {
     /** Call this function recursively to continue the search for `x` */
     const result = findNodeAnEvaluateInherited(
-      tree,
+      root,
+      list,
       f,
       x,
       child,

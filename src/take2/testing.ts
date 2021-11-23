@@ -1,4 +1,4 @@
-import { IndexedTreeType, NamedTreeType } from "./treetypes";
+import { IndexedChildren, NamedChildren } from "./treetypes";
 
 export type SimpleBinaryTree =
   | { type: "fork"; left: SimpleBinaryTree; right: SimpleBinaryTree }
@@ -18,16 +18,9 @@ export const leaf = (n: number): SimpleBinaryTree => ({
   value: n,
 });
 
-export function indexBinaryTree(
-  t: SimpleBinaryTree
-): IndexedTreeType<SimpleBinaryTree> {
-  return {
-    root: t,
-    children: (n: SimpleBinaryTree) => {
-      return n.type == "fork" ? [n.left, n.right] : [];
-    },
-  };
-}
+export const indexedBinaryChildren: IndexedChildren<SimpleBinaryTree> = (
+  n: SimpleBinaryTree
+) => (n.type == "fork" ? [n.left, n.right] : []);
 
 export function findChild(
   t: SimpleBinaryTree,
@@ -45,16 +38,10 @@ export function findChild(
   throw new Error(`Unexpect path element ${next} for node of type ${t.type}`);
 }
 
-export function namedBinaryTree(
-  t: SimpleBinaryTree
-): NamedTreeType<SimpleBinaryTree> {
-  return {
-    root: t,
-    children: (n: SimpleBinaryTree): Record<string, SimpleBinaryTree> => {
-      return n.type == "fork" ? { left: n.left, right: n.right } : {};
-    },
-  };
-}
+export const namedBinaryChildren: NamedChildren<SimpleBinaryTree> = (
+  n: SimpleBinaryTree
+): Record<string, SimpleBinaryTree> =>
+  n.type == "fork" ? { left: n.left, right: n.right } : {};
 
 /**
  *                   .

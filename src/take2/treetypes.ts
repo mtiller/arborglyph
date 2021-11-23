@@ -6,19 +6,9 @@
  * visit every node.
  */
 
-/** A tree where children are represented as an array */
-export interface IndexedTreeType<T> {
-  root: T;
-  children: (x: T) => T[];
-}
-/** A tree where children are named */
-export interface NamedTreeType<T> {
-  root: T;
-  children: (x: T) => Record<string, T>;
-}
-
-/** A union of both tree types. */
-export type TreeType<T> = IndexedTreeType<T> | NamedTreeType<T>;
+export type IndexedChildren<T> = (x: T) => T[];
+export type NamedChildren<T> = (x: T) => Record<string, T>;
+export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
 
 /**
  * Walk the specified tree starting at node `cur`
@@ -26,24 +16,24 @@ export type TreeType<T> = IndexedTreeType<T> | NamedTreeType<T>;
  * @param tree The tree we are walking
  * @param f Function to evaluate at each node
  */
-export function walkTree<T>(cur: T, tree: TreeType<T>, f: (x: T) => void) {
+export function walkTree<T>(cur: T, list: ListChildren<T>, f: (x: T) => void) {
   f(cur);
-  const children = tree.children(cur);
+  const children = list(cur);
   if (Array.isArray(children)) {
     /** If this is an indexed tree... */
     for (const child of children) {
-      walkTree(child, tree, f);
+      walkTree(child, list, f);
     }
   } else {
     /** If this tree has named children */
     for (const child of Object.entries(children)) {
-      walkTree(child[1], tree, f);
+      walkTree(child[1], list, f);
     }
   }
 }
 
-export function childrenOfNode<T>(tree: TreeType<T>, cur: T): Array<T> {
-  const children = tree.children(cur);
+export function childrenOfNode<T>(list: ListChildren<T>, cur: T): Array<T> {
+  const children = list(cur);
   return Array.isArray(children)
     ? children
     : Object.entries(children).map((x) => x[1]);

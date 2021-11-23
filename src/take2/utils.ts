@@ -1,15 +1,15 @@
 import { ScalarFunction } from "./attributes";
-import { childrenOfNode, TreeType } from "./treetypes";
+import { childrenOfNode, ListChildren } from "./treetypes";
 
 export function treeRepr<T, R>(
-  tree: TreeType<T>,
+  cur: T,
+  list: ListChildren<T>,
   attr: ScalarFunction<T, R>,
-  cur: T = tree.root,
   prefix = ""
 ): string {
   let ret = `${prefix}${attr(cur)}`;
-  for (const child of childrenOfNode(tree, cur)) {
-    ret += `\n${treeRepr(tree, attr, child, prefix + "  ")}`;
+  for (const child of childrenOfNode(list, cur)) {
+    ret += `\n${treeRepr(child, list, attr, prefix + "  ")}`;
   }
   return ret;
 }

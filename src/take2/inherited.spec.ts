@@ -3,8 +3,8 @@ import { evalParent, gevalDepth } from "./common";
 import { ParentAttribute, reifyInheritedAttribute } from "./inherited";
 import {
   findChild,
-  indexBinaryTree,
-  namedBinaryTree,
+  indexedBinaryChildren,
+  namedBinaryChildren,
   sampleTree1,
   SimpleBinaryTree,
 } from "./testing";
@@ -12,8 +12,8 @@ import { WrappedTree } from "./wrapped";
 
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
-    const tree = namedBinaryTree(sampleTree1);
-    const parentAttr = reifyInheritedAttribute(tree, evalParent());
+    const tree = new WrappedTree(sampleTree1, namedBinaryChildren);
+    const parentAttr = tree.inh(evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -40,10 +40,8 @@ describe("Test inherited attribute functionalty", () => {
     }
   });
   it("should find the parents of a sample tree with indexed children", () => {
-    const tree = indexBinaryTree(sampleTree1);
-
-    const wp = new WrappedTree(tree);
-    const parentAttr = wp.inh(evalParent());
+    const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
+    const parentAttr = tree.inh(evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -71,34 +69,35 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them", () => {
-    const tree = indexBinaryTree(sampleTree1);
+    const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
     let count = 0;
     const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
       count++;
       return parent.map((x) => x.node);
     };
 
-    const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
+    const parentAttr = tree.inh(parentFunc, {
       memoize: "weakmap",
     });
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
     const prrrr = parentAttr(rrrr);
-    expect(count).toEqual(1);
-    const prrrr2 = parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
+    expect(count).toEqual(1);
+
+    parentAttr(rrrr);
     expect(count).toEqual(1);
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {
-    const tree = indexBinaryTree(sampleTree1);
+    const tree = new WrappedTree(sampleTree1, indexedBinaryChildren);
     let count = 0;
     const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
       count++;
       return parent.map((x) => x.node);
     };
 
-    const parentAttr = reifyInheritedAttribute(tree, parentFunc, {
+    const parentAttr = tree.inh(parentFunc, {
       memoize: "weakmap",
       pre: true,
     });
@@ -112,8 +111,8 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the depth of a sample tree", () => {
-    const tree = namedBinaryTree(sampleTree1);
-    const parentAttr = reifyInheritedAttribute(tree, gevalDepth);
+    const tree = new WrappedTree(sampleTree1, namedBinaryChildren);
+    const parentAttr = tree.inh(gevalDepth);
 
     expect(parentAttr(tree.root)).toEqual(0);
 
