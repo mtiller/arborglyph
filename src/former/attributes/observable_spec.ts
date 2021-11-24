@@ -36,7 +36,9 @@ describe("Test compatibility with mobx", () => {
       },
     });
     expect(foo.c).toEqual(14);
-    action(() => { foo.a = 5} )();
+    action(() => {
+      foo.a = 5;
+    })();
     // expect(count).toEqual(2);
     expect(foo.c).toEqual(12);
   });
@@ -96,14 +98,14 @@ describe("Test compatibility with mobx", () => {
       }
     );
 
-    const attributes = new ArborGlyph(map).add(sum).done()
+    const attributes = new ArborGlyph(map).add(sum).done();
 
-    expect(data.a[0][0].b).toEqual(5)
-    expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
+    expect(data.a[0][0].b).toEqual(5);
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(5);
     expect(attributes.anno(data).sum).toEqual(45);
     data.a[0][0].b = 6;
-    expect(data.a[0][0].b).toEqual(6)
-    expect(attributes.anno(data.a[0][0]).sum).toEqual(6)
+    expect(data.a[0][0].b).toEqual(6);
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(6);
     expect(attributes.anno(data).sum).toEqual(46);
   });
 
@@ -130,38 +132,42 @@ describe("Test compatibility with mobx", () => {
       }
     );
 
-    const attributes = new ArborGlyph(map).add(sum).done()
+    const attributes = new ArborGlyph(map).add(sum).done();
 
-    expect(data.a[0][0].b).toEqual(5)
-    expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
+    expect(data.a[0][0].b).toEqual(5);
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(5);
     expect(attributes.anno(data).sum).toEqual(45);
 
     const nn = map.nodes.size;
-    /** 
+    /**
      * What is essential here is that when we make a change
      * to the **topology** of the tree, we must adjust the
      * underlying tree map and ensure all "new" nodes in the
      * tree are annotated.
      */
     action(() => {
-      data.a[0] = [{ b: 6 }]
-      attributes.reannotate(data.a)
+      data.a[0] = [{ b: 6 }];
+      attributes.reannotate(data.a);
     })();
     expect(map.nodes.size).toEqual(nn);
 
-    expect(data.a[0][0].b).toEqual(6)
-    expect(attributes.anno(data.a[0][0]).sum).toEqual(6)
-    expect(attributes.anno(data.a[0]).sum).toEqual(6)
+    expect(data.a[0][0].b).toEqual(6);
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(6);
+    expect(attributes.anno(data.a[0]).sum).toEqual(6);
     expect(attributes.anno(data).sum).toEqual(46);
   });
 
   it("should observe changes in tree structure", () => {
-    const data = makeAutoObservable({
-      a: [[{ b: 5 }]],
-      c: { d: [{ e: 7, f: 8 }] },
-      g: 2,
-      h: [9, 2, 3, 4, 5],
-    }, {}, { deep: true, proxy: true });
+    const data = makeAutoObservable(
+      {
+        a: [[{ b: 5 }]],
+        c: { d: [{ e: 7, f: 8 }] },
+        g: 2,
+        h: [9, 2, 3, 4, 5],
+      },
+      {},
+      { deep: true, proxy: true }
+    );
     const visitor = new ObjectVisitor(data, isObject);
     const map = TreeMap.create(visitor);
 
@@ -179,48 +185,57 @@ describe("Test compatibility with mobx", () => {
       }
     );
 
-    const attributes = new ArborGlyph(map).add(sum).done()
+    const attributes = new ArborGlyph(map).add(sum).done();
 
-    expect(data.a[0][0].b).toEqual(5)
-    expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
+    expect(data.a[0][0].b).toEqual(5);
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(5);
     expect(attributes.anno(data).sum).toEqual(45);
 
     const reactions: IReactionDisposer[] = [];
-    [...map.nodes].forEach(n => {
-      reactions.push(reaction(() => visitor.children(n), () => { 
-        attributes.reannotate(n);
-      }));
-    })
+    [...map.nodes].forEach((n) => {
+      reactions.push(
+        reaction(
+          () => visitor.children(n),
+          () => {
+            attributes.reannotate(n);
+          }
+        )
+      );
+    });
 
     const nn = map.nodes.size;
-    /** 
+    /**
      * What is essential here is that when we make a change
      * to the **topology** of the tree, we must adjust the
      * underlying tree map and ensure all "new" nodes in the
      * tree are annotated.
      */
     action(() => {
-      data.a[0] = [{ b: 6 }]
+      data.a[0] = [{ b: 6 }];
       // This works, but we want to find a way to automate this.
       // attributes.reannotate(map.root);
     })();
     expect(map.nodes.size).toEqual(nn);
 
-    expect(data.a[0][0].b).toEqual(6)
-    expect(attributes.anno(data.a[0][0]).sum).toEqual(6)
-    expect(attributes.anno(data.a[0]).sum).toEqual(6)
+    expect(data.a[0][0].b).toEqual(6);
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(6);
+    expect(attributes.anno(data.a[0]).sum).toEqual(6);
     expect(attributes.anno(data).sum).toEqual(46);
 
-    reactions.forEach(x => x());
+    reactions.forEach((x) => x());
   });
 
   it("should catch cases where the tree hasn't been properly reannotated", () => {
-    const data = makeAutoObservable({
-      a: [[{ b: 5 }]],
-      c: { d: [{ e: 7, f: 8 }] },
-      g: 2,
-      h: [9, 2, 3, 4, 5],
-    }, {}, { deep: true, proxy: true });
+    const data = makeAutoObservable(
+      {
+        a: [[{ b: 5 }]],
+        c: { d: [{ e: 7, f: 8 }] },
+        g: 2,
+        h: [9, 2, 3, 4, 5],
+      },
+      {},
+      { deep: true, proxy: true }
+    );
     const visitor = new ObjectVisitor(data, isObject);
     const map = TreeMap.create(visitor);
 
@@ -238,27 +253,29 @@ describe("Test compatibility with mobx", () => {
       }
     );
 
-    const attributes = new ArborGlyph(map).add(sum).done()
+    const attributes = new ArborGlyph(map).add(sum).done();
 
-    expect(data.a[0][0].b).toEqual(5)
-    expect(attributes.anno(data.a[0][0]).sum).toEqual(5)
+    expect(data.a[0][0].b).toEqual(5);
+    expect(attributes.anno(data.a[0][0]).sum).toEqual(5);
     expect(attributes.anno(data).sum).toEqual(45);
 
     const nn = map.nodes.size;
-    /** 
+    /**
      * What is essential here is that when we make a change
      * to the **topology** of the tree, we must adjust the
      * underlying tree map and ensure all "new" nodes in the
      * tree are annotated.
      */
     action(() => {
-      data.a[0] = [{ b: 6 }]
+      data.a[0] = [{ b: 6 }];
     })();
     expect(map.nodes.size).toEqual(nn);
 
-    expect(data.a[0][0].b).toEqual(6)
-    expect(() => attributes.anno(data.a[0][0]).sum).toThrow("Node is not annotated.  Did you make a topological change and forget to run 'reannotate()?");
-  })
+    expect(data.a[0][0].b).toEqual(6);
+    expect(() => attributes.anno(data.a[0][0]).sum).toThrow(
+      "Node is not annotated.  Did you make a topological change and forget to run 'reannotate()?"
+    );
+  });
 
   it.skip("should handle proxy objects", () => {
     const data = { x: 5, y: "hello" };

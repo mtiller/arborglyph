@@ -19,7 +19,7 @@ export type SyntheticEvaluationWrapper<T> = <S extends T, R>(
 ) => SyntheticAttributeEvaluator<S, R>;
 
 export interface SyntheticOptions<T, R> {
-  wrapper?: SyntheticEvaluationWrapper<T>;
+  wrappers?: Array<SyntheticEvaluationWrapper<T>>;
   memoize?: "no" | "weakmap" | "lru";
   lru?: LRUOptions;
 }
@@ -59,44 +59,6 @@ export function reifySyntheticAttribute<T extends object, R>(
     );
   }
 
-  // if (memo === "weakmap" || memo === "lru") {
-  //   /** If memoization is requested, first create storage for memoized values. */
-  //   const resultStorage =
-  //     memo === "weakmap" ? new WeakMap<T, R>() : new LRUCache<T, R>(opts.lru);
-  //   const childStorage = memo === "weakmap" ? new WeakMap<T, T[]>() : null;
-
-  //   /**
-  //    * Now create a special memoized wrapper that checks for memoized values and
-  //    * caches any attributes actually evaluated.
-  //    **/
-  //   const memoizeEvaluator: SyntheticAttributeEvaluator<T, R> = (args) => {
-  //     const children = args.children.map((c) => c.node);
-  //     const cachedChildren = childStorage?.get(args.node) ?? children;
-  //     if (
-  //       resultStorage.has(args.node) &&
-  //       children.length === cachedChildren.length &&
-  //       children.every((c, i) => c === cachedChildren[i])
-  //     )
-  //       return resultStorage.get(args.node) as R;
-  //     const ret = evaluator(args);
-  //     resultStorage.set(args.node, ret);
-  //     childStorage?.set(args.node, children);
-  //     return ret;
-  //   };
-
-  //   /** Create an attribute function using a memoizing attribute evaluator */
-  //   const memoed = baseSyntheticAttributeCalculation(
-  //     root,
-  //     list,
-  //     memoizeEvaluator
-  //   );
-
-  //   // NB - I don't see any value to precomputing of synthetic attributes.  It doesn't really
-  //   // avoid the search that precomputing inherited attributes does.
-
-  //   // Return the memoizing attribute function.
-  //   return memoed;
-  // }
   /** Build a function that can compute our attribute */
   return baseSyntheticAttributeCalculation(root, list, evaluator);
 }
@@ -107,11 +69,6 @@ function baseSyntheticAttributeCalculation<T, R>(
   f: SyntheticAttributeEvaluator<T, R>
 ): Attribute<T, R> {
   const ret = (x: T): R => {
-    // TODO: If we *cached* the children of a given node and check if they
-    // changed, we could avoid all this recreation of args (ala React.memo(()
-    // => ..., [x, childNodes])) This in turn, would allow us to enable
-    // "weakmap" caching of IComputedValues from MobX (I think).  So, potential
-    // performance gain.
     const childNodes = childrenOfNode<T>(list, x);
     const children = childNodes.map((c): ChildInformation<T, R> => {
       return {
@@ -158,33 +115,57 @@ export interface SyntheticArg<T, R> {
 
 export type SyntheticAttributeEvaluator<T, R> = (x: SyntheticArg<T, R>) => R;
 
+interface EvaluationRecord<T, R> {
+  result: R;
+  children: T[];
+}
+export interface CacheStorage<T, R> {
+  has(key: T): boolean;
+  get(key: T): R | undefined;
+  set(key: T, value: R): void;
+}
+
 export const weakmapWrapper: SyntheticEvaluationWrapper<object> = <
   T extends object,
   R
 >(
   evaluator: SyntheticAttributeEvaluator<T, R>
 ): SyntheticAttributeEvaluator<T, R> => {
-  const resultStorage = new WeakMap<T, R>();
-  const childStorage = new WeakMap<T, T[]>();
+  const cache = new WeakMap<T, EvaluationRecord<T, R>>();
 
-  return (args) => {
-    const children = args.children.map((c) => c.node);
-    const cachedChildren = childStorage?.get(args.node) ?? children;
-    if (
-      resultStorage.has(args.node) &&
-      children.length === cachedChildren.length &&
-      children.every((c, i) => c === cachedChildren[i])
-    )
-      return resultStorage.get(args.node) as R;
-    const ret = evaluator(args);
-    resultStorage.set(args.node, ret);
-    childStorage?.set(args.node, children);
-    return ret;
-  };
+  return wrapWithMap(cache, evaluator);
 };
+
+function wrapWithMap<T extends object, R>(
+  childStorage: CacheStorage<T, EvaluationRecord<T, R>>,
+  evaluator: SyntheticAttributeEvaluator<T, R>
+): SyntheticAttributeEvaluator<T, R> {
+  return (args: SyntheticArg<T, R>) => {
+    const children = args.children.map((c) => c.node);
+    if (childStorage.has(args.node)) {
+      const entry = childStorage.get(args.node);
+      if (entry === undefined)
+        throw new Error(
+          "Expected cached entry, found none...this should not happen"
+        );
+      const cachedChildren = entry.children;
+      const cachedResult = entry.result;
+      if (
+        children.length === cachedChildren.length &&
+        children.every((c, i) => c === cachedChildren[i])
+      )
+        return cachedResult;
+    }
+    const result = evaluator(args);
+    childStorage.set(args.node, { result, children });
+    return result;
+  };
+}
 
 export interface LRUOptions {
   max?: number;
+  maxAge?: number;
+  length?: (value: any, key?: any) => number;
 }
 
 export function lruWrapper(
@@ -193,20 +174,8 @@ export function lruWrapper(
   return <T extends object, R>(
     evaluator: SyntheticAttributeEvaluator<T, R>
   ): SyntheticAttributeEvaluator<T, R> => {
-    const resultStorage = new LRUCache<T, R>(opts);
+    const cache = new LRUCache<T, EvaluationRecord<T, R>>(opts);
 
-    return (args) => {
-      const children = args.children.map((c) => c.node);
-      const cachedChildren = children;
-      if (
-        resultStorage.has(args.node) &&
-        children.length === cachedChildren.length &&
-        children.every((c, i) => c === cachedChildren[i])
-      )
-        return resultStorage.get(args.node) as R;
-      const ret = evaluator(args);
-      resultStorage.set(args.node, ret);
-      return ret;
-    };
+    return wrapWithMap(cache, evaluator);
   };
 }

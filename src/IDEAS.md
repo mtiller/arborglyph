@@ -1,10 +1,6 @@
 # Ideas
 
-1. Add derived type (skips all tree walking), no caching, no eager evaluation. Transform other attributes.
-
 1. Get rid of get.
-
-1. Add path attribute + name table
 
 1. Add generic wrapper for caching (LRU, weakmap, etc)
 
@@ -33,3 +29,5 @@ Companion libraries for `mobx`, `immer`, ...?
 - Combine TreeType, WrappedTree into a single tree manager class.
 - Attribute<T,R> extendws ScalarFunction<T,R>
 - Rename `pre` to `eager`?
+- Add path attribute + name table
+- Add derived type (skips all tree walking), no caching, no eager evaluation. Transform other attributes.

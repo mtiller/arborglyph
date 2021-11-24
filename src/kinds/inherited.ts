@@ -4,49 +4,6 @@ import { Arbor, childrenOfNode, ListChildren, walkTree } from "../arbor";
 import LRUCache from "lru-cache";
 import { Attribute, AttributeDefinition } from "./attributes";
 
-/** A parent function takes a given node and returns its parent, if it has one. */
-export type ParentFunc<T> = (x: T) => Maybe<T>;
-
-/** This is the information available when evaluating an inherited attribute. */
-export interface InheritedArgs<T, R> {
-  /** The node for which we are evaluating the attribute. */
-  node: T;
-  /** Information about the parent (if this node has a parent) */
-  parent: Maybe<ParentInformation<T, R>>;
-}
-
-/**
- * An inherited attribute evaluator takes `InheritedArgs` as an argument and
- * returns the attribute value.
- **/
-export type InheritedAttributeEvaluator<T, R> = (
-  args: InheritedArgs<T, R>
-) => R;
-/** A parent attribute is a special case of an inherited attribute */
-export type ParentAttribute<T> = InheritedAttributeEvaluator<T, Maybe<T>>;
-
-export type InheritedNodeType<E> = E extends InheritedAttributeEvaluator<
-  infer T,
-  any
->
-  ? T
-  : unknown;
-export type InheritedNodeValue<E> = E extends InheritedAttributeEvaluator<
-  any,
-  infer R
->
-  ? R
-  : unknown;
-
-/**
- * This is the information the inherited attribute evaluator is given about the
- * parent node **if it exists**.
- **/
-export interface ParentInformation<T, R> {
-  node: T;
-  attr: R;
-}
-
 /** Options when reifying an inherited attribute */
 export interface InheritedOptions<T, R> {
   p?: ParentFunc<T>;
@@ -54,17 +11,6 @@ export interface InheritedOptions<T, R> {
   /** Pre-evaluate all nodes */
   eager?: boolean;
   lru?: LRUCache.Options<T, R>;
-}
-
-export function defineInherited<T extends object, R>(
-  evaluator: InheritedAttributeEvaluator<T, R>,
-  opts: InheritedOptions<T, R> = {}
-): AttributeDefinition<T, R> {
-  return {
-    attach: (a: Arbor<T>) => {
-      return reifyInheritedAttribute(a.root, a.list, evaluator, opts);
-    },
-  };
 }
 
 /**
@@ -167,6 +113,49 @@ function baseInheritedAttributeCalculation<T, R>(
   };
 }
 
+/** A parent function takes a given node and returns its parent, if it has one. */
+export type ParentFunc<T> = (x: T) => Maybe<T>;
+
+/** This is the information available when evaluating an inherited attribute. */
+export interface InheritedArgs<T, R> {
+  /** The node for which we are evaluating the attribute. */
+  node: T;
+  /** Information about the parent (if this node has a parent) */
+  parent: Maybe<ParentInformation<T, R>>;
+}
+
+/**
+ * An inherited attribute evaluator takes `InheritedArgs` as an argument and
+ * returns the attribute value.
+ **/
+export type InheritedAttributeEvaluator<T, R> = (
+  args: InheritedArgs<T, R>
+) => R;
+/** A parent attribute is a special case of an inherited attribute */
+export type ParentAttribute<T> = InheritedAttributeEvaluator<T, Maybe<T>>;
+
+export type InheritedNodeType<E> = E extends InheritedAttributeEvaluator<
+  infer T,
+  any
+>
+  ? T
+  : unknown;
+export type InheritedNodeValue<E> = E extends InheritedAttributeEvaluator<
+  any,
+  infer R
+>
+  ? R
+  : unknown;
+
+/**
+ * This is the information the inherited attribute evaluator is given about the
+ * parent node **if it exists**.
+ **/
+export interface ParentInformation<T, R> {
+  node: T;
+  attr: R;
+}
+
 /**
  * This function searches the tree for node `x` and once it finds it, it
  * evaluates the inherited attribute for it.
@@ -250,4 +239,15 @@ function parentInformation<T, R>(
       },
     };
   });
+}
+
+export function defineInherited<T extends object, R>(
+  evaluator: InheritedAttributeEvaluator<T, R>,
+  opts: InheritedOptions<T, R> = {}
+): AttributeDefinition<T, R> {
+  return {
+    attach: (a: Arbor<T>) => {
+      return reifyInheritedAttribute(a.root, a.list, evaluator, opts);
+    },
+  };
 }
