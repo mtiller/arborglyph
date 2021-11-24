@@ -10,6 +10,7 @@ import {
   SyntheticOptions,
 } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
+import { AttributeDefinition } from "./kinds/definitions";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -36,6 +37,20 @@ export class Arbor<T extends object> {
     public list: ListChildren<T>,
     opts: ArborOptions<T> = {}
   ) {}
+  add<R>(def: AttributeDefinition<T, R>) {
+    switch (def.type) {
+      case "syn": {
+        return reifySyntheticAttribute<T, R>(this.root, this.list, def.f, {});
+      }
+      case "inh": {
+        return reifyInheritedAttribute<T, R>(this.root, this.list, def.f, {});
+      }
+      case "der": {
+        // TODO: As attribute gets expanded, more will probably be needed here.
+        return (x: T) => def.f(x);
+      }
+    }
+  }
   inh<R>(
     f: InheritedAttributeEvaluator<T, R>,
     opts: InheritedOptions<T, R> = {}

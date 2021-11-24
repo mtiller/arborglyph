@@ -8,14 +8,14 @@ import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
 import { comparer, configure, observable } from "mobx";
 import { computeableInherited, computeableSynthetic } from "../mobx-helpers";
+import { synthetic } from "../kinds/definitions";
 
-export const evalMin: SyntheticAttributeEvaluator<SimpleBinaryTree, number> = ({
-  node,
-  attr,
-}): number =>
-  node.type === "leaf"
-    ? node.value
-    : Math.min(attr(node.left), attr(node.right));
+export const evalMin = synthetic<SimpleBinaryTree, number>(
+  ({ node, attr }): number =>
+    node.type === "leaf"
+      ? node.value
+      : Math.min(attr(node.left), attr(node.right))
+);
 
 export function evalGlobmin(
   min: ScalarFunction<SimpleBinaryTree, number>
@@ -38,7 +38,7 @@ describe("Run some repmin test cases", () => {
 
   it("should handle a basic repmin", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
-    const min = tree.syn(evalMin);
+    const min = tree.add(evalMin);
     const globmin = tree.inh(evalGlobmin(min));
     const repmin = tree.syn(evalRepmin(globmin));
 
@@ -76,7 +76,7 @@ describe("Run some repmin test cases", () => {
 
     /** Now define the min attribute */
     const min = tree.syn(
-      computeableSynthetic<SimpleBinaryTree, number>(evalMin, {
+      computeableSynthetic<SimpleBinaryTree, number>(evalMin.f, {
         keepAlive: true,
         equals: comparer.shallow,
       }),
@@ -221,7 +221,7 @@ describe("Run some repmin test cases", () => {
 
     /** Now define the min attribute */
     const min = tree.syn(
-      computeableSynthetic<SimpleBinaryTree, number>(evalMin, {
+      computeableSynthetic<SimpleBinaryTree, number>(evalMin.f, {
         keepAlive: true,
         equals: comparer.shallow,
       }),
