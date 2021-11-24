@@ -1,6 +1,6 @@
 import { InheritedAttributeEvaluator } from "..";
 
-export function evalName<T>(): InheritedAttributeEvaluator<T, string> {
+export function evalPath<T>(): InheritedAttributeEvaluator<T, string> {
   return ({ node, parent }) => {
     return parent.caseOf({
       Nothing: () => "root",
