@@ -2,6 +2,7 @@ import { Just, Nothing } from "purify-ts/Maybe";
 import { Arbor } from "../arbor";
 import { symbolTableEvaluator } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";
+import { synthetic } from "../kinds/definitions";
 import { namedBinaryChildren, sampleTree1, SimpleBinaryTree } from "../testing";
 
 describe("Example of building a symbol table", () => {
@@ -9,7 +10,7 @@ describe("Example of building a symbol table", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
 
     const path = tree.inh(evalPath());
-    const table = tree.syn(symbolTableEvaluator(path));
+    const table = tree.add(synthetic(symbolTableEvaluator(path)));
 
     const rtable = table(tree.root);
     expect(new Set([...table(tree.root).keys()])).toEqual(
@@ -43,7 +44,7 @@ describe("Example of building a symbol table", () => {
     const leafpath = tree.der((node) =>
       node.type === "leaf" ? Just(path(node)) : Nothing
     );
-    const table = tree.syn(symbolTableEvaluator(leafpath));
+    const table = tree.add(synthetic(symbolTableEvaluator(leafpath)));
 
     // TODO: Create primitives so we know the values in the map can be narrowed to Leaf
     const rtable = table(tree.root);

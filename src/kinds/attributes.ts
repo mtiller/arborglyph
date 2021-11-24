@@ -7,6 +7,6 @@ export interface Attribute<T, R> extends ScalarFunction<T, R> {
   // reroot(): void;
 }
 
-export interface AttributeDefinition<T extends object, R> {
-  attach(tree: Arbor<T>): Attribute<T, R>;
-}
+// export interface AttributeDefinition<T extends object, R> {
+//   attach(tree: Arbor<T>): Attribute<T, R>;
+// }

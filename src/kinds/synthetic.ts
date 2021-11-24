@@ -1,18 +1,18 @@
-import { Attribute, AttributeDefinition } from "./attributes";
+import { Attribute } from "./attributes";
 import { NodeSuchChild as NoSuchChild } from "../errors";
 import { Arbor, childrenOfNode, ListChildren } from "../arbor";
 import LRUCache from "lru-cache";
 
-export function defineSynthetic<T extends object, R>(
-  evaluator: SyntheticAttributeEvaluator<T, R>,
-  opts: SyntheticOptions<T, R> = {}
-): AttributeDefinition<T, R> {
-  return {
-    attach: (a: Arbor<T>) => {
-      return reifySyntheticAttribute(a.root, a.list, evaluator, opts);
-    },
-  };
-}
+// export function defineSynthetic<T extends object, R>(
+//   evaluator: SyntheticAttributeEvaluator<T, R>,
+//   opts: SyntheticOptions<T, R> = {}
+// ): AttributeDefinition<T, R> {
+//   return {
+//     attach: (a: Arbor<T>) => {
+//       return reifySyntheticAttribute(a.root, a.list, evaluator, opts);
+//     },
+//   };
+// }
 
 export type SyntheticEvaluationWrapper<T> = <S extends T, R>(
   e: SyntheticAttributeEvaluator<S, R>
@@ -119,6 +119,7 @@ interface EvaluationRecord<T, R> {
   result: R;
   children: T[];
 }
+
 export interface CacheStorage<T, R> {
   has(key: T): boolean;
   get(key: T): R | undefined;

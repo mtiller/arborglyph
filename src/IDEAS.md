@@ -8,6 +8,8 @@
 
 1. Conditional attribute "wrapper" (Either + transform)
 
+1. Detect same node with multiple parents (i.e., appears twice in same tree)
+
 Add attributes in bulk (related ones) using desctructuring to get them out. (passing them a tree)
 
 Add rerooting to attributes (support file parsing and `immer`)

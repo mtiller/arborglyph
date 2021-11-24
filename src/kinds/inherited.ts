@@ -2,7 +2,7 @@ import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { NodeNotFoundError } from "../errors";
 import { Arbor, childrenOfNode, ListChildren, walkTree } from "../arbor";
 import LRUCache from "lru-cache";
-import { Attribute, AttributeDefinition } from "./attributes";
+import { Attribute } from "./attributes";
 
 /** Options when reifying an inherited attribute */
 export interface InheritedOptions<T, R> {
@@ -241,13 +241,13 @@ function parentInformation<T, R>(
   });
 }
 
-export function defineInherited<T extends object, R>(
-  evaluator: InheritedAttributeEvaluator<T, R>,
-  opts: InheritedOptions<T, R> = {}
-): AttributeDefinition<T, R> {
-  return {
-    attach: (a: Arbor<T>) => {
-      return reifyInheritedAttribute(a.root, a.list, evaluator, opts);
-    },
-  };
-}
+// export function defineInherited<T extends object, R>(
+//   evaluator: InheritedAttributeEvaluator<T, R>,
+//   opts: InheritedOptions<T, R> = {}
+// ): AttributeDefinition<T, R> {
+//   return {
+//     attach: (a: Arbor<T>) => {
+//       return reifyInheritedAttribute(a.root, a.list, evaluator, opts);
+//     },
+//   };
+// }

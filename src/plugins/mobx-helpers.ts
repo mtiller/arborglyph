@@ -1,16 +1,20 @@
 import { computed, IComputedValue, IComputedValueOptions } from "mobx";
-import { Arbor } from "./arbor";
-import { AttributeDefinition } from "./kinds/attributes";
+import {
+  AttributeDefinition,
+  derived,
+  inherited,
+  synthetic,
+} from "../kinds/definitions";
 import {
   InheritedArgs,
   InheritedAttributeEvaluator,
   InheritedOptions,
-} from "./kinds/inherited";
+} from "../kinds/inherited";
 import {
   SyntheticArg,
   SyntheticAttributeEvaluator,
   SyntheticOptions,
-} from "./kinds/synthetic";
+} from "../kinds/synthetic";
 
 /**
  * THE TRICK
@@ -39,6 +43,25 @@ import {
  * could avoid stale data getting memoized.
  */
 
+export function computable<T extends object, R>(
+  d: AttributeDefinition<T, R>,
+  opts?: IComputedValueOptions<R>
+): AttributeDefinition<T, IComputedValue<R>> {
+  switch (d.type) {
+    case "syn": {
+      return synthetic(computeableSynthetic(d.f, opts));
+    }
+    case "inh": {
+      return inherited(computeableInherited(d.f, opts));
+    }
+    case "der": {
+      return derived<T, IComputedValue<R>>((args) =>
+        computed(() => d.f(args), opts)
+      );
+    }
+  }
+  throw new Error(`Unknown type of attribute: ${(d as any).type as any}`);
+}
 /**
  * Make an existing synthetic attribute evaluator into a "computable" one.
  * Making it computable means that it can track observable data.  The net effect
@@ -114,30 +137,30 @@ export function computeableInherited<T, R>(
   };
 }
 
-export function defineComputedSynthetic<T extends object, R>(
-  f: SyntheticAttributeEvaluator<T, R>,
-  sopts?: SyntheticOptions<T, IComputedValue<R>>,
-  options?: IComputedValueOptions<R>
-): AttributeDefinition<T, R> {
-  return {
-    attach: (a: Arbor<T>) => {
-      const cs = computeableSynthetic(f, options);
-      const attr = a.syn(cs, sopts);
-      return a.der((x) => attr(x).get());
-    },
-  };
-}
+// export function defineComputedSynthetic<T extends object, R>(
+//   f: SyntheticAttributeEvaluator<T, R>,
+//   sopts?: SyntheticOptions<T, IComputedValue<R>>,
+//   options?: IComputedValueOptions<R>
+// ): AttributeDefinition<T, R> {
+//   return {
+//     attach: (a: Arbor<T>) => {
+//       const cs = computeableSynthetic(f, options);
+//       const attr = a.syn(cs, sopts);
+//       return a.der((x) => attr(x).get());
+//     },
+//   };
+// }
 
-export function defineComputedInherited<T extends object, R>(
-  f: InheritedAttributeEvaluator<T, R>,
-  sopts?: InheritedOptions<T, IComputedValue<R>>,
-  options?: IComputedValueOptions<R>
-): AttributeDefinition<T, R> {
-  return {
-    attach: (a: Arbor<T>) => {
-      const cs = computeableInherited(f, options);
-      const attr = a.inh(cs, sopts);
-      return a.der((x) => attr(x).get());
-    },
-  };
-}
+// export function defineComputedInherited<T extends object, R>(
+//   f: InheritedAttributeEvaluator<T, R>,
+//   sopts?: InheritedOptions<T, IComputedValue<R>>,
+//   options?: IComputedValueOptions<R>
+// ): AttributeDefinition<T, R> {
+//   return {
+//     attach: (a: Arbor<T>) => {
+//       const cs = computeableInherited(f, options);
+//       const attr = a.inh(cs, sopts);
+//       return a.der((x) => attr(x).get());
+//     },
+//   };
+// }

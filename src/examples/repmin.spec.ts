@@ -7,7 +7,10 @@ import { SyntheticAttributeEvaluator } from "../kinds/synthetic";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
 import { comparer, configure, observable } from "mobx";
-import { computeableInherited, computeableSynthetic } from "../mobx-helpers";
+import {
+  computeableInherited,
+  computeableSynthetic,
+} from "../plugins/mobx-helpers";
 import { synthetic } from "../kinds/definitions";
 
 export const evalMin = synthetic<SimpleBinaryTree, number>(
