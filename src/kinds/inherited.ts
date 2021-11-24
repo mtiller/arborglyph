@@ -240,14 +240,3 @@ function parentInformation<T, R>(
     };
   });
 }
-
-// export function defineInherited<T extends object, R>(
-//   evaluator: InheritedAttributeEvaluator<T, R>,
-//   opts: InheritedOptions<T, R> = {}
-// ): AttributeDefinition<T, R> {
-//   return {
-//     attach: (a: Arbor<T>) => {
-//       return reifyInheritedAttribute(a.root, a.list, evaluator, opts);
-//     },
-//   };
-// }

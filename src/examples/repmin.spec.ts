@@ -3,7 +3,6 @@
 import { findChild, fork, indexedBinaryChildren, leaf } from "../testing";
 import { ScalarFunction } from "../kinds/attributes";
 import { InheritedAttributeEvaluator } from "../kinds/inherited";
-import { SyntheticAttributeEvaluator } from "../kinds/synthetic";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
 import { comparer, configure, observable } from "mobx";
@@ -20,19 +19,18 @@ export const evalMin = synthetic<SimpleBinaryTree, number>(
       : Math.min(attr(node.left), attr(node.right))
 );
 
-export function evalGlobmin(
-  min: ScalarFunction<SimpleBinaryTree, number>
-): InheritedAttributeEvaluator<SimpleBinaryTree, number> {
+export function evalGlobmin<R>(
+  min: ScalarFunction<SimpleBinaryTree, R>
+): InheritedAttributeEvaluator<SimpleBinaryTree, R> {
   return ({ node, parent }) => parent.map((p) => p.attr).orDefault(min(node));
 }
 
-export function evalRepmin(
-  globmin: ScalarFunction<SimpleBinaryTree, number>
-): SyntheticAttributeEvaluator<SimpleBinaryTree, SimpleBinaryTree> {
-  return ({ node, attr }) =>
+export function evalRepmin(globmin: ScalarFunction<SimpleBinaryTree, number>) {
+  return synthetic<SimpleBinaryTree, SimpleBinaryTree>(({ node, attr }) =>
     node.type === "leaf"
       ? leaf(globmin(node))
-      : fork(attr(node.left), attr(node.right));
+      : fork(attr(node.left), attr(node.right))
+  );
 }
 
 describe("Run some repmin test cases", () => {
@@ -43,7 +41,7 @@ describe("Run some repmin test cases", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
     const min = tree.add(evalMin);
     const globmin = tree.inh(evalGlobmin(min));
-    const repmin = tree.syn(evalRepmin(globmin));
+    const repmin = tree.add(evalRepmin(globmin));
 
     const result = repmin(tree.root);
 
@@ -102,7 +100,7 @@ describe("Run some repmin test cases", () => {
         evalRepmin((x) => {
           repminCount++;
           return globmin(x).get();
-        }),
+        }).f,
         { keepAlive: true, equals: comparer.shallow }
       ),
       { memoize: memo }
@@ -247,7 +245,7 @@ describe("Run some repmin test cases", () => {
         evalRepmin((x) => {
           repminCount++;
           return globmin(x).get();
-        }),
+        }).f,
         { keepAlive: true, equals: comparer.shallow }
       ),
       { memoize: memo }
