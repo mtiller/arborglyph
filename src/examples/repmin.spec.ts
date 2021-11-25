@@ -8,7 +8,7 @@ import { comparer, configure, observable } from "mobx";
 import {
   computeableInherited,
   computeableSynthetic,
-  computable,
+  computableValue,
 } from "../plugins/mobx-helpers";
 import { inherited, synthetic } from "../kinds/definitions";
 import { memoize } from "../plugins/memoize";
@@ -77,18 +77,14 @@ describe("Run some repmin test cases", () => {
     const memo = "no" as const;
 
     /** Now define the min attribute */
-    const min = tree.syn(
-      computeableSynthetic<SimpleBinaryTree, number>(evalMin.f, {
-        keepAlive: true,
-        equals: comparer.shallow,
-      }),
-      { memoize: memo }
+    const min = tree.add(
+      memoize(computableValue(evalMin, { keepAlive: true }))
     );
 
     /** Now define the globmin attribute, but we must provide a slightly different function for evaluating the min attribute */
     const globmin = tree.add(
       memoize(
-        computable(
+        computableValue(
           evalGlobmin((x) => min(x).get()),
           { keepAlive: true }
         )
@@ -97,15 +93,16 @@ describe("Run some repmin test cases", () => {
 
     let repminCount = 0;
     /** Finaly, define the repmin attribute (again need to unwrap globmin values) */
-    const repmin = tree.syn(
-      computeableSynthetic(
-        evalRepmin((x) => {
-          repminCount++;
-          return globmin(x).get();
-        }).f,
-        { keepAlive: true, equals: comparer.shallow }
-      ),
-      { memoize: memo }
+    const repmin = tree.add(
+      memoize(
+        computableValue(
+          evalRepmin((x) => {
+            repminCount++;
+            return globmin(x).get();
+          }),
+          { keepAlive: true }
+        )
+      )
     );
 
     /** Compute the rootMin computed value for the root */
@@ -157,7 +154,7 @@ describe("Run some repmin test cases", () => {
     );
 
     /** Only now that we've requested the new rootRepmin should we see more evaluations. */
-    expect(repminCount).toEqual(initialRepminCount + 13);
+    expect(repminCount).toEqual(initialRepminCount + 8);
 
     expect(rootMin.get()).toEqual(0);
 
@@ -178,7 +175,7 @@ describe("Run some repmin test cases", () => {
     );
 
     /** Only now that we've requested the new rootRepmin should we see more evaluations. */
-    expect(repminCount).toEqual(initialRepminCount + 13);
+    expect(repminCount).toEqual(initialRepminCount + 8);
 
     expect(rootMin.get()).toEqual(0);
 
@@ -204,7 +201,7 @@ describe("Run some repmin test cases", () => {
     );
 
     /** Only now that we've requested the new rootRepmin should we see more evaluations. */
-    expect(repminCount).toEqual(initialRepminCount + 27);
+    expect(repminCount).toEqual(initialRepminCount + 17);
   });
   it("should work with mutable trees and weakmap caching", () => {
     /** Make our root node observable (mobx will apply this recursively) */

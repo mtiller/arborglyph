@@ -42,8 +42,7 @@ import {
  * observables changed) or otherwise invalidated on structural changes, then we
  * could avoid stale data getting memoized.
  */
-
-export function computable<T extends object, R>(
+export function computableValue<T extends object, R>(
   d: AttributeDefinition<T, R>,
   opts?: IComputedValueOptions<R>
 ): AttributeDefinition<T, IComputedValue<R>> {
@@ -62,6 +61,7 @@ export function computable<T extends object, R>(
   }
   throw new Error(`Unknown type of attribute: ${(d as any).type as any}`);
 }
+
 /**
  * Make an existing synthetic attribute evaluator into a "computable" one.
  * Making it computable means that it can track observable data.  The net effect
@@ -87,7 +87,7 @@ export function computeableSynthetic<T, R>(
         },
       };
     });
-    /** Now we create an `args` value compatible with the wrapped evaluator */
+    /** Now we create an `args` value compatable with the wrapped evaluator */
     const nargs: SyntheticArg<T, R> = {
       node: args.node,
       children: children,
