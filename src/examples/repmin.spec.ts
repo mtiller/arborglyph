@@ -2,15 +2,16 @@
 
 import { findChild, fork, indexedBinaryChildren, leaf } from "../testing";
 import { ScalarFunction } from "../kinds/attributes";
-import { InheritedAttributeEvaluator } from "../kinds/inherited";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
 import { comparer, configure, observable } from "mobx";
 import {
   computeableInherited,
   computeableSynthetic,
+  computable,
 } from "../plugins/mobx-helpers";
-import { synthetic } from "../kinds/definitions";
+import { inherited, synthetic } from "../kinds/definitions";
+import { memoize } from "../plugins/memoize";
 
 export const evalMin = synthetic<SimpleBinaryTree, number>(
   ({ node, attr }): number =>
@@ -19,10 +20,10 @@ export const evalMin = synthetic<SimpleBinaryTree, number>(
       : Math.min(attr(node.left), attr(node.right))
 );
 
-export function evalGlobmin<R>(
-  min: ScalarFunction<SimpleBinaryTree, R>
-): InheritedAttributeEvaluator<SimpleBinaryTree, R> {
-  return ({ node, parent }) => parent.map((p) => p.attr).orDefault(min(node));
+export function evalGlobmin<R>(min: ScalarFunction<SimpleBinaryTree, R>) {
+  return inherited<SimpleBinaryTree, R>(({ node, parent }) =>
+    parent.map((p) => p.attr).orDefault(min(node))
+  );
 }
 
 export function evalRepmin(globmin: ScalarFunction<SimpleBinaryTree, number>) {
@@ -40,7 +41,7 @@ describe("Run some repmin test cases", () => {
   it("should handle a basic repmin", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
     const min = tree.add(evalMin);
-    const globmin = tree.inh(evalGlobmin(min));
+    const globmin = tree.add(evalGlobmin(min));
     const repmin = tree.add(evalRepmin(globmin));
 
     const result = repmin(tree.root);
@@ -85,12 +86,13 @@ describe("Run some repmin test cases", () => {
     );
 
     /** Now define the globmin attribute, but we must provide a slightly different function for evaluating the min attribute */
-    const globmin = tree.inh(
-      computeableInherited(
-        evalGlobmin((x) => min(x).get()),
-        { keepAlive: true, equals: comparer.shallow }
-      ),
-      { memoize: memo }
+    const globmin = tree.add(
+      memoize(
+        computable(
+          evalGlobmin((x) => min(x).get()),
+          { keepAlive: true }
+        )
+      )
     );
 
     let repminCount = 0;
@@ -231,10 +233,10 @@ describe("Run some repmin test cases", () => {
 
     /** Now define the globmin attribute, but we must provide a slightly different function for evaluating the min attribute */
     const globmin = tree.inh(
-      computeableInherited(
-        evalGlobmin((x) => min(x).get()),
-        { keepAlive: true, equals: comparer.shallow }
-      ),
+      computeableInherited(evalGlobmin((x) => min(x).get()).f, {
+        keepAlive: true,
+        equals: comparer.shallow,
+      }),
       { memoize: memo }
     );
 
