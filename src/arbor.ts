@@ -12,6 +12,7 @@ import {
 import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
+import { ArborPlugin } from "./plugin";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -26,6 +27,7 @@ export type NamedChildren<T> = (x: T) => Record<string, T>;
 export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
 
 export interface ArborOptions<T> {
+  plugins?: ArborPlugin<T>[];
   // wrappers
   // inh (options, no R)
   // syn (options, no R)
@@ -34,17 +36,26 @@ export interface ArborOptions<T> {
 /** A potentially convenient class, not sure what I think about it yet. */
 export class Arbor<T extends object> {
   protected reified: Map<AttributeDefinition<any, any>, Attribute<any, any>>;
+  public readonly root: T;
+  protected plugins: ArborPlugin<T>[];
   constructor(
-    public root: T,
+    root: T,
     public list: ListChildren<T>,
     opts: ArborOptions<T> = {}
   ) {
+    this.plugins = opts.plugins ?? [];
+    this.root = this.plugins.reduce(
+      (r, p) => (p.remapRoot ? p.remapRoot(r) : r),
+      root
+    );
     this.reified = new Map();
   }
-  add<R>(def: AttributeDefinition<T, R>): Attribute<T, R> {
-    if (this.reified.has(def)) {
-      return this.reified.get(def) as Attribute<T, R>;
+  add<R>(d: AttributeDefinition<T, R>): Attribute<T, R> {
+    if (this.reified.has(d)) {
+      return this.reified.get(d) as Attribute<T, R>;
     }
+    const plugins = this.plugins ?? [];
+    const def = plugins.reduce((r, p) => (p.remapAttr ? p.remapAttr(r) : r), d);
     switch (def.type) {
       case "syn": {
         const r = reifySyntheticAttribute<T, R>(

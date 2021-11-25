@@ -15,7 +15,7 @@ import { InheritedArgs, InheritedAttributeEvaluator } from "../kinds/inherited";
 import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
 import { assertUnreachable } from "../utils";
 import { memoize } from "./memoize";
-import { Plugin } from "../plugin";
+import { ArborPlugin } from "../plugin";
 
 /**
  * THE TRICK
@@ -44,7 +44,7 @@ import { Plugin } from "../plugin";
  * could avoid stale data getting memoized.
  */
 
-export function mobxPlugin<T>(): Plugin<T> {
+export function mobxPlugin<T>(): ArborPlugin<T> {
   return {
     remapRoot: (root: any): any => {
       return observable(root);

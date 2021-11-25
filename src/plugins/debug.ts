@@ -1,4 +1,5 @@
 import { AttributeDefinition } from "../kinds/definitions";
+import { ArborPlugin } from "../plugin";
 
 export function counter<T, R>(
   d: AttributeDefinition<T, R>
@@ -13,6 +14,29 @@ export function counter<T, R>(
     f: w,
     get count() {
       return count;
+    },
+  };
+}
+
+export function counterPlugin<T>(counts: Map<any, number>): ArborPlugin<T> {
+  return {
+    remapRoot: (root: any): any => {
+      return root;
+    },
+    remapAttr: <R>(
+      attr: AttributeDefinition<any, R>
+    ): AttributeDefinition<any, R> => {
+      counts.set(attr, 0);
+      const w: any = (x: any) => {
+        let count = counts.get(attr) ?? 0;
+        count++;
+        counts.set(attr, count);
+        return attr.f(x);
+      };
+      return {
+        ...attr,
+        f: w,
+      };
     },
   };
 }
