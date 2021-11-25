@@ -1,5 +1,9 @@
-import { computed, IComputedValue, IComputedValueOptions } from "mobx";
-import { ComputedValue } from "mobx/dist/internal";
+import {
+  computed,
+  IComputedValue,
+  IComputedValueOptions,
+  observable,
+} from "mobx";
 import {
   AttributeDefinition,
   derived,
@@ -7,17 +11,11 @@ import {
   synthetic,
   transformer,
 } from "../kinds/definitions";
-import {
-  InheritedArgs,
-  InheritedAttributeEvaluator,
-  InheritedOptions,
-} from "../kinds/inherited";
-import {
-  SyntheticArg,
-  SyntheticAttributeEvaluator,
-  SyntheticOptions,
-} from "../kinds/synthetic";
+import { InheritedArgs, InheritedAttributeEvaluator } from "../kinds/inherited";
+import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
 import { assertUnreachable } from "../utils";
+import { memoize } from "./memoize";
+import { Plugin } from "../plugin";
 
 /**
  * THE TRICK
@@ -45,6 +43,21 @@ import { assertUnreachable } from "../utils";
  * observables changed) or otherwise invalidated on structural changes, then we
  * could avoid stale data getting memoized.
  */
+
+export function mobxPlugin<T>(): Plugin<T> {
+  return {
+    remapRoot: (root: any): any => {
+      return observable(root);
+    },
+    remapAttr: <R>(
+      attr: AttributeDefinition<any, R>
+    ): AttributeDefinition<any, R> => {
+      // TODO: This is probably a bad a idea...I don't think we NEED to make everything computable.
+      return computable(attr, { keepAlive: true });
+    },
+  };
+}
+
 export function computableValue<T extends object, R>(
   d: AttributeDefinition<T, R>,
   opts?: IComputedValueOptions<R>
@@ -72,7 +85,7 @@ export function computable<T extends object, R>(
   d: AttributeDefinition<T, R>,
   opts?: IComputedValueOptions<R>
 ) {
-  const inter = computableValue(d, opts);
+  const inter = memoize(computableValue(d, opts));
   return transformer(inter, (x) => x.get());
 }
 

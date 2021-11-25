@@ -68,10 +68,15 @@ export class Arbor<T extends object> {
       }
       case "der": {
         // TODO: As attribute gets expanded, more will probably be needed here.
-        return (x: T) => def.f(x);
+        const ret = (x: T) => def.f(x);
+        this.reified.set(def, ret);
+        return ret;
       }
       case "trans": {
-        throw new Error("No yet implemented");
+        const attr = this.add(def.attr);
+        const ret = (x: T) => def.f(attr(x));
+        this.reified.set(def, ret);
+        return ret;
       }
     }
     return assertUnreachable(def);
