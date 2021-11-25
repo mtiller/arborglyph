@@ -14,7 +14,7 @@ import {
 import { inherited, synthetic } from "../kinds/definitions";
 import { memoize } from "../plugins/memoize";
 import rfdc from "rfdc";
-import { counter } from "../plugins/debug";
+import { counter, counterPlugin } from "../plugins/debug";
 
 const clone = rfdc();
 
@@ -78,9 +78,11 @@ describe("Run some repmin test cases", () => {
   configure({ enforceActions: "never" });
 
   it("should handle a basic repmin", () => {
-    const tree = new Arbor(sampleTree1, indexedBinaryChildren);
-    const cmin = counter(evalMin);
-    const min = tree.add(cmin);
+    const map = new Map<any, number>();
+    const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+      plugins: [counterPlugin(map)],
+    });
+    const min = tree.add(evalMin);
     const globmin = tree.add(evalGlobmin(min));
     const repmin = tree.add(evalRepmin(globmin));
 
@@ -91,22 +93,25 @@ describe("Run some repmin test cases", () => {
     // console.log("GLOBMIN:\n" + treeRepr(tree.tree, globmin));
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(cmin.count).toEqual(256);
+    console.log(map);
+    expect(map.get(evalMin)).toEqual(256);
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(cmin.count).toEqual(482);
+    expect(map.get(evalMin)).toEqual(482);
   });
 
   it("should handle a basic repmin with caching", () => {
-    const tree = new Arbor(sampleTree1, indexedBinaryChildren);
-    const cmin = counter(evalMin);
-    const min = tree.add(memoize(cmin));
+    const map = new Map<any, number>();
+    const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+      plugins: [counterPlugin(map)],
+    });
+    const min = tree.add(memoize(counter(evalMin, map)));
     const globmin = tree.add(evalGlobmin(min));
     const repmin = tree.add(evalRepmin(globmin));
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(cmin.count).toEqual(15);
+    expect(map.get(evalMin)).toEqual(15);
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(cmin.count).toEqual(15);
+    expect(map.get(evalMin)).toEqual(15);
   });
 
   it("should work with mutable trees without mobx", () => {

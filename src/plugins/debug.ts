@@ -2,11 +2,13 @@ import { AttributeDefinition } from "../kinds/definitions";
 import { ArborPlugin } from "../plugin";
 
 export function counter<T, R>(
-  d: AttributeDefinition<T, R>
+  d: AttributeDefinition<T, R>,
+  map?: Map<AttributeDefinition<T, R>, number>
 ): AttributeDefinition<T, R> & { count: number } {
   let count = 0;
   const w: any = (x: any) => {
     count++;
+    map?.set(d, count);
     return d.f(x);
   };
   return {
