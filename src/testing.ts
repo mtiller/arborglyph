@@ -1,4 +1,5 @@
 import { IndexedChildren, NamedChildren } from "./arbor";
+import { assertUnreachable } from "./utils";
 
 export type SimpleBinaryTree =
   | { type: "fork"; left: SimpleBinaryTree; right: SimpleBinaryTree }
@@ -35,7 +36,7 @@ export function findChild(
   if (next === "right") {
     return findChild(t.right, rest);
   }
-  throw new Error(`Unexpect path element ${next} for node of type ${t.type}`);
+  return assertUnreachable(next);
 }
 
 export const namedBinaryChildren: NamedChildren<SimpleBinaryTree> = (

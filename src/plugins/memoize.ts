@@ -8,6 +8,7 @@ import {
 } from "../kinds/definitions";
 import { InheritedAttributeEvaluator } from "../kinds/inherited";
 import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
+import { assertUnreachable } from "../utils";
 
 export function memoize<T extends object, R>(
   d: AttributeDefinition<T, R>
@@ -26,7 +27,11 @@ export function memoize<T extends object, R>(
       const storage = new WeakMap<T, R>();
       return derived(wrapDerivedWithMap(storage, d.f));
     }
+    case "trans": {
+      throw new Error("Unimplemented");
+    }
   }
+  return assertUnreachable(d);
 }
 
 export function lru<T extends object, R>(
@@ -47,7 +52,11 @@ export function lru<T extends object, R>(
       const storage = new LRUCache<T, R>(opts);
       return derived(wrapDerivedWithMap(storage, d.f));
     }
+    case "trans": {
+      throw new Error("Unimplemented");
+    }
   }
+  return assertUnreachable(d);
 }
 
 interface InheritedEvaluationRecord<T, R> {

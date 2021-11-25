@@ -11,6 +11,7 @@ import {
 } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
+import { assertUnreachable } from "./utils";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -32,24 +33,48 @@ export interface ArborOptions<T> {
 
 /** A potentially convenient class, not sure what I think about it yet. */
 export class Arbor<T extends object> {
+  protected reified: Map<AttributeDefinition<any, any>, Attribute<any, any>>;
   constructor(
     public root: T,
     public list: ListChildren<T>,
     opts: ArborOptions<T> = {}
-  ) {}
-  add<R>(def: AttributeDefinition<T, R>) {
+  ) {
+    this.reified = new Map();
+  }
+  add<R>(def: AttributeDefinition<T, R>): Attribute<T, R> {
+    if (this.reified.has(def)) {
+      return this.reified.get(def) as Attribute<T, R>;
+    }
     switch (def.type) {
       case "syn": {
-        return reifySyntheticAttribute<T, R>(this.root, this.list, def.f, {});
+        const r = reifySyntheticAttribute<T, R>(
+          this.root,
+          this.list,
+          def.f,
+          {}
+        );
+        this.reified.set(def, r);
+        return r;
       }
       case "inh": {
-        return reifyInheritedAttribute<T, R>(this.root, this.list, def.f, {});
+        const r = reifyInheritedAttribute<T, R>(
+          this.root,
+          this.list,
+          def.f,
+          {}
+        );
+        this.reified.set(def, r);
+        return r;
       }
       case "der": {
         // TODO: As attribute gets expanded, more will probably be needed here.
         return (x: T) => def.f(x);
       }
+      case "trans": {
+        throw new Error("No yet implemented");
+      }
     }
+    return assertUnreachable(def);
   }
   inh<R>(
     f: InheritedAttributeEvaluator<T, R>,

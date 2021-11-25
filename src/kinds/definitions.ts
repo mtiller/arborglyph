@@ -44,7 +44,25 @@ export function derived<T, R>(
   };
 }
 
+export interface TransformerAttributeDefinition<T, I, O> {
+  type: "trans";
+  attr: AttributeDefinition<T, I>;
+  f: ScalarFunction<I, O>;
+}
+
+export function transformer<T, I, O>(
+  attr: AttributeDefinition<T, I>,
+  f: ScalarFunction<I, O>
+): TransformerAttributeDefinition<T, I, O> {
+  return {
+    type: "trans",
+    attr,
+    f,
+  };
+}
+
 export type AttributeDefinition<T, R> =
   | SyntheticAttributeDefinition<T, R>
   | InheritedAttributeDefinition<T, R>
-  | DerivedAttributeDefinition<T, R>;
+  | DerivedAttributeDefinition<T, R>
+  | TransformerAttributeDefinition<T, any, R>;

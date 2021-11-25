@@ -1,9 +1,11 @@
 import { computed, IComputedValue, IComputedValueOptions } from "mobx";
+import { ComputedValue } from "mobx/dist/internal";
 import {
   AttributeDefinition,
   derived,
   inherited,
   synthetic,
+  transformer,
 } from "../kinds/definitions";
 import {
   InheritedArgs,
@@ -15,6 +17,7 @@ import {
   SyntheticAttributeEvaluator,
   SyntheticOptions,
 } from "../kinds/synthetic";
+import { assertUnreachable } from "../utils";
 
 /**
  * THE TRICK
@@ -58,8 +61,19 @@ export function computableValue<T extends object, R>(
         computed(() => d.f(args), opts)
       );
     }
+    case "trans": {
+      throw new Error("Unimplemented");
+    }
   }
-  throw new Error(`Unknown type of attribute: ${(d as any).type as any}`);
+  return assertUnreachable(d);
+}
+
+export function computable<T extends object, R>(
+  d: AttributeDefinition<T, R>,
+  opts?: IComputedValueOptions<R>
+) {
+  const inter = computableValue(d, opts);
+  return transformer(inter, (x) => x.get());
 }
 
 /**
