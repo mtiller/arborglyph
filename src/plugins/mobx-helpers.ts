@@ -62,16 +62,18 @@ export function computableValue<T extends object, R>(
   d: AttributeDefinition<T, R>,
   opts?: IComputedValueOptions<R>
 ): AttributeDefinition<T, IComputedValue<R>> {
+  const desc = `CV of ${d.description}`;
   switch (d.type) {
     case "syn": {
-      return synthetic(computeableSynthetic(d.f, opts));
+      return synthetic(desc, computeableSynthetic(d.f, opts));
     }
     case "inh": {
-      return inherited(computeableInherited(d.f, opts));
+      return inherited(desc, computeableInherited(d.f, opts));
     }
     case "der": {
-      return derived<T, IComputedValue<R>>((args) =>
-        computed(() => d.f(args), opts)
+      return derived<T, IComputedValue<R>>(
+        `memoize of ${d.description}`,
+        (args) => computed(() => d.f(args), opts)
       );
     }
     case "trans": {
@@ -86,7 +88,7 @@ export function computable<T extends object, R>(
   opts?: IComputedValueOptions<R>
 ) {
   const inter = memoize(computableValue(d, opts));
-  return transformer(inter, (x) => x.get());
+  return transformer(inter, "unwrap CV", (x) => x.get());
 }
 
 /**

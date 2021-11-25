@@ -1,9 +1,13 @@
 import { IndexedChildren, NamedChildren } from "./arbor";
 import { assertUnreachable } from "./utils";
 
-export type SimpleBinaryTree =
-  | { type: "fork"; left: SimpleBinaryTree; right: SimpleBinaryTree }
-  | { type: "leaf"; value: number };
+export type LeafNode = { type: "leaf"; value: number };
+export type ForkNode = {
+  type: "fork";
+  left: SimpleBinaryTree;
+  right: SimpleBinaryTree;
+};
+export type SimpleBinaryTree = ForkNode | LeafNode;
 
 export const fork = (
   l: SimpleBinaryTree,

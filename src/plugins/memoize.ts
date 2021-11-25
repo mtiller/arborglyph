@@ -8,24 +8,38 @@ import {
 } from "../kinds/definitions";
 import { InheritedAttributeEvaluator } from "../kinds/inherited";
 import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
+import { ArborPlugin } from "../plugin";
 import { assertUnreachable } from "../utils";
+
+export function memoizePlugin<T extends object>(): ArborPlugin<T> {
+  return {
+    remapAttr: <R>(d: AttributeDefinition<T, R>) => memoize(d),
+  };
+}
+
+export function lruPlugin<T extends object>(opts: LRUOptions): ArborPlugin<T> {
+  return {
+    remapAttr: <R>(d: AttributeDefinition<T, R>) => lru(d, opts),
+  };
+}
 
 export function memoize<T extends object, R>(
   d: AttributeDefinition<T, R>
 ): AttributeDefinition<T, R> {
+  const desc = `memoize of ${d.description}`;
   switch (d.type) {
     case "syn": {
       const cache = new WeakMap<T, SyntheticEvaluationRecord<T, R>>();
-      return synthetic<T, R>(wrapSyntheticWithMap(cache, d.f));
+      return synthetic<T, R>(desc, wrapSyntheticWithMap(cache, d.f));
     }
     case "inh": {
       /** If memoization is requested, first create storage for memoized values. */
       const storage = new WeakMap<T, InheritedEvaluationRecord<T, R>>();
-      return inherited<T, R>(wrapInheritedWithMap(storage, d.f));
+      return inherited<T, R>(desc, wrapInheritedWithMap(storage, d.f));
     }
     case "der": {
       const storage = new WeakMap<T, R>();
-      return derived(wrapDerivedWithMap(storage, d.f));
+      return derived(desc, wrapDerivedWithMap(storage, d.f));
     }
     case "trans": {
       throw new Error("Unimplemented");
@@ -38,19 +52,20 @@ export function lru<T extends object, R>(
   d: AttributeDefinition<T, R>,
   opts: LRUOptions
 ) {
+  const desc = `lrui of ${d.description}`;
   switch (d.type) {
     case "syn": {
       const cache = new LRUCache<T, SyntheticEvaluationRecord<T, R>>(opts);
-      return synthetic<T, R>(wrapSyntheticWithMap(cache, d.f));
+      return synthetic<T, R>(desc, wrapSyntheticWithMap(cache, d.f));
     }
     case "inh": {
       /** If memoization is requested, first create storage for memoized values. */
       const storage = new LRUCache<T, InheritedEvaluationRecord<T, R>>(opts);
-      return inherited<T, R>(wrapInheritedWithMap(storage, d.f));
+      return inherited<T, R>(desc, wrapInheritedWithMap(storage, d.f));
     }
     case "der": {
       const storage = new LRUCache<T, R>(opts);
-      return derived(wrapDerivedWithMap(storage, d.f));
+      return derived(desc, wrapDerivedWithMap(storage, d.f));
     }
     case "trans": {
       throw new Error("Unimplemented");

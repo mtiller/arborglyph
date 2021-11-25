@@ -50,6 +50,9 @@ export class Arbor<T extends object> {
     );
     this.reified = new Map();
   }
+  attach<R>(f: (x: this) => R) {
+    return f(this);
+  }
   add<R>(d: AttributeDefinition<T, R>): Attribute<T, R> {
     if (this.reified.has(d)) {
       return this.reified.get(d) as Attribute<T, R>;

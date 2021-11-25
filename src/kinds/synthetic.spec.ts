@@ -20,13 +20,14 @@ describe("Test synthetic attribute evaluation", () => {
       let count = 0;
       const desc = descendents<SimpleBinaryTree>();
       const icount = synthetic<SimpleBinaryTree, ReturnType<typeof desc>>(
+        "counter",
         (x) => {
           count++;
           return desc(x);
         }
       );
       const idesc = itree.add(icount);
-      const ndesc = ntree.add(synthetic(descendents()));
+      const ndesc = ntree.add(synthetic("descendents", descendents()));
 
       const itotal = idesc(itree.root);
       const ntotal = ndesc(itree.root);
@@ -51,7 +52,7 @@ describe("Test synthetic attribute evaluation", () => {
       let count = 0;
       const desc = descendents<SimpleBinaryTree>();
       const icount = memoize(
-        synthetic<SimpleBinaryTree, Set<SimpleBinaryTree>>((x) => {
+        synthetic<SimpleBinaryTree, Set<SimpleBinaryTree>>("counter", (x) => {
           count++;
           return desc(x);
         })
@@ -82,7 +83,7 @@ describe("Test synthetic attribute evaluation", () => {
         count++;
         return desc(x);
       };
-      const idef = synthetic(icount);
+      const idef = synthetic("counter", icount);
       const cdef = lru(idef, { max: 30 });
       const idesc = itree.add(cdef);
 
@@ -110,7 +111,7 @@ describe("Test synthetic attribute evaluation", () => {
         count++;
         return desc(x);
       };
-      const idesc = itree.add(lru(synthetic(icount), { max: 5 }));
+      const idesc = itree.add(lru(synthetic("counter", icount), { max: 5 }));
 
       const itotal = idesc(itree.root);
 
@@ -140,7 +141,7 @@ describe("Test synthetic attribute evaluation", () => {
         return desc(x);
       };
       // NB: This must be done at the same level as other memoization
-      const idesc = itree.add(lru(synthetic(icount), {}));
+      const idesc = itree.add(lru(synthetic("descendents", icount), {}));
 
       const itotal = idesc(itree.root);
 

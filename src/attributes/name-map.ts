@@ -17,4 +17,23 @@ export function symbolTableEvaluator<T>(
   };
 }
 
+// Better as two pass, one give names to everything
+// Second collect names from matching.
+export function condSymbolTableEvaluator<T, S extends T>(
+  namer: ScalarFunction<S, string>,
+  pred: (x: T) => x is S
+): SyntheticAttributeEvaluator<T, Map<string, S>> {
+  return ({ node, children }) => {
+    const ret = children.reduce((p, c) => {
+      c.attr.forEach((v, k) => p.set(k, v));
+      return p;
+    }, new Map<string, S>());
+    if (pred(node)) {
+      const me = namer(node);
+      ret.set(me, node);
+    }
+    return ret;
+  };
+}
+
 // TODO: Conditional name map
