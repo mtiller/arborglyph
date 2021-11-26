@@ -1,3 +1,4 @@
+import { Attribute } from "../kinds/attributes";
 import { AttributeDefinition } from "../kinds/definitions";
 import { ArborPlugin } from "../plugin";
 
@@ -25,7 +26,7 @@ export function counterPlugin<T>(counts: Map<any, number>): ArborPlugin<T> {
     remapRoot: (root: any): any => {
       return root;
     },
-    remapAttr: <R>(
+    remapDef: <R>(
       attr: AttributeDefinition<any, R>
     ): AttributeDefinition<any, R> => {
       counts.set(attr, 0);
@@ -39,6 +40,16 @@ export function counterPlugin<T>(counts: Map<any, number>): ArborPlugin<T> {
         ...attr,
         f: w,
       };
+    },
+    remapAttr: <R>(attr: Attribute<T, R>) => {
+      const ret = (x: T) => {
+        let count = counts.get(ret) ?? 0;
+        count++;
+        counts.set(ret, count);
+        return attr(x);
+      };
+      counts.set(attr, 0);
+      return ret;
     },
   };
 }

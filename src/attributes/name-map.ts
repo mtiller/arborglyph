@@ -1,6 +1,7 @@
 import { Maybe } from "purify-ts/Maybe";
 import { SyntheticAttributeEvaluator } from "..";
 import { ScalarFunction } from "../kinds/attributes";
+import { synthetic } from "../kinds/definitions";
 
 export function symbolTableEvaluator<T>(
   namer: ScalarFunction<T, string | Maybe<string>>
@@ -19,7 +20,7 @@ export function symbolTableEvaluator<T>(
 
 // Better as two pass, one give names to everything
 // Second collect names from matching.
-export function condSymbolTableEvaluator<T, S extends T>(
+function condSymbolTableEvaluator<T, S extends T>(
   namer: ScalarFunction<S, string>,
   pred: (x: T) => x is S
 ): SyntheticAttributeEvaluator<T, Map<string, S>> {
@@ -34,6 +35,21 @@ export function condSymbolTableEvaluator<T, S extends T>(
     }
     return ret;
   };
+}
+
+export interface SubTableOptions {
+  name?: string;
+}
+/** Provides a symbol table for a subset of nodes */
+export function subTable<T, S extends T>(
+  namer: ScalarFunction<S, string>,
+  pred: (x: T) => x is S,
+  opts?: SubTableOptions
+) {
+  return synthetic(
+    opts?.name ?? "symbol table",
+    condSymbolTableEvaluator(namer, pred)
+  );
 }
 
 // TODO: Conditional name map

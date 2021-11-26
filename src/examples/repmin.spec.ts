@@ -1,6 +1,12 @@
 /** An implementation of the repmin example */
 
-import { findChild, fork, indexedBinaryChildren, leaf } from "../testing";
+import {
+  findChild,
+  fork,
+  indexedBinaryChildren,
+  leaf,
+  LeafNode,
+} from "../testing";
 import { ScalarFunction } from "../kinds/attributes";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
@@ -10,11 +16,16 @@ import {
   computeableSynthetic,
   computableValue,
   computable,
+  mobxPlugin,
 } from "../plugins/mobx-helpers";
 import { inherited, synthetic } from "../kinds/definitions";
 import { lruPlugin, memoize, memoizePlugin } from "../plugins/memoize";
 import rfdc from "rfdc";
 import { counterPlugin } from "../plugins/debug";
+import { subTable } from "../attributes/name-map";
+import { evalPath } from "../attributes/path";
+import { mustGet } from "../utils";
+import { ArborPlugin } from "../plugin";
 
 const clone = rfdc();
 
@@ -42,48 +53,45 @@ export function evalRepmin(globmin: ScalarFunction<SimpleBinaryTree, number>) {
   );
 }
 
-export function repminCluster(tree: Arbor<SimpleBinaryTree>) {
-  const min = tree.add(evalMin);
-  const globmin = tree.add(evalGlobmin(min));
-  const repmin = tree.add(evalRepmin(globmin));
-  return { min, globmin, repmin };
+export interface MutableResults {
+  initialMinEvals: number;
+  secondMinEvals: number;
+  thirdMinEvals: number;
+  fourthMinEvals: number;
 }
 
-// TODO: Add cluster, but need to build globmin off a definition, not an attribute
+function mutableTreeTest(
+  results: MutableResults,
+  ...plugins: ArborPlugin<SimpleBinaryTree>[]
+) {
+  const map = new Map<any, number>();
+  const tree = new Arbor(clone(sampleTree1), indexedBinaryChildren, {
+    plugins: [counterPlugin(map), ...plugins],
+  });
+  const { table, min, globmin, repmin } = tree.attach(repminCluster);
 
-export function repminResult(x: number) {
-  return fork(
-    fork(leaf(x), fork(fork(leaf(x), leaf(x)), leaf(x))),
-    fork(leaf(x), fork(leaf(x), fork(leaf(x), leaf(x))))
-  );
-}
-
-function mutableTreeTest() {
-  const tree = new Arbor(clone(sampleTree1), indexedBinaryChildren);
-  const { globmin, repmin } = tree.attach(repminCluster);
-  // const min = tree.add(evalMin);
-  // const globmin = tree.add(evalGlobmin(min));
-  // const repmin = tree.add(evalRepmin(globmin));
-
+  expect(map.get(min)).toEqual(undefined);
   const result = repmin(tree.root);
 
   expect(globmin(tree.root)).toEqual(1);
+  expect(map.get(min)).toEqual(results.initialMinEvals);
   expect(globmin(tree.root)).toEqual(1);
+  expect(map.get(min)).toEqual(results.secondMinEvals);
 
-  expect(result).toEqual(
-    fork(
-      fork(leaf(1), fork(fork(leaf(1), leaf(1)), leaf(1))),
-      fork(leaf(1), fork(leaf(1), fork(leaf(1), leaf(1))))
-    )
-  );
+  expect(result).toEqual(repminResult(1));
 
-  const minElem = findChild(tree.root, ["right", "right", "left"]);
-  expect(minElem.type === "leaf" && minElem.value === 1).toEqual(true);
-  if (minElem.type === "fork") throw new Error("Expected a leaf"); // This is just to narrow the type.
+  const minElem = mustGet(table, "root/right/right/left");
+  expect(minElem.value).toEqual(1);
 
   minElem.value = 0;
 
   expect(repmin(tree.root)).toEqual(repminResult(0));
+  expect(map.get(min)).toEqual(results.thirdMinEvals);
+
+  minElem.value = 1;
+
+  expect(repmin(tree.root)).toEqual(repminResult(1));
+  expect(map.get(min)).toEqual(results.fourthMinEvals);
 }
 
 describe("Run some repmin test cases", () => {
@@ -127,7 +135,7 @@ describe("Run some repmin test cases", () => {
     const { repmin } = tree.attach(repminCluster);
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(37);
+    expect(map.get(evalMin)).toEqual(37); // Better, but not as good as with weakmap
     expect(repmin(tree.root)).toEqual(repminResult(1));
     expect(map.get(evalMin)).toEqual(37);
   });
@@ -140,17 +148,28 @@ describe("Run some repmin test cases", () => {
     const { repmin } = tree.attach(repminCluster);
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(15);
+    expect(map.get(evalMin)).toEqual(15); // Matches weak map
     expect(repmin(tree.root)).toEqual(repminResult(1));
     expect(map.get(evalMin)).toEqual(15);
   });
 
   it("should work with mutable trees without mobx", () => {
-    mutableTreeTest();
+    mutableTreeTest({
+      initialMinEvals: 35,
+      secondMinEvals: 36,
+      thirdMinEvals: 70,
+      fourthMinEvals: 104,
+    });
   });
 
   it("should work with mutable trees with mobx", () => {
-    mutableTreeTest();
+    // TODO: Add MobX plugin
+    mutableTreeTest({
+      initialMinEvals: 35,
+      secondMinEvals: 36,
+      thirdMinEvals: 70,
+      fourthMinEvals: 104,
+    });
   });
 
   it("should work with mutable trees", () => {
@@ -423,3 +442,23 @@ describe("Run some repmin test cases", () => {
     expect(repminCount).toEqual(initialRepminCount + 17); // 35 without cachine, 25 with
   });
 });
+
+function repminCluster(tree: Arbor<SimpleBinaryTree>) {
+  const min = tree.add(evalMin);
+  const globmin = tree.add(evalGlobmin(min));
+  const repmin = tree.add(evalRepmin(globmin));
+  const path = tree.inh(evalPath());
+  const subtable = tree.add(
+    subTable(path, (x): x is LeafNode => x.type === "leaf")
+  );
+  const table = subtable(tree.root);
+
+  return { table, min, globmin, repmin };
+}
+
+function repminResult(x: number) {
+  return fork(
+    fork(leaf(x), fork(fork(leaf(x), leaf(x)), leaf(x))),
+    fork(leaf(x), fork(leaf(x), fork(leaf(x), leaf(x))))
+  );
+}

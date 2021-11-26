@@ -13,13 +13,13 @@ import { assertUnreachable } from "../utils";
 
 export function memoizePlugin<T extends object>(): ArborPlugin<T> {
   return {
-    remapAttr: <R>(d: AttributeDefinition<T, R>) => memoize(d),
+    remapDef: <R>(d: AttributeDefinition<T, R>) => memoize(d),
   };
 }
 
 export function lruPlugin<T extends object>(opts: LRUOptions): ArborPlugin<T> {
   return {
-    remapAttr: <R>(d: AttributeDefinition<T, R>) => lru(d, opts),
+    remapDef: <R>(d: AttributeDefinition<T, R>) => lru(d, opts),
   };
 }
 

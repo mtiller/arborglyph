@@ -49,7 +49,7 @@ export function mobxPlugin<T>(): ArborPlugin<T> {
     remapRoot: (root: any): any => {
       return observable(root);
     },
-    remapAttr: <R>(
+    remapDef: <R>(
       attr: AttributeDefinition<any, R>
     ): AttributeDefinition<any, R> => {
       // TODO: This is probably a bad a idea...I don't think we NEED to make everything computable.

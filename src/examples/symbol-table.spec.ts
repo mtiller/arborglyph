@@ -1,17 +1,10 @@
 import { Just, Nothing } from "purify-ts/Maybe";
 import { Arbor } from "../arbor";
-import {
-  condSymbolTableEvaluator,
-  symbolTableEvaluator,
-} from "../attributes/name-map";
+import { subTable, symbolTableEvaluator } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";
 import { synthetic } from "../kinds/definitions";
-import {
-  LeafNode,
-  namedBinaryChildren,
-  sampleTree1,
-  SimpleBinaryTree,
-} from "../testing";
+import { LeafNode, namedBinaryChildren, sampleTree1 } from "../testing";
+import { mustGet } from "../utils";
 
 describe("Example of building a symbol table", () => {
   it("should build a symbol table based on path to each node", () => {
@@ -23,28 +16,8 @@ describe("Example of building a symbol table", () => {
     );
 
     const rtable = table(tree.root);
-    expect(new Set([...table(tree.root).keys()])).toEqual(
-      new Set([
-        "root",
-        "root/left/left",
-        "root/left/right/left/left",
-        "root/left/right/left/right",
-        "root/left/right/left",
-        "root/left/right/right",
-        "root/left/right",
-        "root/left",
-        "root/right/left",
-        "root/right/right/left",
-        "root/right/right/right/left",
-        "root/right/right/right/right",
-        "root/right/right/right",
-        "root/right/right",
-        "root/right",
-      ])
-    );
-    const rrlNode = rtable.get("root/right/right/left");
-    expect(rrlNode).toBeDefined();
-    if (rrlNode === undefined) throw new Error("Expected node, got undefined");
+    expect(new Set([...table(tree.root).keys()])).toEqual(new Set(allNodes));
+    const rrlNode = mustGet(rtable, "root/right/right/left");
     expect(path(rrlNode)).toEqual("root/right/right/left");
   });
   it("should build a symbol table only for leaf nodes", () => {
@@ -60,21 +33,8 @@ describe("Example of building a symbol table", () => {
 
     // TODO: Create primitives so we know the values in the map can be narrowed to Leaf
     const rtable = table(tree.root);
-    expect(new Set([...table(tree.root).keys()])).toEqual(
-      new Set([
-        "root/left/left",
-        "root/left/right/left/left",
-        "root/left/right/left/right",
-        "root/left/right/right",
-        "root/right/left",
-        "root/right/right/left",
-        "root/right/right/right/left",
-        "root/right/right/right/right",
-      ])
-    );
-    const rrlNode = rtable.get("root/right/right/left");
-    expect(rrlNode).toBeDefined();
-    if (rrlNode === undefined) throw new Error("Expected node, got undefined");
+    expect(new Set([...table(tree.root).keys()])).toEqual(new Set(leafNodes));
+    const rrlNode = mustGet(rtable, "root/right/right/left");
     expect(path(rrlNode)).toEqual("root/right/right/left");
   });
   it("should build a symbol table only for leaf nodes of a given type", () => {
@@ -82,29 +42,41 @@ describe("Example of building a symbol table", () => {
 
     const path = tree.inh(evalPath());
     const table = tree.add(
-      synthetic(
-        "symbol table",
-        condSymbolTableEvaluator(path, (x): x is LeafNode => x.type === "leaf")
-      )
+      subTable(path, (x): x is LeafNode => x.type === "leaf")
     );
 
-    // TODO: Create primitives so we know the values in the map can be narrowed to Leaf
     const rtable = table(tree.root);
-    expect(new Set([...table(tree.root).keys()])).toEqual(
-      new Set([
-        "root/left/left",
-        "root/left/right/left/left",
-        "root/left/right/left/right",
-        "root/left/right/right",
-        "root/right/left",
-        "root/right/right/left",
-        "root/right/right/right/left",
-        "root/right/right/right/right",
-      ])
-    );
-    const rrlNode = rtable.get("root/right/right/left");
-    expect(rrlNode).toBeDefined();
-    if (rrlNode === undefined) throw new Error("Expected node, got undefined");
+    expect(new Set([...table(tree.root).keys()])).toEqual(new Set(leafNodes));
+    const rrlNode = mustGet(rtable, "root/right/right/left");
     expect(path(rrlNode)).toEqual("root/right/right/left");
   });
 });
+
+const allNodes = [
+  "root",
+  "root/left/left",
+  "root/left/right/left/left",
+  "root/left/right/left/right",
+  "root/left/right/left",
+  "root/left/right/right",
+  "root/left/right",
+  "root/left",
+  "root/right/left",
+  "root/right/right/left",
+  "root/right/right/right/left",
+  "root/right/right/right/right",
+  "root/right/right/right",
+  "root/right/right",
+  "root/right",
+];
+
+const leafNodes = [
+  "root/left/left",
+  "root/left/right/left/left",
+  "root/left/right/left/right",
+  "root/left/right/right",
+  "root/right/left",
+  "root/right/right/left",
+  "root/right/right/right/left",
+  "root/right/right/right/right",
+];

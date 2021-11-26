@@ -58,7 +58,7 @@ export class Arbor<T extends object> {
       return this.reified.get(d) as Attribute<T, R>;
     }
     const plugins = this.plugins ?? [];
-    const def = plugins.reduce((r, p) => (p.remapAttr ? p.remapAttr(r) : r), d);
+    const def = plugins.reduce((r, p) => (p.remapDef ? p.remapDef(r) : r), d);
     switch (def.type) {
       case "syn": {
         const r = reifySyntheticAttribute<T, R>(
@@ -68,7 +68,10 @@ export class Arbor<T extends object> {
           {}
         );
         this.reified.set(def, r);
-        return r;
+        return plugins.reduce(
+          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
+          r
+        );
       }
       case "inh": {
         const r = reifyInheritedAttribute<T, R>(
@@ -78,19 +81,28 @@ export class Arbor<T extends object> {
           {}
         );
         this.reified.set(def, r);
-        return r;
+        return plugins.reduce(
+          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
+          r
+        );
       }
       case "der": {
         // TODO: As attribute gets expanded, more will probably be needed here.
-        const ret = (x: T) => def.f(x);
-        this.reified.set(def, ret);
-        return ret;
+        const r = (x: T) => def.f(x);
+        this.reified.set(def, r);
+        return plugins.reduce(
+          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
+          r
+        );
       }
       case "trans": {
         const attr = this.add(def.attr);
-        const ret = (x: T) => def.f(attr(x));
-        this.reified.set(def, ret);
-        return ret;
+        const r = (x: T) => def.f(attr(x));
+        this.reified.set(def, r);
+        return plugins.reduce(
+          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
+          r
+        );
       }
     }
     return assertUnreachable(def);

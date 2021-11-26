@@ -17,3 +17,9 @@ export function treeRepr<T, R>(
 export function assertUnreachable(x: never): never {
   throw new Error("Didn't expect to get here");
 }
+
+export function mustGet<T, R>(m: Map<T, R>, key: T): R {
+  const ret = m.get(key);
+  if (ret === undefined) throw new Error(`Missing key`);
+  return ret;
+}
