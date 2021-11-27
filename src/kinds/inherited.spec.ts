@@ -74,17 +74,16 @@ describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with indexed children and memoize them", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
     // Memoize (should be default) but not eager.
-    const map = new Map<any, number>();
     const p = evalParent<SimpleBinaryTree>();
-    const parentAttr = tree.add(counter(p, map));
+    const parentAttr = tree.add(p);
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
     const prrrr = parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
-    expect(map.get(p)).toEqual(1);
+    expect(p.count).toEqual(15);
 
     parentAttr(rrrr);
-    expect(map.get(p)).toEqual(1);
+    expect(p.count).toEqual(15);
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {

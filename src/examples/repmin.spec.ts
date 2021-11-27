@@ -324,35 +324,13 @@ describe("Run some repmin test cases", () => {
 
     /** Now define the min attribute */
     const min = tree.add(computable(evalMin));
-    // const min = tree.syn(
-    //   computeableSynthetic<SimpleBinaryTree, number>(evalMin.f, {
-    //     keepAlive: true,
-    //     equals: comparer.shallow,
-    //   }),
-    //   { memoize: memo }
-    // );
 
     /** Now define the globmin attribute, but we must provide a slightly different function for evaluating the min attribute */
     const globmin = tree.add(computable(evalGlobmin(min)));
-    //   computeableInherited(evalGlobmin((x) => min(x).get()).f, {
-    //     keepAlive: true,
-    //     equals: comparer.shallow,
-    //   }),
-    //   { memoize: memo }
-    // );
 
     let repminCount = 0;
     /** Finaly, define the repmin attribute (again need to unwrap globmin values) */
     const repmin = tree.add(computable(evalRepmin(globmin)));
-    //   computeableSynthetic(
-    //     evalRepmin((x) => {
-    //       repminCount++;
-    //       return globmin(x).get();
-    //     }).f,
-    //     { keepAlive: true, equals: comparer.shallow }
-    //   ),
-    //   { memoize: memo }
-    // );
 
     /** Compute the rootMin computed value for the root */
     const rootMin = min(root);
