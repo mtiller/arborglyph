@@ -76,6 +76,7 @@ function baseSyntheticAttributeCalculation<T, R>(
         if (child === undefined) throw new NoSuchChild(x, n, root);
         return child.attr;
       },
+      createMap: <K, V>() => new Map<K, V>(),
     };
     const result = f(args);
     return result;
@@ -100,6 +101,7 @@ export interface SyntheticArg<T, R> {
   node: T;
   attr: (child: T) => R;
   children: Array<ChildInformation<T, R>>;
+  createMap: <K, V>() => Map<K, V>;
 }
 
 export type SyntheticAttributeEvaluator<T, R> = (x: SyntheticArg<T, R>) => R;

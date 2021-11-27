@@ -28,17 +28,27 @@ export interface InheritedAttributeDefinition<T, R>
   extends BaseAttributeDefinition<T> {
   type: "inh";
   f: InheritedAttributeEvaluator<T, R>;
+  opts: Partial<InheritedOptions>;
+}
+
+export interface InheritedOptions {
+  /** Whether the inherited attribute should be eagerly evaluated (default: true) */
+  eager: boolean;
+  /** Whether the inherited attribute should be cached (default: true) */
+  cached: boolean;
 }
 
 export function inherited<T, R>(
   description: string,
-  f: InheritedAttributeEvaluator<T, R>
+  f: InheritedAttributeEvaluator<T, R>,
+  opts?: Partial<InheritedOptions>
 ): InheritedAttributeDefinition<T, R> {
   return {
     type: "inh",
     description,
     f,
     prev: [],
+    opts: opts ?? {},
   };
 }
 

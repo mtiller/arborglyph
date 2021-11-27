@@ -10,7 +10,7 @@ describe("Example of building a symbol table", () => {
   it("should build a symbol table based on path to each node", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
 
-    const path = tree.inh(evalPath());
+    const path = tree.add(evalPath());
     const table = tree.add(
       synthetic("symbol table", symbolTableEvaluator(path))
     );
@@ -23,7 +23,7 @@ describe("Example of building a symbol table", () => {
   it("should build a symbol table only for leaf nodes", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
 
-    const path = tree.inh(evalPath());
+    const path = tree.add(evalPath());
     const leafpath = tree.der((node) =>
       node.type === "leaf" ? Just(path(node)) : Nothing
     );
@@ -40,7 +40,7 @@ describe("Example of building a symbol table", () => {
   it("should build a symbol table only for leaf nodes of a given type", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
 
-    const path = tree.inh(evalPath());
+    const path = tree.add(evalPath());
     const table = tree.add(
       subTable(path, (x): x is LeafNode => x.type === "leaf")
     );

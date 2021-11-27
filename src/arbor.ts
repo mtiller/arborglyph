@@ -13,6 +13,7 @@ import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
+import { lruPlugin } from "./plugins/memoize";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -28,6 +29,7 @@ export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
 
 export interface ArborOptions<T> {
   plugins?: ArborPlugin<T>[];
+  inheritOptions?: Partial<InheritedOptions<T>>;
   // wrappers
   // inh (options, no R)
   // syn (options, no R)
@@ -41,7 +43,7 @@ export class Arbor<T extends object> {
   constructor(
     root: T,
     public list: ListChildren<T>,
-    opts: ArborOptions<T> = {}
+    protected opts: ArborOptions<T> = {}
   ) {
     this.plugins = opts.plugins ?? [];
     this.root = this.plugins.reduce(
@@ -74,11 +76,17 @@ export class Arbor<T extends object> {
         );
       }
       case "inh": {
+        const popts = { ...this.opts.inheritOptions, ...def.opts };
+        const opts: InheritedOptions<T> = {
+          eager: popts.eager ?? true,
+          p: popts.p ?? null,
+          memoize: popts.memoize ?? true,
+        };
         const r = reifyInheritedAttribute<T, R>(
           this.root,
           this.list,
           def.f,
-          {}
+          opts
         );
         this.reified.set(def, r);
         return plugins.reduce(
@@ -106,12 +114,6 @@ export class Arbor<T extends object> {
       }
     }
     return assertUnreachable(def);
-  }
-  inh<R>(
-    f: InheritedAttributeEvaluator<T, R>,
-    opts: InheritedOptions<T, R> = {}
-  ): Attribute<T, R> {
-    return reifyInheritedAttribute<T, R>(this.root, this.list, f, opts);
   }
   syn<R>(
     f: SyntheticAttributeEvaluator<T, R>,

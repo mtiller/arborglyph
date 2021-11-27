@@ -10,7 +10,7 @@ import {
 import { ScalarFunction } from "../kinds/attributes";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
-import { comparer, configure, observable } from "mobx";
+import { comparer, computed, configure, observable } from "mobx";
 import {
   computeableInherited,
   computeableSynthetic,
@@ -18,7 +18,12 @@ import {
   computable,
   mobxPlugin,
 } from "../plugins/mobx-helpers";
-import { inherited, synthetic } from "../kinds/definitions";
+import {
+  derived,
+  inherited,
+  synthetic,
+  transformer,
+} from "../kinds/definitions";
 import { lruPlugin, memoize, memoizePlugin } from "../plugins/memoize";
 import rfdc from "rfdc";
 import { counterPlugin } from "../plugins/debug";
@@ -68,15 +73,15 @@ function mutableTreeTest(
   const tree = new Arbor(clone(sampleTree1), indexedBinaryChildren, {
     plugins: [counterPlugin(map), ...plugins],
   });
-  const { table, min, globmin, repmin } = tree.attach(repminCluster);
+  const { table, min, globmin, repmin, evalMin } = tree.attach(repminCluster);
 
   expect(map.get(min)).toEqual(undefined);
   const result = repmin(tree.root);
 
   expect(globmin(tree.root)).toEqual(1);
-  expect(map.get(min)).toEqual(results.initialMinEvals);
+  expect(map.get(evalMin)).toEqual(results.initialMinEvals);
   expect(globmin(tree.root)).toEqual(1);
-  expect(map.get(min)).toEqual(results.secondMinEvals);
+  expect(map.get(evalMin)).toEqual(results.secondMinEvals);
 
   expect(result).toEqual(repminResult(1));
 
@@ -86,12 +91,12 @@ function mutableTreeTest(
   minElem.value = 0;
 
   expect(repmin(tree.root)).toEqual(repminResult(0));
-  expect(map.get(min)).toEqual(results.thirdMinEvals);
+  expect(map.get(evalMin)).toEqual(results.thirdMinEvals);
 
   minElem.value = 1;
 
   expect(repmin(tree.root)).toEqual(repminResult(1));
-  expect(map.get(min)).toEqual(results.fourthMinEvals);
+  expect(map.get(evalMin)).toEqual(results.fourthMinEvals);
 }
 
 describe("Run some repmin test cases", () => {
@@ -155,21 +160,24 @@ describe("Run some repmin test cases", () => {
 
   it("should work with mutable trees without mobx", () => {
     mutableTreeTest({
-      initialMinEvals: 35,
-      secondMinEvals: 36,
-      thirdMinEvals: 70,
-      fourthMinEvals: 104,
+      initialMinEvals: 241,
+      secondMinEvals: 256,
+      thirdMinEvals: 482,
+      fourthMinEvals: 708,
     });
   });
 
   it("should work with mutable trees with mobx", () => {
     // TODO: Add MobX plugin
-    mutableTreeTest({
-      initialMinEvals: 35,
-      secondMinEvals: 36,
-      thirdMinEvals: 70,
-      fourthMinEvals: 104,
-    });
+    mutableTreeTest(
+      {
+        initialMinEvals: 35,
+        secondMinEvals: 36,
+        thirdMinEvals: 70,
+        fourthMinEvals: 104,
+      },
+      mobxPlugin()
+    );
   });
 
   it("should work with mutable trees", () => {
@@ -315,47 +323,48 @@ describe("Run some repmin test cases", () => {
     const memo = "weakmap" as const;
 
     /** Now define the min attribute */
-    const min = tree.syn(
-      computeableSynthetic<SimpleBinaryTree, number>(evalMin.f, {
-        keepAlive: true,
-        equals: comparer.shallow,
-      }),
-      { memoize: memo }
-    );
+    const min = tree.add(computable(evalMin));
+    // const min = tree.syn(
+    //   computeableSynthetic<SimpleBinaryTree, number>(evalMin.f, {
+    //     keepAlive: true,
+    //     equals: comparer.shallow,
+    //   }),
+    //   { memoize: memo }
+    // );
 
     /** Now define the globmin attribute, but we must provide a slightly different function for evaluating the min attribute */
-    const globmin = tree.inh(
-      computeableInherited(evalGlobmin((x) => min(x).get()).f, {
-        keepAlive: true,
-        equals: comparer.shallow,
-      }),
-      { memoize: memo }
-    );
+    const globmin = tree.add(computable(evalGlobmin(min)));
+    //   computeableInherited(evalGlobmin((x) => min(x).get()).f, {
+    //     keepAlive: true,
+    //     equals: comparer.shallow,
+    //   }),
+    //   { memoize: memo }
+    // );
 
     let repminCount = 0;
     /** Finaly, define the repmin attribute (again need to unwrap globmin values) */
-    const repmin = tree.syn(
-      computeableSynthetic(
-        evalRepmin((x) => {
-          repminCount++;
-          return globmin(x).get();
-        }).f,
-        { keepAlive: true, equals: comparer.shallow }
-      ),
-      { memoize: memo }
-    );
+    const repmin = tree.add(computable(evalRepmin(globmin)));
+    //   computeableSynthetic(
+    //     evalRepmin((x) => {
+    //       repminCount++;
+    //       return globmin(x).get();
+    //     }).f,
+    //     { keepAlive: true, equals: comparer.shallow }
+    //   ),
+    //   { memoize: memo }
+    // );
 
     /** Compute the rootMin computed value for the root */
     const rootMin = min(root);
-    expect(rootMin.get()).toEqual(1);
+    expect(rootMin).toEqual(1);
 
     /** Compute the rootGlobmin computed value for the root */
     const rootGlobmin = globmin(root);
-    expect(rootGlobmin.get()).toEqual(1);
+    expect(rootGlobmin).toEqual(1);
 
     /** Compute the rootRepmin computed value for the root */
     const rootRepmin = repmin(root);
-    expect(rootRepmin.get()).toEqual(
+    expect(rootRepmin).toEqual(
       fork(
         fork(leaf(1), fork(fork(leaf(1), leaf(1)), leaf(1))),
         fork(leaf(1), fork(leaf(1), fork(leaf(1), leaf(1))))
@@ -366,7 +375,7 @@ describe("Run some repmin test cases", () => {
     expect(initialRepminCount).toEqual(8);
 
     /** Requesting the computed value shouldn't cause any more evaluations */
-    rootRepmin.get();
+    repmin(root);
     expect(repminCount).toEqual(initialRepminCount);
 
     /** If we get here, we got the expected result win the min value was 1, now lets change it to zero */
@@ -380,13 +389,13 @@ describe("Run some repmin test cases", () => {
      * already computed rootMin computed value.  This is memoized UNTIL some value that effected the
      * calculation is changed in which case it gets updated automatically (and only if needed).
      */
-    expect(rootMin.get()).toEqual(0);
+    expect(min(root)).toEqual(0);
 
     /** Same with the globmin */
-    expect(rootGlobmin.get()).toEqual(0);
+    expect(globmin(root)).toEqual(0);
 
     /** And even the repmin tree! */
-    expect(rootRepmin.get()).toEqual(
+    expect(repmin(root)).toEqual(
       fork(
         fork(leaf(0), fork(fork(leaf(0), leaf(0)), leaf(0))),
         fork(leaf(0), fork(leaf(0), fork(leaf(0), leaf(0))))
@@ -396,7 +405,7 @@ describe("Run some repmin test cases", () => {
     /** Only now that we've requested the new rootRepmin should we see more evaluations. */
     // expect(repminCount).toEqual(initialRepminCount + 8); // 21 without cachine, 16 with
 
-    expect(rootMin.get()).toEqual(0);
+    expect(min(root)).toEqual(0);
 
     /** Now let's say we change a value that doesn't impact repmin */
     /** Find the element with the smallest value */
@@ -405,7 +414,7 @@ describe("Run some repmin test cases", () => {
     if (maxElem.type !== "leaf") throw new Error("Expected leaf"); // This is just to narrow the type
 
     /** And even the repmin tree! */
-    expect(rootRepmin.get()).toEqual(
+    expect(repmin(root)).toEqual(
       fork(
         fork(leaf(0), fork(fork(leaf(0), leaf(0)), leaf(0))),
         fork(leaf(0), fork(leaf(0), fork(leaf(0), leaf(0))))
@@ -415,7 +424,7 @@ describe("Run some repmin test cases", () => {
     /** Only now that we've requested the new rootRepmin should we see more evaluations. */
     // expect(repminCount).toEqual(initialRepminCount + 8); // 21 without caching, 16 with
 
-    expect(rootMin.get()).toEqual(0);
+    expect(min(root)).toEqual(0);
 
     /**
      * If we replace the minimum element with a fork that has a new (different minimum), it should
@@ -429,9 +438,9 @@ describe("Run some repmin test cases", () => {
     /** Now the new min should be -2, but the structure is different */
     minParent.left = fork(leaf(-2), leaf(10));
 
-    expect(rootMin.get()).toEqual(-2);
+    expect(min(root)).toEqual(-2);
 
-    expect(rootRepmin.get()).toEqual(
+    expect(repmin(root)).toEqual(
       fork(
         fork(leaf(-2), fork(fork(leaf(-2), leaf(-2)), leaf(-2))),
         fork(leaf(-2), fork(fork(leaf(-2), leaf(-2)), fork(leaf(-2), leaf(-2))))
@@ -447,13 +456,13 @@ function repminCluster(tree: Arbor<SimpleBinaryTree>) {
   const min = tree.add(evalMin);
   const globmin = tree.add(evalGlobmin(min));
   const repmin = tree.add(evalRepmin(globmin));
-  const path = tree.inh(evalPath());
+  const path = tree.add(evalPath());
   const subtable = tree.add(
     subTable(path, (x): x is LeafNode => x.type === "leaf")
   );
   const table = subtable(tree.root);
 
-  return { table, min, globmin, repmin };
+  return { table, min, globmin, repmin, evalMin };
 }
 
 function repminResult(x: number) {

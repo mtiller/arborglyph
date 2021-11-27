@@ -1,16 +1,15 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { NodeNotFoundError } from "../errors";
-import { Arbor, childrenOfNode, ListChildren, walkTree } from "../arbor";
+import { childrenOfNode, ListChildren, walkTree } from "../arbor";
 import LRUCache from "lru-cache";
 import { Attribute } from "./attributes";
 
 /** Options when reifying an inherited attribute */
-export interface InheritedOptions<T, R> {
-  p?: ParentFunc<T>;
-  memoize?: "no" | "weakmap" | "lru";
+export interface InheritedOptions<T> {
+  p: ParentFunc<T> | null;
+  memoize: boolean;
   /** Pre-evaluate all nodes */
-  eager?: boolean;
-  lru?: LRUCache.Options<T, R>;
+  eager: boolean;
 }
 
 /**
@@ -27,16 +26,15 @@ export function reifyInheritedAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   evaluator: InheritedAttributeEvaluator<T, R>,
-  opts: InheritedOptions<T, R> = {}
+  opts: InheritedOptions<T>
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
-  const memo = opts.memoize ?? "no";
-  const pre = opts.eager ?? false;
+  const memo = opts.memoize;
+  const eager = opts.eager;
 
-  if (memo === "weakmap" || memo === "lru") {
+  if (memo) {
     /** If memoization is requested, first create storage for memoized values. */
-    const storage =
-      memo === "weakmap" ? new WeakMap<T, R>() : new LRUCache<T, R>(opts.lru);
+    const storage = new WeakMap<T, R>();
 
     /**
      * Now create a special memoized wrapper that checks for memoized values and
@@ -59,12 +57,7 @@ export function reifyInheritedAttribute<T extends object, R>(
 
     /* If precomputing of the attribute for all nodes was selected... */
     // TODO: Defer this until the very first time the attribute is evaluated? (e.g., lazier)
-    if (pre) {
-      if (memo === "lru") {
-        console.warn(
-          "Precomputing with LRU cache map lead to wasted evaluations"
-        );
-      }
+    if (eager) {
       // Walk the tree and invoke the function for every child
       walkTree(root, list, memoed);
     }
@@ -88,13 +81,13 @@ function baseInheritedAttributeCalculation<T, R>(
   root: T,
   list: ListChildren<T>,
   f: InheritedAttributeEvaluator<T, R>,
-  p?: ParentFunc<T>
+  p: ParentFunc<T> | null
 ): Attribute<T, R> {
   return (x: T): R => {
     /**
      * If a parent function was supplied, then this is very easy
      */
-    if (p) {
+    if (p !== null) {
       const information = parentInformation(x, p, f);
       return f({ node: x, parent: information });
     }

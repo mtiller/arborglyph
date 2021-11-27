@@ -1,7 +1,7 @@
-import { InheritedAttributeEvaluator } from "..";
+import { inherited, InheritedAttributeDefinition } from "../kinds/definitions";
 
-export function evalPath<T>(): InheritedAttributeEvaluator<T, string> {
-  return ({ node, parent }) => {
+export function evalPath<T>(): InheritedAttributeDefinition<T, string> {
+  return inherited("path", ({ node, parent }) => {
     return parent.caseOf({
       Nothing: () => "root",
       Just: (p) => {
@@ -15,5 +15,5 @@ export function evalPath<T>(): InheritedAttributeEvaluator<T, string> {
         );
       },
     });
-  };
+  });
 }

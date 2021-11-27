@@ -8,13 +8,15 @@ import {
   SimpleBinaryTree,
 } from "../testing";
 import { Arbor } from "../arbor";
+//import { evalParent } from "../attributes/parent";
+import { evalDepth } from "../attributes/depth";
 import { evalParent } from "../attributes/parent";
-import { gevalDepth } from "../attributes/depth";
+import { counter } from "../plugins/debug";
 
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
-    const parentAttr = tree.inh(evalParent());
+    const parentAttr = tree.add(evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -42,7 +44,7 @@ describe("Test inherited attribute functionalty", () => {
   });
   it("should find the parents of a sample tree with indexed children", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
-    const parentAttr = tree.inh(evalParent());
+    const parentAttr = tree.add(evalParent());
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -71,49 +73,38 @@ describe("Test inherited attribute functionalty", () => {
 
   it("should find the parents of a sample tree with indexed children and memoize them", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
-    let count = 0;
-    const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
-      count++;
-      return parent.map((x) => x.node);
-    };
-
-    const parentAttr = tree.inh(parentFunc, {
-      memoize: "weakmap",
-    });
+    // Memoize (should be default) but not eager.
+    const map = new Map<any, number>();
+    const p = evalParent<SimpleBinaryTree>();
+    const parentAttr = tree.add(counter(p, map));
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
     const prrrr = parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
-    expect(count).toEqual(1);
+    expect(map.get(p)).toEqual(1);
 
     parentAttr(rrrr);
-    expect(count).toEqual(1);
+    expect(map.get(p)).toEqual(1);
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
-    let count = 0;
-    const parentFunc: ParentAttribute<SimpleBinaryTree> = ({ parent }) => {
-      count++;
-      return parent.map((x) => x.node);
-    };
 
-    const parentAttr = tree.inh(parentFunc, {
-      memoize: "weakmap",
-      eager: true,
-    });
+    const map = new Map<any, number>();
+    const p = evalParent<SimpleBinaryTree>();
+    const parentAttr = tree.add(counter(p, map));
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
-    expect(count).toEqual(15);
+    expect(map.get(p)).toEqual(15);
     const prrrr = parentAttr(rrrr);
-    const prrrr2 = parentAttr(rrrr);
+    parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
-    expect(count).toEqual(15);
+    expect(map.get(p)).toEqual(15);
   });
 
   it("should find the depth of a sample tree", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
-    const parentAttr = tree.inh(gevalDepth);
+    const parentAttr = tree.add(evalDepth());
 
     expect(parentAttr(tree.root)).toEqual(0);
 
