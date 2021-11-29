@@ -26,9 +26,14 @@ export interface CounterStatistics<T> {
   evaluations: (a: Attribute<T, any>, n?: T) => number;
 }
 
+// TODO: Add some predicates to control when reporting happens
 export class DebugPlugin<T extends object> implements ArborPlugin<T> {
-  recordInvocation?(d: AttributeDefinition<T, any>, n: T): void {
-    console.log(`Invoking ${d.description} with ${JSON.stringify(n)}`);
+  recordInvocation?<R>(d: AttributeDefinition<T, R>, n: T, r: R): void {
+    console.log(
+      `Invoking ${d.description} with ${JSON.stringify(n)} => ${JSON.stringify(
+        r
+      )}`
+    );
   }
 }
 

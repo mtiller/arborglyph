@@ -1,15 +1,10 @@
 import { DerivedEvaluator } from "./kinds/derived";
 import { InheritedOptions, reifyInheritedAttribute } from "./kinds/inherited";
-import {
-  reifySyntheticAttribute,
-  SyntheticAttributeEvaluator,
-  SyntheticOptions,
-} from "./kinds/synthetic";
+import { reifySyntheticAttribute, SyntheticOptions } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
-import { AttributeDefinition, AttributeEvaluator } from "./kinds/definitions";
+import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
-import { repmin } from "./former/attributes/testing/tree";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -23,8 +18,8 @@ export type IndexedChildren<T> = (x: T) => T[];
 export type NamedChildren<T> = (x: T) => Record<string, T>;
 export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
 export interface EvaluationNotifications<T> {
-  invocation(d: AttributeDefinition<T, any>, n: T): void;
-  evaluation(d: Attribute<T, any>, n: T): void;
+  invocation<R>(d: AttributeDefinition<T, R>, n: T, result: R): R;
+  evaluation<R>(d: Attribute<T, R>, n: T, result: R): R;
 }
 
 export interface ArborOptions<T> {
@@ -54,19 +49,21 @@ export class Arbor<T extends object> {
     );
     this.reified = new Map();
     this.notify = {
-      invocation: (d: AttributeDefinition<T, any>, n: T) => {
+      invocation: <R>(d: AttributeDefinition<T, R>, n: T, result: R): R => {
         this.plugins.forEach((p) => {
           if (p.recordInvocation) {
-            p.recordInvocation(d, n);
+            p.recordInvocation(d, n, result);
           }
         });
+        return result;
       },
-      evaluation: (a: Attribute<T, any>, n: T) => {
+      evaluation: <R>(a: Attribute<T, any>, n: T, result: R) => {
         this.plugins.forEach((p) => {
           if (p.recordEvaluation) {
-            p.recordEvaluation(a, n);
+            p.recordEvaluation(a, n, result);
           }
         });
+        return result;
       },
     };
   }
@@ -74,10 +71,7 @@ export class Arbor<T extends object> {
     return f(this);
   }
   protected instrumentAttribute<R>(attr: Attribute<T, R>): Attribute<T, R> {
-    const ret = (n: T): R => {
-      this.notify.evaluation(ret, n);
-      return attr(n);
-    };
+    const ret = (n: T): R => this.notify.evaluation(ret, n, attr(n));
     return ret;
   }
   protected instrumentDefinition<R>(
@@ -87,33 +81,21 @@ export class Arbor<T extends object> {
       case "syn": {
         const ret: typeof def = {
           ...def,
-          f: (args) => {
-            this.notify.invocation(def, args.node);
-            const result = def.f(args);
-            return result;
-          },
+          f: (args) => this.notify.invocation(def, args.node, def.f(args)),
         };
         return ret;
       }
       case "inh": {
         const ret: typeof def = {
           ...def,
-          f: (args) => {
-            this.notify.invocation(def, args.node);
-            const result = def.f(args);
-            return result;
-          },
+          f: (args) => this.notify.invocation(def, args.node, def.f(args)),
         };
         return ret;
       }
       case "der": {
         const ret: typeof def = {
           ...def,
-          f: (n) => {
-            this.notify.invocation(def, n);
-            const result = def.f(n);
-            return result;
-          },
+          f: (n) => this.notify.invocation(def, n, def.f(n)),
         };
         return ret;
       }
