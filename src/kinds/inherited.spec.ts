@@ -11,7 +11,7 @@ import { Arbor } from "../arbor";
 //import { evalParent } from "../attributes/parent";
 import { evalDepth } from "../attributes/depth";
 import { evalParent } from "../attributes/parent";
-import { counter } from "../plugins/debug";
+import { CounterPlugin } from "../plugins/debug";
 
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
@@ -87,18 +87,20 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {
-    const tree = new Arbor(sampleTree1, indexedBinaryChildren);
+    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+      plugins: [stats],
+    });
 
-    const map = new Map<any, number>();
     const p = evalParent<SimpleBinaryTree>();
-    const parentAttr = tree.add(counter(p, map));
+    const parentAttr = tree.add(p);
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
-    expect(map.get(p)).toEqual(15);
+    expect(stats.invocations(p)).toEqual(15);
     const prrrr = parentAttr(rrrr);
     parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
-    expect(map.get(p)).toEqual(15);
+    expect(stats.invocations(p)).toEqual(15);
   });
 
   it("should find the depth of a sample tree", () => {

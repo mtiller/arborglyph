@@ -10,23 +10,16 @@ import {
 import { ScalarFunction } from "../kinds/attributes";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
-import { comparer, computed, configure, observable } from "mobx";
+import { configure, observable } from "mobx";
 import {
-  computeableInherited,
-  computeableSynthetic,
   computableValue,
   computable,
   mobxPlugin,
 } from "../plugins/mobx-helpers";
-import {
-  derived,
-  inherited,
-  synthetic,
-  transformer,
-} from "../kinds/definitions";
+import { inherited, synthetic } from "../kinds/definitions";
 import { lruPlugin, memoize, memoizePlugin } from "../plugins/memoize";
 import rfdc from "rfdc";
-import { counterPlugin } from "../plugins/debug";
+import { CounterPlugin } from "../plugins/debug";
 import { subTable } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";
 import { mustGet } from "../utils";
@@ -69,11 +62,12 @@ function mutableTreeTest(
   results: MutableResults,
   ...plugins: ArborPlugin<SimpleBinaryTree>[]
 ) {
+  const stats = new CounterPlugin<SimpleBinaryTree>();
   const map = new Map<any, number>();
   const tree = new Arbor(clone(sampleTree1), indexedBinaryChildren, {
-    plugins: [counterPlugin(map), ...plugins],
+    plugins: [stats, ...plugins],
   });
-  const { table, min, globmin, repmin, evalMin } = tree.attach(repminCluster);
+  const { table, min, globmin, repmin } = tree.attach(repminCluster);
 
   expect(map.get(min)).toEqual(undefined);
   const result = repmin(tree.root);
@@ -104,9 +98,9 @@ describe("Run some repmin test cases", () => {
   configure({ enforceActions: "never" });
 
   it("should handle a basic repmin", () => {
-    const map = new Map<any, number>();
+    const stats = new CounterPlugin<SimpleBinaryTree>();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
-      plugins: [counterPlugin(map)],
+      plugins: [stats],
     });
     const { globmin, repmin } = tree.attach(repminCluster);
 
@@ -114,48 +108,48 @@ describe("Run some repmin test cases", () => {
     expect(globmin(tree.root)).toEqual(1);
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(256);
+    expect(stats.invocations(evalMin)).toEqual(53);
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(482);
+    expect(stats.invocations(evalMin)).toEqual(53);
   });
 
   it("should handle a basic repmin with weakmap caching", () => {
-    const map = new Map<any, number>();
+    const stats = new CounterPlugin<SimpleBinaryTree>();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
-      plugins: [counterPlugin(map), memoizePlugin()],
+      plugins: [stats],
     });
     const { repmin } = tree.attach(repminCluster);
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(15);
+    expect(stats.invocations(evalMin)).toEqual(15);
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(15);
+    expect(stats.invocations(evalMin)).toEqual(15);
   });
 
   it("should handle a basic repmin with small caching", () => {
-    const map = new Map<any, number>();
+    const stats = new CounterPlugin<SimpleBinaryTree>();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
-      plugins: [counterPlugin(map), lruPlugin({ max: 5 })],
+      plugins: [stats, lruPlugin({ max: 5 })],
     });
     const { repmin } = tree.attach(repminCluster);
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(37); // Better, but not as good as with weakmap
+    expect(stats.invocations(evalMin)).toEqual(37); // Better, but not as good as with weakmap
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(37);
+    expect(stats.invocations(evalMin)).toEqual(37);
   });
 
   it("should handle a basic repmin with large caching", () => {
-    const map = new Map<any, number>();
+    const stats = new CounterPlugin<SimpleBinaryTree>();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
-      plugins: [counterPlugin(map), lruPlugin({ max: 15 })],
+      plugins: [stats, lruPlugin({ max: 15 })],
     });
     const { repmin } = tree.attach(repminCluster);
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(15); // Matches weak map
+    expect(stats.invocations(evalMin)).toEqual(15); // Matches weak map
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(map.get(evalMin)).toEqual(15);
+    expect(stats.invocations(evalMin)).toEqual(15);
   });
 
   it("should work with mutable trees without mobx", () => {
@@ -440,7 +434,7 @@ function repminCluster(tree: Arbor<SimpleBinaryTree>) {
   );
   const table = subtable(tree.root);
 
-  return { table, min, globmin, repmin, evalMin };
+  return { table, min, globmin, repmin };
 }
 
 function repminResult(x: number) {

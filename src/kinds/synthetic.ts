@@ -1,16 +1,20 @@
 import { Attribute } from "./attributes";
 import { NodeSuchChild as NoSuchChild } from "../errors";
-import { childrenOfNode, ListChildren } from "../arbor";
+import {
+  childrenOfNode,
+  EvaluationNotifications,
+  ListChildren,
+} from "../arbor";
 import LRUCache from "lru-cache";
+import { SyntheticAttributeDefinition } from "./definitions";
 
 export type SyntheticEvaluationWrapper<T> = <S extends T, R>(
   e: SyntheticAttributeEvaluator<S, R>
 ) => SyntheticAttributeEvaluator<S, R>;
 
-export interface SyntheticOptions<T, R> {
-  wrappers?: Array<SyntheticEvaluationWrapper<T>>;
-  memoize?: "no" | "weakmap" | "lru";
-  lru?: LRUOptions;
+export interface SyntheticOptions {
+  memoize: boolean;
+  /** Pre-evaluate all nodes */
 }
 
 /**
@@ -24,37 +28,35 @@ export interface SyntheticOptions<T, R> {
  * @returns
  */
 export function reifySyntheticAttribute<T extends object, R>(
+  d: SyntheticAttributeDefinition<T, R>,
   root: T,
   list: ListChildren<T>,
   evaluator: SyntheticAttributeEvaluator<T, R>,
-  opts: SyntheticOptions<T, R> = {}
+  notify: EvaluationNotifications<T>,
+  opts: SyntheticOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
-  const memo = opts.memoize ?? "no";
+  const memo = opts.memoize ?? false;
 
-  if (memo === "weakmap") {
+  if (memo) {
     return baseSyntheticAttributeCalculation(
+      d,
       root,
       list,
+      notify,
       weakmapWrapper(evaluator)
     );
   }
 
-  if (memo === "lru") {
-    return baseSyntheticAttributeCalculation(
-      root,
-      list,
-      lruWrapper(opts.lru)(evaluator)
-    );
-  }
-
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(root, list, evaluator);
+  return baseSyntheticAttributeCalculation(d, root, list, notify, evaluator);
 }
 
 function baseSyntheticAttributeCalculation<T, R>(
+  d: SyntheticAttributeDefinition<T, R>,
   root: T,
   list: ListChildren<T>,
+  notify: EvaluationNotifications<T>,
   f: SyntheticAttributeEvaluator<T, R>
 ): Attribute<T, R> {
   const ret = (x: T): R => {
@@ -78,6 +80,7 @@ function baseSyntheticAttributeCalculation<T, R>(
       },
       createMap: <K, V>() => new Map<K, V>(),
     };
+    notify.invocation(d, args.node);
     const result = f(args);
     return result;
   };

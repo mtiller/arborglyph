@@ -1,19 +1,15 @@
 import { DerivedEvaluator } from "./kinds/derived";
-import {
-  InheritedAttributeEvaluator,
-  InheritedOptions,
-  reifyInheritedAttribute,
-} from "./kinds/inherited";
+import { InheritedOptions, reifyInheritedAttribute } from "./kinds/inherited";
 import {
   reifySyntheticAttribute,
   SyntheticAttributeEvaluator,
   SyntheticOptions,
 } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
-import { AttributeDefinition } from "./kinds/definitions";
+import { AttributeDefinition, AttributeEvaluator } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
-import { lruPlugin } from "./plugins/memoize";
+import { repmin } from "./former/attributes/testing/tree";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -26,10 +22,15 @@ import { lruPlugin } from "./plugins/memoize";
 export type IndexedChildren<T> = (x: T) => T[];
 export type NamedChildren<T> = (x: T) => Record<string, T>;
 export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
+export interface EvaluationNotifications<T> {
+  invocation(d: AttributeDefinition<T, any>, n: T): void;
+  evaluation(d: Attribute<T, any>, n: T): void;
+}
 
 export interface ArborOptions<T> {
   plugins?: ArborPlugin<T>[];
   inheritOptions?: Partial<InheritedOptions<T>>;
+  syntheticOptions?: Partial<SyntheticOptions>;
   // wrappers
   // inh (options, no R)
   // syn (options, no R)
@@ -40,6 +41,7 @@ export class Arbor<T extends object> {
   protected reified: Map<AttributeDefinition<any, any>, Attribute<any, any>>;
   public readonly root: T;
   protected plugins: ArborPlugin<T>[];
+  protected notify: EvaluationNotifications<T>;
   constructor(
     root: T,
     public list: ListChildren<T>,
@@ -51,6 +53,22 @@ export class Arbor<T extends object> {
       root
     );
     this.reified = new Map();
+    this.notify = {
+      invocation: (d: AttributeDefinition<T, any>, n: T) => {
+        this.plugins.forEach((p) => {
+          if (p.recordInvocation) {
+            p.recordInvocation(d, n);
+          }
+        });
+      },
+      evaluation: (a: Attribute<T, any>, n: T) => {
+        this.plugins.forEach((p) => {
+          if (p.recordEvaluation) {
+            p.recordEvaluation(a, n);
+          }
+        });
+      },
+    };
   }
   attach<R>(f: (x: this) => R) {
     return f(this);
@@ -63,11 +81,17 @@ export class Arbor<T extends object> {
     const def = plugins.reduce((r, p) => (p.remapDef ? p.remapDef(r) : r), d);
     switch (def.type) {
       case "syn": {
+        const popts = { ...this.opts.syntheticOptions, ...def.opts };
+        const opts: SyntheticOptions = {
+          memoize: popts.memoize ?? false,
+        };
         const r = reifySyntheticAttribute<T, R>(
+          def,
           this.root,
           this.list,
           def.f,
-          {}
+          this.notify,
+          opts
         );
         this.reified.set(def, r);
         return plugins.reduce(
@@ -85,7 +109,8 @@ export class Arbor<T extends object> {
         const r = reifyInheritedAttribute<T, R>(
           this.root,
           this.list,
-          def.f,
+          def,
+          this.notify,
           opts
         );
         this.reified.set(def, r);
@@ -115,12 +140,18 @@ export class Arbor<T extends object> {
     }
     return assertUnreachable(def);
   }
-  syn<R>(
-    f: SyntheticAttributeEvaluator<T, R>,
-    opts: SyntheticOptions<T, R> = {}
-  ): Attribute<T, R> {
-    return reifySyntheticAttribute<T, R>(this.root, this.list, f, opts);
-  }
+  // syn<R>(
+  //   f: SyntheticAttributeEvaluator<T, R>,
+  //   opts: SyntheticOptions<T, R> = {}
+  // ): Attribute<T, R> {
+  //   return reifySyntheticAttribute<T, R>(
+  //     this.root,
+  //     this.list,
+  //     f,
+  //     this.notify,
+  //     opts
+  //   );
+  // }
   // There are no options here mainly because memoization probably isn't useful.
   der<R>(f: DerivedEvaluator<T, R>): Attribute<T, R> {
     // TODO: As attribute gets expanded, more will probably be needed here.
