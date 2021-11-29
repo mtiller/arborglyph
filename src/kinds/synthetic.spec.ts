@@ -47,29 +47,30 @@ describe("Test synthetic attribute evaluation", () => {
       // compare sets from index and named trees
     });
     it("should find all descendents with caching", () => {
-      const tree = new Arbor(sampleTree1, indexedBinaryChildren);
+      const stats = new CounterPlugin<SimpleBinaryTree>();
+      const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+        plugins: [stats],
+        syntheticOptions: { memoize: true },
+      });
 
-      let count = 0;
       const desc = descendents<SimpleBinaryTree>();
-      const icount = memoize(
-        synthetic<SimpleBinaryTree, Set<SimpleBinaryTree>>("counter", (x) => {
-          count++;
-          return desc(x);
-        })
+      const icount = synthetic<SimpleBinaryTree, Set<SimpleBinaryTree>>(
+        "counter",
+        desc
       );
       const idesc = tree.add(icount);
 
       const itotal = idesc(tree.root);
 
       expect(itotal.size).toEqual(14);
-      expect(count).toEqual(15);
+      expect(stats.invocations(icount)).toEqual(15);
 
       /**
        * There is memoization so we expect evaluating the attribute
        * (for all existing nodes) should not lead to any more evaluations.
        **/
       itotal.forEach((x) => idesc(x));
-      expect(count).toEqual(15);
+      expect(stats.invocations(icount)).toEqual(15);
 
       // Create synthetic attribute to find all descendents as a set
       // compare sets from index and named trees

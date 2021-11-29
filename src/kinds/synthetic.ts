@@ -38,18 +38,16 @@ export function reifySyntheticAttribute<T extends object, R>(
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? false;
 
-  if (memo) {
-    return baseSyntheticAttributeCalculation(
-      d,
-      root,
-      list,
-      notify,
-      weakmapWrapper(evaluator)
-    );
-  }
+  const e: SyntheticAttributeEvaluator<T, R> = memo
+    ? wrapWithMap(d, new WeakMap(), evaluator, notify)
+    : (args) => {
+        notify.invocation(d, args.node);
+        const ret = evaluator(args);
+        return ret;
+      };
 
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(d, root, list, notify, evaluator);
+  return baseSyntheticAttributeCalculation(d, root, list, notify, e);
 }
 
 function baseSyntheticAttributeCalculation<T, R>(
@@ -120,20 +118,11 @@ export interface CacheStorage<T, R> {
   set(key: T, value: R): void;
 }
 
-export const weakmapWrapper: SyntheticEvaluationWrapper<object> = <
-  T extends object,
-  R
->(
-  evaluator: SyntheticAttributeEvaluator<T, R>
-): SyntheticAttributeEvaluator<T, R> => {
-  const cache = new WeakMap<T, EvaluationRecord<T, R>>();
-
-  return wrapWithMap(cache, evaluator);
-};
-
 function wrapWithMap<T extends object, R>(
+  def: SyntheticAttributeDefinition<T, R>,
   childStorage: CacheStorage<T, EvaluationRecord<T, R>>,
-  evaluator: SyntheticAttributeEvaluator<T, R>
+  evaluator: SyntheticAttributeEvaluator<T, R>,
+  notify: EvaluationNotifications<T>
 ): SyntheticAttributeEvaluator<T, R> {
   return (args: SyntheticArg<T, R>) => {
     const children = args.children.map((c) => c.node);
@@ -151,26 +140,9 @@ function wrapWithMap<T extends object, R>(
       )
         return cachedResult;
     }
+    notify.invocation(def, args.node);
     const result = evaluator(args);
     childStorage.set(args.node, { result, children });
     return result;
-  };
-}
-
-export interface LRUOptions {
-  max?: number;
-  maxAge?: number;
-  length?: (value: any, key?: any) => number;
-}
-
-export function lruWrapper(
-  opts?: LRUOptions
-): SyntheticEvaluationWrapper<object> {
-  return <T extends object, R>(
-    evaluator: SyntheticAttributeEvaluator<T, R>
-  ): SyntheticAttributeEvaluator<T, R> => {
-    const cache = new LRUCache<T, EvaluationRecord<T, R>>(opts);
-
-    return wrapWithMap(cache, evaluator);
   };
 }
