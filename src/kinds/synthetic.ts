@@ -32,29 +32,23 @@ export function reifySyntheticAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   evaluator: SyntheticAttributeEvaluator<T, R>,
-  notify: EvaluationNotifications<T>,
   opts: SyntheticOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? false;
 
   const e: SyntheticAttributeEvaluator<T, R> = memo
-    ? wrapWithMap(d, new WeakMap(), evaluator, notify)
-    : (args) => {
-        notify.invocation(d, args.node);
-        const ret = evaluator(args);
-        return ret;
-      };
+    ? wrapWithMap(d, new WeakMap(), evaluator)
+    : evaluator;
 
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(d, root, list, notify, e);
+  return baseSyntheticAttributeCalculation(d, root, list, e);
 }
 
 function baseSyntheticAttributeCalculation<T, R>(
   d: SyntheticAttributeDefinition<T, R>,
   root: T,
   list: ListChildren<T>,
-  notify: EvaluationNotifications<T>,
   f: SyntheticAttributeEvaluator<T, R>
 ): Attribute<T, R> {
   const ret = (x: T): R => {
@@ -78,7 +72,6 @@ function baseSyntheticAttributeCalculation<T, R>(
       },
       createMap: <K, V>() => new Map<K, V>(),
     };
-    notify.invocation(d, args.node);
     const result = f(args);
     return result;
   };
@@ -121,8 +114,7 @@ export interface CacheStorage<T, R> {
 function wrapWithMap<T extends object, R>(
   def: SyntheticAttributeDefinition<T, R>,
   childStorage: CacheStorage<T, EvaluationRecord<T, R>>,
-  evaluator: SyntheticAttributeEvaluator<T, R>,
-  notify: EvaluationNotifications<T>
+  evaluator: SyntheticAttributeEvaluator<T, R>
 ): SyntheticAttributeEvaluator<T, R> {
   return (args: SyntheticArg<T, R>) => {
     const children = args.children.map((c) => c.node);
@@ -140,7 +132,6 @@ function wrapWithMap<T extends object, R>(
       )
         return cachedResult;
     }
-    notify.invocation(def, args.node);
     const result = evaluator(args);
     childStorage.set(args.node, { result, children });
     return result;

@@ -31,7 +31,6 @@ export function reifyInheritedAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   def: InheritedAttributeDefinition<T, R>,
-  notify: EvaluationNotifications<T>,
   opts: InheritedOptions<T>
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
@@ -48,7 +47,6 @@ export function reifyInheritedAttribute<T extends object, R>(
      **/
     const memoizeEvaluator: InheritedAttributeEvaluator<T, R> = (args) => {
       if (storage.has(args.node)) return storage.get(args.node) as R;
-      notify.invocation(def, args.node);
       const ret = def.f(args);
       storage.set(args.node, ret);
       return ret;
@@ -73,11 +71,7 @@ export function reifyInheritedAttribute<T extends object, R>(
     return memoed;
   }
 
-  const evaluator: InheritedAttributeEvaluator<T, R> = (args) => {
-    notify.invocation(def, args.node);
-    const ret = def.f(args);
-    return ret;
-  };
+  const evaluator: InheritedAttributeEvaluator<T, R> = def.f;
 
   /** Build a function that can compute our attribute but doesn't use caching */
   return baseInheritedAttributeCalculation(root, list, evaluator, opts.p);

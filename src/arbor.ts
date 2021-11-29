@@ -73,12 +73,65 @@ export class Arbor<T extends object> {
   attach<R>(f: (x: this) => R) {
     return f(this);
   }
+  protected instrumentAttribute<R>(attr: Attribute<T, R>): Attribute<T, R> {
+    const ret = (n: T): R => {
+      this.notify.evaluation(ret, n);
+      return attr(n);
+    };
+    return ret;
+  }
+  protected instrumentDefinition<R>(
+    def: AttributeDefinition<T, R>
+  ): AttributeDefinition<T, R> {
+    switch (def.type) {
+      case "syn": {
+        const ret: typeof def = {
+          ...def,
+          f: (args) => {
+            this.notify.invocation(def, args.node);
+            const result = def.f(args);
+            return result;
+          },
+        };
+        return ret;
+      }
+      case "inh": {
+        const ret: typeof def = {
+          ...def,
+          f: (args) => {
+            this.notify.invocation(def, args.node);
+            const result = def.f(args);
+            return result;
+          },
+        };
+        return ret;
+      }
+      case "der": {
+        const ret: typeof def = {
+          ...def,
+          f: (n) => {
+            this.notify.invocation(def, n);
+            const result = def.f(n);
+            return result;
+          },
+        };
+        return ret;
+      }
+      case "trans": {
+        return def;
+      }
+    }
+    return assertUnreachable(def);
+  }
   add<R>(d: AttributeDefinition<T, R>): Attribute<T, R> {
     if (this.reified.has(d)) {
       return this.reified.get(d) as Attribute<T, R>;
     }
     const plugins = this.plugins ?? [];
-    const def = plugins.reduce((r, p) => (p.remapDef ? p.remapDef(r) : r), d);
+    const def = plugins.reduce(
+      (r, p) => (p.remapDef ? this.instrumentDefinition(p.remapDef(r)) : r),
+      this.instrumentDefinition(d)
+    );
     switch (def.type) {
       case "syn": {
         const popts = { ...this.opts.syntheticOptions, ...def.opts };
@@ -90,13 +143,11 @@ export class Arbor<T extends object> {
           this.root,
           this.list,
           def.f,
-          this.notify,
           opts
         );
         this.reified.set(def, r);
-        return plugins.reduce(
-          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
-          r
+        return this.instrumentAttribute(
+          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
         );
       }
       case "inh": {
@@ -110,31 +161,27 @@ export class Arbor<T extends object> {
           this.root,
           this.list,
           def,
-          this.notify,
           opts
         );
         this.reified.set(def, r);
-        return plugins.reduce(
-          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
-          r
+        return this.instrumentAttribute(
+          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
         );
       }
       case "der": {
         // TODO: As attribute gets expanded, more will probably be needed here.
         const r = (x: T) => def.f(x);
         this.reified.set(def, r);
-        return plugins.reduce(
-          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
-          r
+        return this.instrumentAttribute(
+          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
         );
       }
       case "trans": {
         const attr = this.add(def.attr);
         const r = (x: T) => def.f(attr(x));
         this.reified.set(def, r);
-        return plugins.reduce(
-          (ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret),
-          r
+        return this.instrumentAttribute(
+          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
         );
       }
     }

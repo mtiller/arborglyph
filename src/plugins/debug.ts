@@ -26,6 +26,12 @@ export interface CounterStatistics<T> {
   evaluations: (a: Attribute<T, any>, n?: T) => number;
 }
 
+export class DebugPlugin<T extends object> implements ArborPlugin<T> {
+  recordInvocation?(d: AttributeDefinition<T, any>, n: T): void {
+    console.log(`Invoking ${d.description} with ${JSON.stringify(n)}`);
+  }
+}
+
 export class CounterPlugin<T extends object>
   implements ArborPlugin<T>, CounterStatistics<T>
 {

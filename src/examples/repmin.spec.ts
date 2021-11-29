@@ -19,7 +19,7 @@ import {
 import { inherited, synthetic } from "../kinds/definitions";
 import { lruPlugin, memoize, memoizePlugin } from "../plugins/memoize";
 import rfdc from "rfdc";
-import { CounterPlugin } from "../plugins/debug";
+import { CounterPlugin, DebugPlugin } from "../plugins/debug";
 import { subTable } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";
 import { mustGet } from "../utils";
