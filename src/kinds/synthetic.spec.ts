@@ -10,21 +10,21 @@ import { computeableSynthetic } from "../plugins/mobx-helpers";
 import { descendents } from "../attributes/descendents";
 import { synthetic } from "./definitions";
 import { lru, memoize } from "../plugins/memoize";
+import { CounterPlugin } from "../plugins/debug";
 
 describe("Test synthetic attribute evaluation", () => {
   describe("Tests for descendent attribute", () => {
     it("should find all descendents", () => {
-      const itree = new Arbor(sampleTree1, indexedBinaryChildren);
+      const stats = new CounterPlugin<SimpleBinaryTree>();
+      const itree = new Arbor(sampleTree1, indexedBinaryChildren, {
+        plugins: [stats],
+      });
       const ntree = new Arbor(sampleTree1, namedBinaryChildren);
 
-      let count = 0;
       const desc = descendents<SimpleBinaryTree>();
       const icount = synthetic<SimpleBinaryTree, ReturnType<typeof desc>>(
         "counter",
-        (x) => {
-          count++;
-          return desc(x);
-        }
+        desc
       );
       const idesc = itree.add(icount);
       const ndesc = ntree.add(synthetic("descendents", descendents()));
@@ -34,14 +34,14 @@ describe("Test synthetic attribute evaluation", () => {
 
       expect(itotal).toEqual(ntotal);
       expect(itotal.size).toEqual(14);
-      expect(count).toEqual(15);
+      expect(stats.invocations(icount)).toEqual(15);
 
       /**
        * There is no memoization so we expect our evaluator to be called
        * repeatedly for the same ndoes.
        **/
       idesc(itree.root);
-      expect(count).toEqual(30);
+      expect(stats.invocations(icount)).toEqual(30);
 
       // Create synthetic attribute to find all descendents as a set
       // compare sets from index and named trees

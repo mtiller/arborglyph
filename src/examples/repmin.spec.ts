@@ -117,6 +117,7 @@ describe("Run some repmin test cases", () => {
     const stats = new CounterPlugin<SimpleBinaryTree>();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats],
+      syntheticOptions: { memoize: true },
     });
     const { repmin } = tree.attach(repminCluster);
 
