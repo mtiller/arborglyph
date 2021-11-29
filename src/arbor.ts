@@ -169,23 +169,6 @@ export class Arbor<T extends object> {
     }
     return assertUnreachable(def);
   }
-  // syn<R>(
-  //   f: SyntheticAttributeEvaluator<T, R>,
-  //   opts: SyntheticOptions<T, R> = {}
-  // ): Attribute<T, R> {
-  //   return reifySyntheticAttribute<T, R>(
-  //     this.root,
-  //     this.list,
-  //     f,
-  //     this.notify,
-  //     opts
-  //   );
-  // }
-  // There are no options here mainly because memoization probably isn't useful.
-  der<R>(f: DerivedEvaluator<T, R>): Attribute<T, R> {
-    // TODO: As attribute gets expanded, more will probably be needed here.
-    return (x: T) => f(x);
-  }
 }
 
 /**

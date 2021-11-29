@@ -2,7 +2,7 @@ import { Just, Nothing } from "purify-ts/Maybe";
 import { Arbor } from "../arbor";
 import { subTable, symbolTableEvaluator } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";
-import { synthetic } from "../kinds/definitions";
+import { derived, synthetic } from "../kinds/definitions";
 import { LeafNode, namedBinaryChildren, sampleTree1 } from "../testing";
 import { mustGet } from "../utils";
 
@@ -24,8 +24,10 @@ describe("Example of building a symbol table", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
 
     const path = tree.add(evalPath());
-    const leafpath = tree.der((node) =>
-      node.type === "leaf" ? Just(path(node)) : Nothing
+    const leafpath = tree.add(
+      derived("leaf path", (node) =>
+        node.type === "leaf" ? Just(path(node)) : Nothing
+      )
     );
     const table = tree.add(
       synthetic("symbol table", symbolTableEvaluator(leafpath))
