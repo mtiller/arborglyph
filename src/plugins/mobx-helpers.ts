@@ -82,9 +82,8 @@ export function computableValue<T extends object, R>(
       return inherited(desc, computeableInherited(d.f, opts));
     }
     case "der": {
-      return derived<T, IComputedValue<R>>(
-        `memoize of ${d.description}`,
-        (args) => computed(() => d.f(args), opts)
+      return derived<T, IComputedValue<R>>(`CV of ${d.description}`, (args) =>
+        computed(() => d.f(args), opts)
       );
     }
     case "trans": {

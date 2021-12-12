@@ -1,11 +1,6 @@
 import { Attribute } from "./attributes";
 import { NodeSuchChild as NoSuchChild } from "../errors";
-import {
-  childrenOfNode,
-  EvaluationNotifications,
-  ListChildren,
-} from "../arbor";
-import LRUCache from "lru-cache";
+import { childrenOfNode, ListChildren } from "../arbor";
 import { SyntheticAttributeDefinition } from "./definitions";
 
 export type SyntheticEvaluationWrapper<T> = <S extends T, R>(

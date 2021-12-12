@@ -9,8 +9,8 @@ import { Arbor } from "../arbor";
 import { computeableSynthetic } from "../plugins/mobx-helpers";
 import { descendents } from "../attributes/descendents";
 import { synthetic } from "./definitions";
-import { lru, memoize } from "../plugins/memoize";
-import { CounterPlugin } from "../plugins/debug";
+import { lru } from "../plugins/memoize";
+import { CounterPlugin } from "../plugins/counter";
 
 describe("Test synthetic attribute evaluation", () => {
   describe("Tests for descendent attribute", () => {

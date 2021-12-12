@@ -11,5 +11,7 @@ import { inherited, InheritedAttributeDefinition } from "../kinds/definitions";
 // }
 
 export function evalParent<T>(): InheritedAttributeDefinition<T, Maybe<T>> {
-  return inherited("eval parent", (node) => node.parent.map((v) => v.node));
+  return inherited("eval parent", (node) => node.parent.map((v) => v.node), {
+    eager: true,
+  });
 }

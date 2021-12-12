@@ -52,7 +52,7 @@ export function lru<T extends object, R>(
   d: AttributeDefinition<T, R>,
   opts: LRUOptions
 ) {
-  const desc = `lrui of ${d.description}`;
+  const desc = `lru of ${d.description}`;
   switch (d.type) {
     case "syn": {
       const cache = new LRUCache<T, SyntheticEvaluationRecord<T, R>>(opts);
