@@ -12,6 +12,26 @@ export interface SyntheticOptions {
   /** Pre-evaluate all nodes */
 }
 
+/** The type signature for a function that can reify an attribute definition into an attribute */
+export type SyntheticReifier<T> = <R>(
+  d: SyntheticAttributeDefinition<T, R>,
+  root: T,
+  list: ListChildren<T>,
+  evaluator: SyntheticAttributeEvaluator<T, R>
+) => Attribute<T, R>;
+
+export function sreifier<T extends object>(
+  opts: SyntheticOptions
+): SyntheticReifier<T> {
+  return <R>(
+    d: SyntheticAttributeDefinition<T, R>,
+    root: T,
+    list: ListChildren<T>,
+    evaluator: SyntheticAttributeEvaluator<T, R>
+  ): Attribute<T, R> => {
+    return reifySyntheticAttribute<T, R>(d, root, list, evaluator, opts);
+  };
+}
 /**
  * This is the function that takes a description of a synthetic
  * attribute and returns an actual implementation capable of computing

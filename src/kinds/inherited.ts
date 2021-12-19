@@ -17,6 +17,13 @@ export interface InheritedOptions<T> {
   eager: boolean;
 }
 
+export type InheritedReifier<T> = <R>(
+  root: T,
+  list: ListChildren<T>,
+  def: InheritedAttributeDefinition<T, R>,
+  opts: InheritedOptions<T>
+) => Attribute<T, R>;
+
 /**
  * This is the function that takes a description of an inherited
  * attribute and returns an actual implementation capable of computing

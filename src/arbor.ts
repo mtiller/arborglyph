@@ -1,8 +1,21 @@
 import { DerivedEvaluator } from "./kinds/derived";
-import { InheritedOptions, reifyInheritedAttribute } from "./kinds/inherited";
-import { reifySyntheticAttribute, SyntheticOptions } from "./kinds/synthetic";
+import {
+  InheritedOptions,
+  InheritedReifier,
+  reifyInheritedAttribute,
+} from "./kinds/inherited";
+import {
+  reifySyntheticAttribute,
+  sreifier,
+  SyntheticAttributeEvaluator,
+  SyntheticOptions,
+  SyntheticReifier,
+} from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
-import { AttributeDefinition } from "./kinds/definitions";
+import {
+  AttributeDefinition,
+  SyntheticAttributeDefinition,
+} from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
 
@@ -26,6 +39,8 @@ export interface ArborOptions<T> {
   plugins?: ArborPlugin<T>[];
   inheritOptions?: Partial<InheritedOptions<T>>;
   syntheticOptions?: Partial<SyntheticOptions>;
+  syntheticReifier?: SyntheticReifier<T>;
+  inheritedReifier?: InheritedReifier<T>;
   // wrappers
   // inh (options, no R)
   // syn (options, no R)
@@ -121,13 +136,15 @@ export class Arbor<T extends object> {
         const opts: SyntheticOptions = {
           memoize: popts.memoize ?? false,
         };
-        const r = reifySyntheticAttribute<T, R>(
-          def,
-          this.root,
-          this.list,
-          def.f,
-          opts
-        );
+        const reifier: SyntheticReifier<T> = sreifier(opts);
+        const r = reifier(def, this.root, this.list, def.f);
+        // const r = reifier(def, this.root, this.list, def.f)reifySyntheticAttribute<T, R>(
+        //   def,
+        //   this.root,
+        //   this.list,
+        //   def.f,
+        //   opts
+        // );
         this.reified.set(def, r);
         return this.instrumentAttribute(
           plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
