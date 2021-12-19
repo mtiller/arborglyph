@@ -6,8 +6,8 @@ import { computable } from "../plugins/mobx-helpers";
 import rfdc from "rfdc";
 import { CounterPlugin } from "../plugins/counter";
 import { DebugPlugin } from "../plugins/debug";
-import { evalGlobmin, evalMin, evalRepmin } from "./repmin.spec";
 import { evalPath } from "../attributes/path";
+import { evalGlobmin, evalMin, evalRepmin } from "./repmin_attrs";
 
 describe("Examples using mutable trees", () => {
   // Being a bit sloppy with MobX here.

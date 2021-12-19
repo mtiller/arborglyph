@@ -1,8 +1,12 @@
 # Ideas
 
-1. Get rid of get. (not sure this is really possible)
+1. Builtin parent
 
-1. Add generic wrapper for caching (LRU, weakmap, etc)
+1. Alternative `synthetic` implementation for observables (with integrated wrap/unwrap)
+
+1. Add generic wrapper for caching (LRU, weakmap, etc) (use Storage interface)
+
+1. Simple fixed length array LRU implementation built in?
 
 1. Add wrap, unwrap functionality for attrs **and** root (observable). Drop in for `mobx`.
 
@@ -26,6 +30,7 @@ Companion libraries for `mobx`, `immer`, ...?
 
 # Completed
 
+- Get rid of get. (not sure this is really possible)
 - Combine TreeType, WrappedTree into a single tree manager class.
 - Attribute<T,R> extendws ScalarFunction<T,R>
 - Rename `pre` to `eager`?

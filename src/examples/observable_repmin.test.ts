@@ -3,7 +3,7 @@
 import { fork, indexedBinaryChildren, leaf, LeafNode } from "../testing";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
-import { configure } from "mobx";
+import { configure, observable } from "mobx";
 import { lruPlugin } from "../plugins/memoize";
 import { CounterPlugin } from "../plugins/counter";
 import { subTable } from "../attributes/name-map";
@@ -11,7 +11,7 @@ import { evalPath } from "../attributes/path";
 import { DebugPlugin } from "../plugins/debug";
 import { evalGlobmin, evalMin, evalRepmin } from "./repmin_attrs";
 
-describe("Run some repmin test cases", () => {
+describe("Run some repmin test cases on mutable trees", () => {
   // Being a bit sloppy with MobX here.
   configure({ enforceActions: "never" });
 
@@ -20,7 +20,8 @@ describe("Run some repmin test cases", () => {
     logger.events.push("Pre-Tree");
     expect(logger.events).toMatchSnapshot();
     const stats = new CounterPlugin<SimpleBinaryTree>();
-    const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+    const otree = observable(sampleTree1);
+    const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats, logger],
     });
     logger.events.push("Post-Tree");
@@ -45,7 +46,8 @@ describe("Run some repmin test cases", () => {
 
   it("should handle a basic repmin with weakmap caching", () => {
     const stats = new CounterPlugin<SimpleBinaryTree>();
-    const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+    const otree = observable(sampleTree1);
+    const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats],
       syntheticOptions: { memoize: true },
     });
@@ -59,7 +61,8 @@ describe("Run some repmin test cases", () => {
 
   it("should handle a basic repmin with small caching", () => {
     const stats = new CounterPlugin<SimpleBinaryTree>();
-    const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+    const otree = observable(sampleTree1);
+    const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats, lruPlugin({ max: 5 })],
     });
     const { repmin } = tree.attach(repminCluster);
@@ -72,7 +75,8 @@ describe("Run some repmin test cases", () => {
 
   it("should handle a basic repmin with large caching", () => {
     const stats = new CounterPlugin<SimpleBinaryTree>();
-    const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
+    const otree = observable(sampleTree1);
+    const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats, lruPlugin({ max: 15 })],
     });
     const { repmin } = tree.attach(repminCluster);

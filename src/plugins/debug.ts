@@ -21,6 +21,6 @@ export class DebugPlugin<T extends object> implements ArborPlugin<T> {
       n
     )}) => ${this.stringifyResult(r)}`;
     this.events.push(msg);
-    console.log(msg);
+    // console.log(msg);
   }
 }
