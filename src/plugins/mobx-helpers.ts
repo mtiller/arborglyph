@@ -12,7 +12,11 @@ import {
   transformer,
 } from "../kinds/definitions";
 import { InheritedArgs, InheritedAttributeEvaluator } from "../kinds/inherited";
-import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
+import {
+  SyntheticArg,
+  SyntheticAttributeEvaluator,
+  SyntheticOptions,
+} from "../kinds/synthetic";
 import { assertUnreachable } from "../utils";
 import { memoize } from "./memoize";
 import { ArborPlugin } from "../plugin";
@@ -44,6 +48,22 @@ import { Attribute } from "../kinds/attributes";
  * observables changed) or otherwise invalidated on structural changes, then we
  * could avoid stale data getting memoized.
  */
+
+export const mobx = {
+  synthetic<T, R>(
+    description: string,
+    f: SyntheticAttributeEvaluator<T, R>,
+    opts?: Partial<SyntheticOptions>
+  ) {
+    return {
+      type: "syn",
+      description,
+      f,
+      prev: [],
+      opts: opts ?? {},
+    };
+  },
+};
 
 export function mobxPlugin<T extends object>(): ArborPlugin<T> {
   const map = new Map<Attribute<T, any>, Attribute<T, any>>();

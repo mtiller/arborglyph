@@ -8,11 +8,8 @@ import { CounterStatistics } from "./debug";
 export class CounterPlugin<T extends object>
   implements ArborPlugin<T>, CounterStatistics<T>
 {
-  protected invocationMap: Map<AttributeDefinition<T, any>, number> = new Map();
-  protected nodeInvocationMap: Map<
-    AttributeDefinition<T, any>,
-    WeakMap<T, number>
-  > = new Map();
+  protected invocationMap: Map<Function, number> = new Map();
+  protected nodeInvocationMap: Map<Function, WeakMap<T, number>> = new Map();
   protected evaluationMap: Map<Attribute<T, any>, number> = new Map();
   protected nodeEvaluationMap: Map<Attribute<T, any>, WeakMap<T, number>> =
     new Map();
@@ -20,10 +17,10 @@ export class CounterPlugin<T extends object>
     switch (d.type) {
       case "syn": {
         const instrumentedFunction: SyntheticAttributeEvaluator<T, R> = (x) => {
-          this.invocationMap.set(d, (this.invocationMap.get(d) ?? 0) + 1);
-          const tallies = this.nodeInvocationMap.get(d) ?? new WeakMap();
+          this.invocationMap.set(d.f, (this.invocationMap.get(d.f) ?? 0) + 1);
+          const tallies = this.nodeInvocationMap.get(d.f) ?? new WeakMap();
           tallies.set(x.node, (tallies.get(x.node) ?? 0) + 1);
-          this.nodeInvocationMap.set(d, tallies);
+          this.nodeInvocationMap.set(d.f, tallies);
           return d.f(x);
         };
         return { ...d, f: instrumentedFunction };
@@ -41,10 +38,10 @@ export class CounterPlugin<T extends object>
     return assertUnreachable(d);
   }
   recordInvocation?(d: AttributeDefinition<T, any>, n: T): void {
-    this.invocationMap.set(d, (this.invocationMap.get(d) ?? 0) + 1);
-    const tallies = this.nodeInvocationMap.get(d) ?? new WeakMap();
+    this.invocationMap.set(d.f, (this.invocationMap.get(d.f) ?? 0) + 1);
+    const tallies = this.nodeInvocationMap.get(d.f) ?? new WeakMap();
     tallies.set(n, (tallies.get(n) ?? 0) + 1);
-    this.nodeInvocationMap.set(d, tallies);
+    this.nodeInvocationMap.set(d.f, tallies);
   }
   recordEvaluation?(a: Attribute<T, any>, n: T): void {
     this.evaluationMap.set(a, (this.evaluationMap.get(a) ?? 0) + 1);
@@ -53,8 +50,8 @@ export class CounterPlugin<T extends object>
     this.nodeEvaluationMap.set(a, tallies);
   }
   invocations(d: AttributeDefinition<T, any>, n?: T): number {
-    if (n === undefined) return this.invocationMap.get(d) ?? 0;
-    const tallies = this.nodeInvocationMap.get(d) ?? new WeakMap();
+    if (n === undefined) return this.invocationMap.get(d.f) ?? 0;
+    const tallies = this.nodeInvocationMap.get(d.f) ?? new WeakMap();
     return tallies.get(n) ?? 0;
   }
   evaluations(d: Attribute<T, any>, n?: T): number {

@@ -9,7 +9,7 @@ import { DebugPlugin } from "../plugins/debug";
 import { evalPath } from "../attributes/path";
 import { evalGlobmin, evalMin, evalRepmin } from "./repmin_attrs";
 
-describe("Examples using mutable trees", () => {
+describe.skip("Examples using mutable trees", () => {
   // Being a bit sloppy with MobX here.
   configure({ enforceActions: "never" });
 
