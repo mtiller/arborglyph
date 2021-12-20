@@ -1,17 +1,11 @@
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { NodeNotFoundError } from "../errors";
-import {
-  childrenOfNode,
-  EvaluationNotifications,
-  ListChildren,
-  walkTree,
-} from "../arbor";
+import { childrenOfNode, ListChildren, walkTree } from "../arbor";
 import { Attribute } from "./attributes";
 import { InheritedAttributeDefinition } from "./definitions";
 
 /** Options when reifying an inherited attribute */
-export interface InheritedOptions<T> {
-  p: ParentFunc<T> | null;
+export interface InheritedOptions {
   memoize: boolean;
   /** Pre-evaluate all nodes */
   eager: boolean;
@@ -21,7 +15,7 @@ export type InheritedReifier<T> = <R>(
   root: T,
   list: ListChildren<T>,
   def: InheritedAttributeDefinition<T, R>,
-  opts: InheritedOptions<T>
+  opts: InheritedOptions
 ) => Attribute<T, R>;
 
 /**
@@ -38,7 +32,8 @@ export function reifyInheritedAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   def: InheritedAttributeDefinition<T, R>,
-  opts: InheritedOptions<T>
+  p: ParentFunc<T> | null,
+  opts: InheritedOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize;
@@ -64,7 +59,7 @@ export function reifyInheritedAttribute<T extends object, R>(
       root,
       list,
       memoizeEvaluator,
-      opts.p
+      p
     );
 
     /* If precomputing of the attribute for all nodes was selected... */
@@ -81,7 +76,7 @@ export function reifyInheritedAttribute<T extends object, R>(
   const evaluator: InheritedAttributeEvaluator<T, R> = def.f;
 
   /** Build a function that can compute our attribute but doesn't use caching */
-  return baseInheritedAttributeCalculation(root, list, evaluator, opts.p);
+  return baseInheritedAttributeCalculation(root, list, evaluator, p);
 }
 
 /**

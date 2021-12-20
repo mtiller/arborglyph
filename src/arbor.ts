@@ -37,7 +37,7 @@ export interface EvaluationNotifications<T> {
 
 export interface ArborOptions<T> {
   plugins?: ArborPlugin<T>[];
-  inheritOptions?: Partial<InheritedOptions<T>>;
+  inheritOptions?: Partial<InheritedOptions>;
   syntheticOptions?: Partial<SyntheticOptions>;
   syntheticReifier?: SyntheticReifier<T>;
   inheritedReifier?: InheritedReifier<T>;
@@ -152,18 +152,18 @@ export class Arbor<T extends object> {
       }
       case "inh": {
         const popts = { ...this.opts.inheritOptions, ...def.opts };
-        const opts: InheritedOptions<T> = {
+        const opts: InheritedOptions = {
           // TODO: Set this to false.  But for this to work, we need parent as a built-in
           // memoized, eagerly evaluated attribute because that's a precondition for having
           // lazily evaluated inherited attributes.
           eager: popts.eager ?? true,
-          p: popts.p ?? null,
           memoize: popts.memoize ?? true,
         };
         const r = reifyInheritedAttribute<T, R>(
           this.root,
           this.list,
           def,
+          null,
           opts
         );
         this.reified.set(def, r);
