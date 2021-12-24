@@ -15,7 +15,7 @@ import { InheritedArgs, InheritedAttributeEvaluator } from "../kinds/inherited";
 import {
   SyntheticArg,
   SyntheticAttributeEvaluator,
-  SyntheticOptions,
+  CommonSyntheticOptions,
 } from "../kinds/synthetic";
 import { assertUnreachable } from "../utils";
 import { memoize } from "./memoize";
@@ -53,7 +53,7 @@ export const mobx = {
   synthetic<T, R>(
     description: string,
     f: SyntheticAttributeEvaluator<T, R>,
-    opts?: Partial<SyntheticOptions>
+    opts?: Partial<CommonSyntheticOptions>
   ) {
     return {
       type: "syn",

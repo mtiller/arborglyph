@@ -5,7 +5,7 @@ import { Attribute } from "./attributes";
 import { InheritedAttributeDefinition } from "./definitions";
 
 /** Options when reifying an inherited attribute */
-export interface InheritedOptions {
+export interface CommonInheritedOptions {
   memoize: boolean;
   /** Pre-evaluate all nodes */
   eager: boolean;
@@ -15,17 +15,17 @@ export type InheritedReifier<T> = <R>(
   root: T,
   list: ListChildren<T>,
   def: InheritedAttributeDefinition<T, R>,
-  p: ParentFunc<T> | null
+  p: ParentFunc<T> | null,
+  opts: CommonInheritedOptions
 ) => Attribute<T, R>;
 
-export function ireifier<T extends object>(
-  opts: InheritedOptions
-): InheritedReifier<T> {
+export function ireifier<T extends object>(): InheritedReifier<T> {
   return <R>(
     root: T,
     list: ListChildren<T>,
     d: InheritedAttributeDefinition<T, R>,
-    p: ParentFunc<T> | null
+    p: ParentFunc<T> | null,
+    opts: CommonInheritedOptions
   ): Attribute<T, R> => {
     return reifyInheritedAttribute<T, R>(root, list, d, p, opts);
   };
@@ -46,7 +46,7 @@ export function reifyInheritedAttribute<T extends object, R>(
   list: ListChildren<T>,
   def: InheritedAttributeDefinition<T, R>,
   p: ParentFunc<T> | null,
-  opts: InheritedOptions
+  opts: CommonInheritedOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize;

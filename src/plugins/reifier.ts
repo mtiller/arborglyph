@@ -5,11 +5,14 @@ import {
   SyntheticAttributeDefinition,
 } from "../kinds/definitions";
 import {
-  InheritedOptions,
+  CommonInheritedOptions,
   ParentFunc,
   reifyInheritedAttribute,
 } from "../kinds/inherited";
-import { reifySyntheticAttribute, SyntheticOptions } from "../kinds/synthetic";
+import {
+  reifySyntheticAttribute,
+  CommonSyntheticOptions,
+} from "../kinds/synthetic";
 
 export interface Reifier<B = any> {
   synthetic<T extends B, R>(
@@ -34,8 +37,8 @@ type RecursivePartial<T> = {
 };
 
 export interface StandardReifierOptions {
-  inherited: InheritedOptions;
-  synthetic: SyntheticOptions;
+  inherited: CommonInheritedOptions;
+  synthetic: CommonSyntheticOptions;
 }
 
 export class StandardReifier implements Reifier<object> {

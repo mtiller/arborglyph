@@ -7,7 +7,7 @@ export type SyntheticEvaluationWrapper<T> = <S extends T, R>(
   e: SyntheticAttributeEvaluator<S, R>
 ) => SyntheticAttributeEvaluator<S, R>;
 
-export interface SyntheticOptions {
+export interface CommonSyntheticOptions {
   memoize: boolean;
   /** Pre-evaluate all nodes */
 }
@@ -17,17 +17,17 @@ export type SyntheticReifier<T> = <R>(
   d: SyntheticAttributeDefinition<T, R>,
   root: T,
   list: ListChildren<T>,
-  evaluator: SyntheticAttributeEvaluator<T, R>
+  evaluator: SyntheticAttributeEvaluator<T, R>,
+  opts: CommonSyntheticOptions
 ) => Attribute<T, R>;
 
-export function sreifier<T extends object>(
-  opts: SyntheticOptions
-): SyntheticReifier<T> {
+export function sreifier<T extends object>(): SyntheticReifier<T> {
   return <R>(
     d: SyntheticAttributeDefinition<T, R>,
     root: T,
     list: ListChildren<T>,
-    evaluator: SyntheticAttributeEvaluator<T, R>
+    evaluator: SyntheticAttributeEvaluator<T, R>,
+    opts: CommonSyntheticOptions
   ): Attribute<T, R> => {
     return reifySyntheticAttribute<T, R>(d, root, list, evaluator, opts);
   };
@@ -47,7 +47,7 @@ export function reifySyntheticAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   evaluator: SyntheticAttributeEvaluator<T, R>,
-  opts: SyntheticOptions
+  opts: CommonSyntheticOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? false;

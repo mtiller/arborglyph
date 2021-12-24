@@ -1,13 +1,13 @@
 import { DerivedEvaluator } from "./kinds/derived";
 import {
-  InheritedOptions,
+  CommonInheritedOptions,
   InheritedReifier,
   ireifier,
   reifyInheritedAttribute,
 } from "./kinds/inherited";
 import {
   sreifier,
-  SyntheticOptions,
+  CommonSyntheticOptions,
   SyntheticReifier,
 } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
@@ -34,8 +34,8 @@ export interface EvaluationNotifications<T> {
 
 export interface ArborOptions<T> {
   plugins?: ArborPlugin<T>[];
-  inheritOptions?: Partial<InheritedOptions>;
-  syntheticOptions?: Partial<SyntheticOptions>;
+  inheritOptions?: Partial<CommonInheritedOptions>;
+  syntheticOptions?: Partial<CommonSyntheticOptions>;
   reifier?: Reifier<T>;
   syntheticReifier?: SyntheticReifier<T>;
   inheritedReifier?: InheritedReifier<T>;
@@ -96,14 +96,14 @@ export class Arbor<T extends object> {
     switch (def.type) {
       case "syn": {
         const popts = { ...this.opts.syntheticOptions, ...def.opts };
-        const opts: SyntheticOptions = {
+        const opts: CommonSyntheticOptions = {
           memoize: popts.memoize ?? false,
         };
         const reifier: SyntheticReifier<T> =
           this.opts.syntheticReifier ||
           this.opts.reifier?.synthetic ||
-          sreifier(opts);
-        const r = reifier(def, this.root, this.list, def.f);
+          sreifier();
+        const r = reifier(def, this.root, this.list, def.f, opts);
         // const r = reifier(def, this.root, this.list, def.f)reifySyntheticAttribute<T, R>(
         //   def,
         //   this.root,
@@ -118,7 +118,7 @@ export class Arbor<T extends object> {
       }
       case "inh": {
         const popts = { ...this.opts.inheritOptions, ...def.opts };
-        const opts: InheritedOptions = {
+        const opts: CommonInheritedOptions = {
           // TODO: Set this to false.  But for this to work, we need parent as a built-in
           // memoized, eagerly evaluated attribute because that's a precondition for having
           // lazily evaluated inherited attributes.
@@ -128,9 +128,9 @@ export class Arbor<T extends object> {
         const reifier: InheritedReifier<T> =
           this.opts.inheritedReifier ||
           this.opts.reifier?.inherited ||
-          ireifier(opts);
+          ireifier();
 
-        const r = reifier(this.root, this.list, def, null);
+        const r = reifier(this.root, this.list, def, null, opts);
         // const r = reifyInheritedAttribute<T, R>(
         //   this.root,
         //   this.list,

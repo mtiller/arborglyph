@@ -1,4 +1,4 @@
-import { SyntheticOptions } from ".";
+import { CommonSyntheticOptions } from ".";
 import { ScalarFunction } from "./attributes";
 import { InheritedAttributeEvaluator } from "./inherited";
 import { SyntheticAttributeEvaluator } from "./synthetic";
@@ -11,13 +11,13 @@ export interface SyntheticAttributeDefinition<T, R>
   extends BaseAttributeDefinition<T> {
   type: "syn";
   f: SyntheticAttributeEvaluator<T, R>;
-  opts: Partial<SyntheticOptions>;
+  opts: Partial<CommonSyntheticOptions>;
 }
 
 export function synthetic<T, R>(
   description: string,
   f: SyntheticAttributeEvaluator<T, R>,
-  opts?: Partial<SyntheticOptions>
+  opts?: Partial<CommonSyntheticOptions>
 ): SyntheticAttributeDefinition<T, R> {
   return {
     type: "syn",
