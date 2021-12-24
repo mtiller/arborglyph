@@ -1,15 +1,5 @@
-import { DerivedEvaluator } from "./kinds/derived";
-import {
-  CommonInheritedOptions,
-  InheritedReifier,
-  ireifier,
-  reifyInheritedAttribute,
-} from "./kinds/inherited";
-import {
-  sreifier,
-  CommonSyntheticOptions,
-  SyntheticReifier,
-} from "./kinds/synthetic";
+import { CommonInheritedOptions } from "./kinds/inherited";
+import { CommonSyntheticOptions } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
@@ -99,15 +89,12 @@ export class Arbor<T extends object> {
           ...this.opts.syntheticOptions,
           ...def.opts,
         };
-        const completeOptions: CommonSyntheticOptions = {
-          memoize: mergedPartialOptions.memoize ?? false,
-        };
         reifier = reifier ?? this.reifier;
         const r: Attribute<T, R> = reifier.synthetic(
           this.root,
           this.list,
           def,
-          completeOptions
+          mergedPartialOptions
         );
         this.reified.set(def, r);
         return this.instrumentAttribute(
@@ -119,13 +106,6 @@ export class Arbor<T extends object> {
           ...this.opts.inheritOptions,
           ...def.opts,
         };
-        const completeOptions: CommonInheritedOptions = {
-          // TODO: Set this to false.  But for this to work, we need parent as a built-in
-          // memoized, eagerly evaluated attribute because that's a precondition for having
-          // lazily evaluated inherited attributes.
-          eager: mergedPartialOptions.eager ?? true,
-          memoize: mergedPartialOptions.memoize ?? true,
-        };
         reifier = reifier ?? this.reifier;
 
         const r = this.reifier.inherited(
@@ -133,7 +113,7 @@ export class Arbor<T extends object> {
           this.list,
           def,
           null,
-          completeOptions
+          mergedPartialOptions
         );
         this.reified.set(def, r);
         return this.instrumentAttribute(

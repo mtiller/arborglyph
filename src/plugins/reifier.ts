@@ -19,14 +19,14 @@ export interface Reifier<B = any> {
     root: T,
     list: ListChildren<T>,
     d: SyntheticAttributeDefinition<T, R>,
-    opts: CommonSyntheticOptions
+    opts: Partial<CommonSyntheticOptions>
   ): Attribute<T, R>;
   inherited<T extends B, R>(
     root: T,
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
     p: ParentFunc<T> | null,
-    opts: CommonInheritedOptions
+    opts: Partial<CommonInheritedOptions>
   ): Attribute<T, R>;
 }
 
@@ -54,12 +54,20 @@ export class StandardReifier implements Reifier<object> {
     root: T,
     list: ListChildren<T>,
     def: SyntheticAttributeDefinition<T, R>,
-    opts: CommonSyntheticOptions
+    opts: Partial<CommonSyntheticOptions>
   ): Attribute<T, R> {
-    return reifySyntheticAttribute<T, R>(root, list, def, def.f, {
-      ...this.syntheticOptions,
-      ...opts,
-    });
+    const mergedPartialOptions = { ...this.syntheticOptions, ...opts };
+    const completeOptions: CommonSyntheticOptions = {
+      memoize: mergedPartialOptions.memoize ?? false,
+    };
+
+    return reifySyntheticAttribute<T, R>(
+      root,
+      list,
+      def,
+      def.f,
+      completeOptions
+    );
   }
   inherited<T extends object, R>(
     root: T,
@@ -68,9 +76,15 @@ export class StandardReifier implements Reifier<object> {
     p: ParentFunc<T> | null,
     opts: CommonInheritedOptions
   ): Attribute<T, R> {
-    return reifyInheritedAttribute<T, R>(root, list, def, p, {
-      ...this.inheritedOptions,
-      ...opts,
-    });
+    const mergedPartialOptions = { ...this.inheritedOptions, ...opts };
+    const completeOptions: CommonInheritedOptions = {
+      // TODO: Set this to false.  But for this to work, we need parent as a built-in
+      // memoized, eagerly evaluated attribute because that's a precondition for having
+      // lazily evaluated inherited attributes.
+      eager: mergedPartialOptions.eager ?? true,
+      memoize: mergedPartialOptions.memoize ?? true,
+    };
+
+    return reifyInheritedAttribute<T, R>(root, list, def, p, completeOptions);
   }
 }
