@@ -2,19 +2,12 @@ import { childrenOfNode, ListChildren } from "../arbor";
 import { NoSuchChild } from "../errors";
 import { Attribute } from "../kinds/attributes";
 import { SyntheticAttributeDefinition } from "../kinds/definitions";
-import { CommonInheritedOptions } from "../kinds/inherited";
 import {
   ChildInformation,
   CommonSyntheticOptions,
   SyntheticArg,
   SyntheticAttributeEvaluator,
 } from "../kinds/synthetic";
-
-export interface StandardReifierOptions {
-  inherited: Partial<CommonInheritedOptions>;
-  synthetic: Partial<CommonSyntheticOptions>;
-}
-
 import { CacheStorage } from "../kinds/cache";
 
 /**
@@ -31,18 +24,17 @@ export function reifySyntheticAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   d: SyntheticAttributeDefinition<T, R>,
-  evaluator: SyntheticAttributeEvaluator<T, R>,
   opts: CommonSyntheticOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? false;
 
-  const e: SyntheticAttributeEvaluator<T, R> = memo
-    ? wrapWithMap(d, new WeakMap(), evaluator)
-    : evaluator;
+  const evaluator: SyntheticAttributeEvaluator<T, R> = memo
+    ? wrapWithMap(d, new WeakMap(), d.f)
+    : d.f;
 
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(d, root, list, e);
+  return baseSyntheticAttributeCalculation(d, root, list, evaluator);
 }
 
 function baseSyntheticAttributeCalculation<T, R>(

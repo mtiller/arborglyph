@@ -1,29 +1,13 @@
 import { childrenOfNode, ListChildren, walkTree } from "../arbor";
-import { NodeNotFoundError, NoSuchChild } from "../errors";
+import { NodeNotFoundError } from "../errors";
 import { Attribute } from "../kinds/attributes";
-import {
-  InheritedAttributeDefinition,
-  SyntheticAttributeDefinition,
-} from "../kinds/definitions";
+import { InheritedAttributeDefinition } from "../kinds/definitions";
 import {
   CommonInheritedOptions,
   InheritedAttributeEvaluator,
   ParentFunc,
   ParentInformation,
 } from "../kinds/inherited";
-import {
-  ChildInformation,
-  CommonSyntheticOptions,
-  SyntheticArg,
-  SyntheticAttributeEvaluator,
-} from "../kinds/synthetic";
-
-export interface StandardReifierOptions {
-  inherited: Partial<CommonInheritedOptions>;
-  synthetic: Partial<CommonSyntheticOptions>;
-}
-
-import { CacheStorage } from "../kinds/cache";
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 
 /**
@@ -122,19 +106,6 @@ function baseInheritedAttributeCalculation<T, R>(
     });
   };
 }
-
-export type InheritedNodeType<E> = E extends InheritedAttributeEvaluator<
-  infer T,
-  any
->
-  ? T
-  : unknown;
-export type InheritedNodeValue<E> = E extends InheritedAttributeEvaluator<
-  any,
-  infer R
->
-  ? R
-  : unknown;
 
 /**
  * This function searches the tree for node `x` and once it finds it, it

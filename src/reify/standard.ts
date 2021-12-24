@@ -33,13 +33,7 @@ export class StandardReifier implements Reifier<object> {
       memoize: mergedPartialOptions.memoize ?? false,
     };
 
-    return reifySyntheticAttribute<T, R>(
-      root,
-      list,
-      def,
-      def.f,
-      completeOptions
-    );
+    return reifySyntheticAttribute<T, R>(root, list, def, completeOptions);
   }
   inherited<T extends object, R>(
     root: T,
