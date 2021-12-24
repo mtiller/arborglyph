@@ -4,7 +4,8 @@ import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
-import { Reifier, StandardReifier } from "./plugins/reifier";
+import { Reifier } from "./reify/reifier";
+import { StandardReifier } from "./reify/standard";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -28,8 +29,6 @@ export interface ArborOptions<T> {
   syntheticOptions?: Partial<CommonSyntheticOptions>;
   reifier?: Reifier<T>;
   // wrappers
-  // inh (options, no R)
-  // syn (options, no R)
 }
 
 /** A potentially convenient class, not sure what I think about it yet. */

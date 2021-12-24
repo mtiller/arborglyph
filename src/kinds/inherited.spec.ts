@@ -7,7 +7,6 @@ import {
   SimpleBinaryTree,
 } from "../testing";
 import { Arbor } from "../arbor";
-//import { evalParent } from "../attributes/parent";
 import { evalDepth } from "../attributes/depth";
 import { evalParent } from "../attributes/parent";
 import { CounterPlugin } from "../plugins/counter";
