@@ -16,15 +16,17 @@ import {
 
 export interface Reifier<B = any> {
   synthetic<T extends B, R>(
-    d: SyntheticAttributeDefinition<T, R>,
     root: T,
-    list: ListChildren<T>
+    list: ListChildren<T>,
+    d: SyntheticAttributeDefinition<T, R>,
+    opts: CommonSyntheticOptions
   ): Attribute<T, R>;
   inherited<T extends B, R>(
     root: T,
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
-    p: ParentFunc<T> | null
+    p: ParentFunc<T> | null,
+    opts: CommonInheritedOptions
   ): Attribute<T, R>;
 }
 
@@ -55,11 +57,12 @@ export class StandardReifier implements Reifier<object> {
     };
   }
   synthetic<T extends object, R>(
-    def: SyntheticAttributeDefinition<T, R>,
     root: T,
-    list: ListChildren<T>
+    list: ListChildren<T>,
+    def: SyntheticAttributeDefinition<T, R>,
+    opts: CommonSyntheticOptions
   ): Attribute<T, R> {
-    return reifySyntheticAttribute<T, R>(def, root, list, def.f, {
+    return reifySyntheticAttribute<T, R>(root, list, def, def.f, {
       ...this.options.synthetic,
     });
   }

@@ -14,22 +14,20 @@ export interface CommonSyntheticOptions {
 
 /** The type signature for a function that can reify an attribute definition into an attribute */
 export type SyntheticReifier<T> = <R>(
-  d: SyntheticAttributeDefinition<T, R>,
   root: T,
   list: ListChildren<T>,
-  evaluator: SyntheticAttributeEvaluator<T, R>,
+  d: SyntheticAttributeDefinition<T, R>,
   opts: CommonSyntheticOptions
 ) => Attribute<T, R>;
 
 export function sreifier<T extends object>(): SyntheticReifier<T> {
   return <R>(
-    d: SyntheticAttributeDefinition<T, R>,
     root: T,
     list: ListChildren<T>,
-    evaluator: SyntheticAttributeEvaluator<T, R>,
+    d: SyntheticAttributeDefinition<T, R>,
     opts: CommonSyntheticOptions
   ): Attribute<T, R> => {
-    return reifySyntheticAttribute<T, R>(d, root, list, evaluator, opts);
+    return reifySyntheticAttribute<T, R>(root, list, d, d.f, opts);
   };
 }
 /**
@@ -43,9 +41,9 @@ export function sreifier<T extends object>(): SyntheticReifier<T> {
  * @returns
  */
 export function reifySyntheticAttribute<T extends object, R>(
-  d: SyntheticAttributeDefinition<T, R>,
   root: T,
   list: ListChildren<T>,
+  d: SyntheticAttributeDefinition<T, R>,
   evaluator: SyntheticAttributeEvaluator<T, R>,
   opts: CommonSyntheticOptions
 ): Attribute<T, R> {

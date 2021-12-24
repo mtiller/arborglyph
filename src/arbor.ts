@@ -103,7 +103,7 @@ export class Arbor<T extends object> {
           this.opts.syntheticReifier ||
           this.opts.reifier?.synthetic ||
           sreifier();
-        const r = reifier(def, this.root, this.list, def.f, opts);
+        const r: Attribute<T, R> = reifier(this.root, this.list, def, opts);
         // const r = reifier(def, this.root, this.list, def.f)reifySyntheticAttribute<T, R>(
         //   def,
         //   this.root,
