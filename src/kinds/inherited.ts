@@ -15,8 +15,21 @@ export type InheritedReifier<T> = <R>(
   root: T,
   list: ListChildren<T>,
   def: InheritedAttributeDefinition<T, R>,
-  opts: InheritedOptions
+  p: ParentFunc<T> | null
 ) => Attribute<T, R>;
+
+export function ireifier<T extends object>(
+  opts: InheritedOptions
+): InheritedReifier<T> {
+  return <R>(
+    root: T,
+    list: ListChildren<T>,
+    d: InheritedAttributeDefinition<T, R>,
+    p: ParentFunc<T> | null
+  ): Attribute<T, R> => {
+    return reifyInheritedAttribute<T, R>(root, list, d, p, opts);
+  };
+}
 
 /**
  * This is the function that takes a description of an inherited

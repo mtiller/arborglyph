@@ -18,9 +18,9 @@ export interface Reifier<B = any> {
     list: ListChildren<T>
   ): Attribute<T, R>;
   inherited<T extends B, R>(
-    def: InheritedAttributeDefinition<T, R>,
     root: T,
     list: ListChildren<T>,
+    def: InheritedAttributeDefinition<T, R>,
     p: ParentFunc<T> | null
   ): Attribute<T, R>;
 }
@@ -61,9 +61,9 @@ export class StandardReifier implements Reifier<object> {
     });
   }
   inherited<T extends object, R>(
-    def: InheritedAttributeDefinition<T, R>,
     root: T,
     list: ListChildren<T>,
+    def: InheritedAttributeDefinition<T, R>,
     p: ParentFunc<T> | null
   ): Attribute<T, R> {
     return reifyInheritedAttribute<T, R>(root, list, def, p, {
