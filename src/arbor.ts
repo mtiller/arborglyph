@@ -14,7 +14,7 @@ import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
-import { Reifier } from "./plugins/reifier";
+import { Reifier, StandardReifier } from "./plugins/reifier";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -37,8 +37,6 @@ export interface ArborOptions<T> {
   inheritOptions?: Partial<CommonInheritedOptions>;
   syntheticOptions?: Partial<CommonSyntheticOptions>;
   reifier?: Reifier<T>;
-  syntheticReifier?: SyntheticReifier<T>;
-  inheritedReifier?: InheritedReifier<T>;
   // wrappers
   // inh (options, no R)
   // syn (options, no R)
@@ -50,6 +48,7 @@ export class Arbor<T extends object> {
   public readonly root: T;
   protected plugins: ArborPlugin<T>[];
   protected notify: EvaluationNotifications<T>;
+  protected reifier: Reifier<T>;
   constructor(
     root: T,
     public list: ListChildren<T>,
@@ -60,6 +59,7 @@ export class Arbor<T extends object> {
       (r, p) => (p.remapRoot ? p.remapRoot(r) : r),
       root
     );
+    this.reifier = opts.reifier ?? new StandardReifier();
     this.reified = new Map();
     this.notify = {
       invocation: <R>(d: AttributeDefinition<T, R>, n: T, result: R): R => {
@@ -99,18 +99,14 @@ export class Arbor<T extends object> {
         const opts: CommonSyntheticOptions = {
           memoize: popts.memoize ?? false,
         };
-        const reifier: SyntheticReifier<T> =
-          this.opts.syntheticReifier ||
-          this.opts.reifier?.synthetic ||
-          sreifier();
-        const r: Attribute<T, R> = reifier(this.root, this.list, def, opts);
-        // const r = reifier(def, this.root, this.list, def.f)reifySyntheticAttribute<T, R>(
-        //   def,
-        //   this.root,
-        //   this.list,
-        //   def.f,
-        //   opts
-        // );
+        // TODO: Allow this to be overriden via some optionas argument
+        const reifier = this.reifier;
+        const r: Attribute<T, R> = reifier.synthetic(
+          this.root,
+          this.list,
+          def,
+          opts
+        );
         this.reified.set(def, r);
         return this.instrumentAttribute(
           plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
@@ -125,19 +121,10 @@ export class Arbor<T extends object> {
           eager: popts.eager ?? true,
           memoize: popts.memoize ?? true,
         };
-        const reifier: InheritedReifier<T> =
-          this.opts.inheritedReifier ||
-          this.opts.reifier?.inherited ||
-          ireifier();
+        // TODO: Allow this to be overriden via some optionas argument
+        const reifier = this.reifier;
 
-        const r = reifier(this.root, this.list, def, null, opts);
-        // const r = reifyInheritedAttribute<T, R>(
-        //   this.root,
-        //   this.list,
-        //   def,
-        //   null,
-        //   opts
-        // );
+        const r = this.reifier.inherited(this.root, this.list, def, null, opts);
         this.reified.set(def, r);
         return this.instrumentAttribute(
           plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)

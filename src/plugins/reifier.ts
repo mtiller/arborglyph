@@ -39,22 +39,16 @@ type RecursivePartial<T> = {
 };
 
 export interface StandardReifierOptions {
-  inherited: CommonInheritedOptions;
-  synthetic: CommonSyntheticOptions;
+  inherited: Partial<CommonInheritedOptions>;
+  synthetic: Partial<CommonSyntheticOptions>;
 }
 
 export class StandardReifier implements Reifier<object> {
-  protected options: StandardReifierOptions;
+  protected syntheticOptions: Partial<CommonSyntheticOptions>;
+  protected inheritedOptions: Partial<CommonInheritedOptions>;
   constructor(opts?: RecursivePartial<StandardReifierOptions>) {
-    this.options = {
-      inherited: {
-        memoize: opts?.inherited?.memoize ?? false,
-        eager: opts?.inherited?.eager ?? false,
-      },
-      synthetic: {
-        memoize: opts?.synthetic?.memoize ?? false,
-      },
-    };
+    this.syntheticOptions = opts?.synthetic ?? {};
+    this.inheritedOptions = opts?.inherited ?? {};
   }
   synthetic<T extends object, R>(
     root: T,
@@ -63,17 +57,20 @@ export class StandardReifier implements Reifier<object> {
     opts: CommonSyntheticOptions
   ): Attribute<T, R> {
     return reifySyntheticAttribute<T, R>(root, list, def, def.f, {
-      ...this.options.synthetic,
+      ...this.syntheticOptions,
+      ...opts,
     });
   }
   inherited<T extends object, R>(
     root: T,
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
-    p: ParentFunc<T> | null
+    p: ParentFunc<T> | null,
+    opts: CommonInheritedOptions
   ): Attribute<T, R> {
     return reifyInheritedAttribute<T, R>(root, list, def, p, {
-      ...this.options.inherited,
+      ...this.inheritedOptions,
+      ...opts,
     });
   }
 }
