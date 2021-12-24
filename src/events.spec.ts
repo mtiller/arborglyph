@@ -1,4 +1,5 @@
 import { createEmitter } from "./events";
+import { NamedSyntheticFunction } from "./former";
 import { Attribute } from "./kinds/attributes";
 
 describe("Test event emitter", () => {
@@ -9,14 +10,14 @@ describe("Test event emitter", () => {
       count++;
     });
     te.on("invocation", () => {});
-    te.emit("evaluation", null as any);
-    te.emit("evaluation", null as any);
-    te.emit("invocation", null as any);
+    te.emit("evaluation", null as any, null, null);
+    te.emit("evaluation", null as any, null, null);
+    te.emit("invocation", null as any, null, null);
     expect(count).toEqual(2);
     // te.emit("what", null as any); // Compile time error, yay!
     expect(te.listenerCount("evaluation")).toEqual(1);
     foo.removeAllListeners("evaluation");
-    te.emit("evaluation", null as any);
+    te.emit("evaluation", null as any, null, null);
     expect(count).toEqual(2);
 
     expect(te.listenerCount("evaluation")).toEqual(0);

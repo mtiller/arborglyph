@@ -6,6 +6,7 @@ import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
 import { Reifier } from "./reify/reifier";
 import { StandardReifier } from "./reify/standard";
+import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -34,6 +35,8 @@ export interface ArborOptions<T> {
 /** A potentially convenient class, not sure what I think about it yet. */
 export class Arbor<T extends object> {
   protected reified: Map<AttributeDefinition<any, any>, Attribute<any, any>>;
+  public readonly monitor: ArborMonitor<T>;
+  protected events: ArborEmitter<T>;
   public readonly root: T;
   protected plugins: ArborPlugin<T>[];
   protected notify: EvaluationNotifications<T>;
@@ -44,6 +47,8 @@ export class Arbor<T extends object> {
     protected opts: ArborOptions<T> = {}
   ) {
     this.plugins = opts.plugins ?? [];
+    this.events = createEmitter<T>();
+    this.monitor = this.events;
     this.root = this.plugins.reduce(
       (r, p) => (p.remapRoot ? p.remapRoot(r) : r),
       root
@@ -52,6 +57,7 @@ export class Arbor<T extends object> {
     this.reified = new Map();
     this.notify = {
       invocation: <R>(d: AttributeDefinition<T, R>, n: T, result: R): R => {
+        this.events.emit("invocation", d as any, n, result);
         this.plugins.forEach((p) => {
           if (p.recordInvocation) {
             p.recordInvocation(d, n, result);
@@ -60,6 +66,7 @@ export class Arbor<T extends object> {
         return result;
       },
       evaluation: <R>(a: Attribute<T, any>, n: T, result: R) => {
+        this.events.emit("evaluation", a, n, result);
         this.plugins.forEach((p) => {
           if (p.recordEvaluation) {
             p.recordEvaluation(a, n, result);

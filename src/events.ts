@@ -5,9 +5,18 @@ import TypedEmitter from "typed-emitter";
 import EventEmitter from "events";
 
 export interface TreeEvents<T> {
-  evaluation: (attr: Attribute<T, unknown>) => void;
-  invocation: (def: AttributeDefinition<T, unknown>) => void;
+  invocation: (
+    d: AttributeDefinition<T, unknown>,
+    n: T,
+    result: unknown
+  ) => void;
+  evaluation: (a: Attribute<T, unknown>, n: T, result: unknown) => void;
 }
+
+export type ArborMonitor<T> = Pick<
+  ArborEmitter<T>,
+  "on" | "once" | "off" | "removeListener"
+>;
 
 export type ArborEmitter<T> = TypedEmitter<TreeEvents<T>>;
 
