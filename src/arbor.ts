@@ -83,7 +83,7 @@ export class Arbor<T extends object> {
   attach<R>(f: (x: this) => R) {
     return f(this);
   }
-  add<R>(d: AttributeDefinition<T, R>): Attribute<T, R> {
+  add<R>(d: AttributeDefinition<T, R>, reifier?: Reifier<T>): Attribute<T, R> {
     if (this.reified.has(d)) {
       return this.reified.get(d) as Attribute<T, R>;
     }
@@ -95,17 +95,19 @@ export class Arbor<T extends object> {
     );
     switch (def.type) {
       case "syn": {
-        const popts = { ...this.opts.syntheticOptions, ...def.opts };
-        const opts: CommonSyntheticOptions = {
-          memoize: popts.memoize ?? false,
+        const mergedPartialOptions = {
+          ...this.opts.syntheticOptions,
+          ...def.opts,
         };
-        // TODO: Allow this to be overriden via some optionas argument
-        const reifier = this.reifier;
+        const completeOptions: CommonSyntheticOptions = {
+          memoize: mergedPartialOptions.memoize ?? false,
+        };
+        reifier = reifier ?? this.reifier;
         const r: Attribute<T, R> = reifier.synthetic(
           this.root,
           this.list,
           def,
-          opts
+          completeOptions
         );
         this.reified.set(def, r);
         return this.instrumentAttribute(
@@ -113,18 +115,26 @@ export class Arbor<T extends object> {
         );
       }
       case "inh": {
-        const popts = { ...this.opts.inheritOptions, ...def.opts };
-        const opts: CommonInheritedOptions = {
+        const mergedPartialOptions = {
+          ...this.opts.inheritOptions,
+          ...def.opts,
+        };
+        const completeOptions: CommonInheritedOptions = {
           // TODO: Set this to false.  But for this to work, we need parent as a built-in
           // memoized, eagerly evaluated attribute because that's a precondition for having
           // lazily evaluated inherited attributes.
-          eager: popts.eager ?? true,
-          memoize: popts.memoize ?? true,
+          eager: mergedPartialOptions.eager ?? true,
+          memoize: mergedPartialOptions.memoize ?? true,
         };
-        // TODO: Allow this to be overriden via some optionas argument
-        const reifier = this.reifier;
+        reifier = reifier ?? this.reifier;
 
-        const r = this.reifier.inherited(this.root, this.list, def, null, opts);
+        const r = this.reifier.inherited(
+          this.root,
+          this.list,
+          def,
+          null,
+          completeOptions
+        );
         this.reified.set(def, r);
         return this.instrumentAttribute(
           plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
