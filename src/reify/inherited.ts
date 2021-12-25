@@ -9,6 +9,7 @@ import {
   ParentInformation,
 } from "../kinds/inherited";
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
+import { ArborEmitter } from "../events";
 
 /**
  * This is the function that takes a description of an inherited
@@ -24,6 +25,7 @@ export function reifyInheritedAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   def: InheritedAttributeDefinition<T, R>,
+  emitter: ArborEmitter<T>,
   p: ParentFunc<T> | null,
   opts: CommonInheritedOptions
 ): Attribute<T, R> {
@@ -33,7 +35,7 @@ export function reifyInheritedAttribute<T extends object, R>(
 
   if (memo) {
     /** If memoization is requested, first create storage for memoized values. */
-    const storage = new WeakMap<T, R>();
+    const storage = opts.cacheProvider();
 
     /**
      * Now create a special memoized wrapper that checks for memoized values and
@@ -42,6 +44,12 @@ export function reifyInheritedAttribute<T extends object, R>(
     const memoizeEvaluator: InheritedAttributeEvaluator<T, R> = (args) => {
       if (storage.has(args.node)) return storage.get(args.node) as R;
       const ret = def.f(args);
+      emitter.emit(
+        "invocation",
+        def as InheritedAttributeDefinition<T, unknown>,
+        args.node,
+        ret
+      );
       storage.set(args.node, ret);
       return ret;
     };
@@ -65,7 +73,16 @@ export function reifyInheritedAttribute<T extends object, R>(
     return memoed;
   }
 
-  const evaluator: InheritedAttributeEvaluator<T, R> = def.f;
+  const evaluator: InheritedAttributeEvaluator<T, R> = (args) => {
+    const ret = def.f(args);
+    emitter.emit(
+      "invocation",
+      def as InheritedAttributeDefinition<T, unknown>,
+      args.node,
+      ret
+    );
+    return ret;
+  };
 
   /** Build a function that can compute our attribute but doesn't use caching */
   return baseInheritedAttributeCalculation(root, list, evaluator, p);

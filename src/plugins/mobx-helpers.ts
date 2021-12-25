@@ -65,29 +65,29 @@ export const mobx = {
   },
 };
 
-export function mobxPlugin<T extends object>(): ArborPlugin<T> {
-  const map = new Map<Attribute<T, any>, Attribute<T, any>>();
-  return {
-    remapRoot: (root: any): any => {
-      return observable(root);
-    },
-    // remapDef: <R>(
-    //   attr: AttributeDefinition<any, R>
-    // ): AttributeDefinition<any, R> => {
-    //   // TODO: This is probably a bad a idea...I don't think we NEED to make everything computable.
-    //   return computable(attr, { keepAlive: true });
-    // },
-    remapAttr: <R>(attr: Attribute<T, R>) => {
-      const cached = map.get(attr);
-      if (cached !== undefined) return cached;
-      const ret = (x: T) => {
-        return computed(() => attr(x)).get();
-      };
-      map.set(attr, ret);
-      return ret;
-    },
-  };
-}
+// export function mobxPlugin<T extends object>(): ArborPlugin<T> {
+//   const map = new Map<Attribute<T, any>, Attribute<T, any>>();
+//   return {
+//     remapRoot: (root: any): any => {
+//       return observable(root);
+//     },
+//     // remapDef: <R>(
+//     //   attr: AttributeDefinition<any, R>
+//     // ): AttributeDefinition<any, R> => {
+//     //   // TODO: This is probably a bad a idea...I don't think we NEED to make everything computable.
+//     //   return computable(attr, { keepAlive: true });
+//     // },
+//     remapAttr: <R>(attr: Attribute<T, R>) => {
+//       const cached = map.get(attr);
+//       if (cached !== undefined) return cached;
+//       const ret = (x: T) => {
+//         return computed(() => attr(x)).get();
+//       };
+//       map.set(attr, ret);
+//       return ret;
+//     },
+//   };
+// }
 
 export function computableValue<T extends object, R>(
   d: AttributeDefinition<T, R>,

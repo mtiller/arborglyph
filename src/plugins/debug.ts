@@ -1,3 +1,4 @@
+import { Arbor } from "../arbor";
 import { Attribute } from "../kinds/attributes";
 import { AttributeDefinition } from "../kinds/definitions";
 import { ArborPlugin } from "../plugin";
@@ -16,7 +17,15 @@ export class DebugPlugin<T extends object> implements ArborPlugin<T> {
     public stringifyResult: (result: any) => string = (result: any) =>
       JSON.stringify(result)
   ) {}
-  recordInvocation?<R>(d: AttributeDefinition<T, R>, n: T, r: R): void {
+
+  connect(arbor: Arbor<T>) {
+    arbor.monitor.on("invocation", (d, n, r) => this.recordInvocation(d, n, r));
+  }
+  protected recordInvocation<R>(
+    d: AttributeDefinition<T, R>,
+    n: T,
+    r: R
+  ): void {
     const msg = `${d.description}(${this.stringifyNode(
       n
     )}) => ${this.stringifyResult(r)}`;

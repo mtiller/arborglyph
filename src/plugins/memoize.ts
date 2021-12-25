@@ -11,15 +11,20 @@ import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
 import { ArborPlugin } from "../plugin";
 import { assertUnreachable } from "../utils";
 
-export function memoizePlugin<T extends object>(): ArborPlugin<T> {
-  return {
-    remapDef: <R>(d: AttributeDefinition<T, R>) => memoize(d),
-  };
-}
+// export function memoizePlugin<T extends object>(): ArborPlugin<T> {
+//   return {
+//     remapDef: <R>(d: AttributeDefinition<T, R>) => memoize(d),
+//   };
+// }
 
 export function lruPlugin<T extends object>(opts: LRUOptions): ArborPlugin<T> {
   return {
-    remapDef: <R>(d: AttributeDefinition<T, R>) => lru(d, opts),
+    syntheticOptions: (cur) => ({
+      ...cur,
+      memoize: true,
+      cacheProvider: () =>
+        new LRUCache<T, SyntheticEvaluationRecord<any, any>>(opts),
+    }),
   };
 }
 

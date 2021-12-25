@@ -9,6 +9,7 @@ import {
   SyntheticAttributeEvaluator,
 } from "../kinds/synthetic";
 import { CacheStorage } from "../kinds/cache";
+import { ArborEmitter } from "../events";
 
 /**
  * This is the function that takes a description of a synthetic
@@ -24,14 +25,26 @@ export function reifySyntheticAttribute<T extends object, R>(
   root: T,
   list: ListChildren<T>,
   d: SyntheticAttributeDefinition<T, R>,
+  emitter: ArborEmitter<T>,
   opts: CommonSyntheticOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? false;
 
+  const f: typeof d["f"] = (x) => {
+    const r = d.f(x);
+    emitter.emit(
+      "invocation",
+      d as SyntheticAttributeDefinition<T, unknown>,
+      x.node,
+      r
+    );
+    return r;
+  };
+
   const evaluator: SyntheticAttributeEvaluator<T, R> = memo
-    ? wrapWithMap(d, new WeakMap(), d.f)
-    : d.f;
+    ? wrapWithMap(d, opts.cacheProvider(), f)
+    : f;
 
   /** Build a function that can compute our attribute */
   return baseSyntheticAttributeCalculation(d, root, list, evaluator);

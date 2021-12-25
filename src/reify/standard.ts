@@ -9,6 +9,7 @@ import { CommonSyntheticOptions } from "../kinds/synthetic";
 import { Reifier } from "./reifier";
 import { reifySyntheticAttribute } from "./synthetic";
 import { reifyInheritedAttribute } from "./inherited";
+import { ArborEmitter } from "../events";
 
 export interface StandardReifierOptions {
   inherited: Partial<CommonInheritedOptions>;
@@ -26,19 +27,30 @@ export class StandardReifier implements Reifier<object> {
     root: T,
     list: ListChildren<T>,
     def: SyntheticAttributeDefinition<T, R>,
+    emitter: ArborEmitter<T>,
     opts: Partial<CommonSyntheticOptions>
   ): Attribute<T, R> {
     const mergedPartialOptions = { ...this.syntheticOptions, ...opts };
     const completeOptions: CommonSyntheticOptions = {
       memoize: mergedPartialOptions.memoize ?? false,
+      eager: mergedPartialOptions.eager ?? true,
+      cacheProvider:
+        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
     };
 
-    return reifySyntheticAttribute<T, R>(root, list, def, completeOptions);
+    return reifySyntheticAttribute<T, R>(
+      root,
+      list,
+      def,
+      emitter,
+      completeOptions
+    );
   }
   inherited<T extends object, R>(
     root: T,
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
+    emitter: ArborEmitter<T>,
     p: ParentFunc<T> | null,
     opts: CommonInheritedOptions
   ): Attribute<T, R> {
@@ -49,8 +61,17 @@ export class StandardReifier implements Reifier<object> {
       // lazily evaluated inherited attributes.
       eager: mergedPartialOptions.eager ?? true,
       memoize: mergedPartialOptions.memoize ?? true,
+      cacheProvider:
+        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
     };
 
-    return reifyInheritedAttribute<T, R>(root, list, def, p, completeOptions);
+    return reifyInheritedAttribute<T, R>(
+      root,
+      list,
+      def,
+      emitter,
+      p,
+      completeOptions
+    );
   }
 }

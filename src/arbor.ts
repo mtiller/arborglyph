@@ -19,12 +19,8 @@ import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
 export type IndexedChildren<T> = (x: T) => T[];
 export type NamedChildren<T> = (x: T) => Record<string, T>;
 export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
-export interface EvaluationNotifications<T> {
-  invocation<R>(d: AttributeDefinition<T, R>, n: T, result: R): R;
-  evaluation<R>(d: Attribute<T, R>, n: T, result: R): R;
-}
 
-export interface ArborOptions<T> {
+export interface ArborOptions<T extends object> {
   plugins?: ArborPlugin<T>[];
   inheritOptions?: Partial<CommonInheritedOptions>;
   syntheticOptions?: Partial<CommonSyntheticOptions>;
@@ -39,56 +35,44 @@ export class Arbor<T extends object> {
   protected events: ArborEmitter<T>;
   public readonly root: T;
   protected plugins: ArborPlugin<T>[];
-  protected notify: EvaluationNotifications<T>;
   protected reifier: Reifier<T>;
   constructor(
     root: T,
     public list: ListChildren<T>,
     protected opts: ArborOptions<T> = {}
   ) {
-    this.plugins = opts.plugins ?? [];
+    this.root = root;
     this.events = createEmitter<T>();
     this.monitor = this.events;
-    this.root = this.plugins.reduce(
-      (r, p) => (p.remapRoot ? p.remapRoot(r) : r),
-      root
+    this.plugins = opts.plugins ?? [];
+    this.plugins.forEach((plugin) =>
+      plugin.connect ? plugin.connect(this) : undefined
     );
     this.reifier = opts.reifier ?? new StandardReifier();
     this.reified = new Map();
-    this.notify = {
-      invocation: <R>(d: AttributeDefinition<T, R>, n: T, result: R): R => {
-        this.events.emit("invocation", d as any, n, result);
-        this.plugins.forEach((p) => {
-          if (p.recordInvocation) {
-            p.recordInvocation(d, n, result);
-          }
-        });
-        return result;
-      },
-      evaluation: <R>(a: Attribute<T, any>, n: T, result: R) => {
-        this.events.emit("evaluation", a, n, result);
-        this.plugins.forEach((p) => {
-          if (p.recordEvaluation) {
-            p.recordEvaluation(a, n, result);
-          }
-        });
-        return result;
-      },
-    };
+
+    const iopt = this.plugins.reduce(
+      (cur, plugin) =>
+        plugin.inheritedOptions ? plugin.inheritedOptions(cur) : cur,
+      opts.inheritOptions ?? {}
+    );
+    const sopt = this.plugins.reduce(
+      (cur, plugin) =>
+        plugin.syntheticOptions ? plugin.syntheticOptions(cur) : cur,
+      opts.inheritOptions ?? {}
+    );
   }
   attach<R>(f: (x: this) => R) {
     return f(this);
   }
-  add<R>(d: AttributeDefinition<T, R>, reifier?: Reifier<T>): Attribute<T, R> {
-    if (this.reified.has(d)) {
-      return this.reified.get(d) as Attribute<T, R>;
+  add<R>(
+    def: AttributeDefinition<T, R>,
+    reifier?: Reifier<T>
+  ): Attribute<T, R> {
+    if (this.reified.has(def)) {
+      return this.reified.get(def) as Attribute<T, R>;
     }
     const plugins = this.plugins ?? [];
-    const def = plugins.reduce(
-      (r, p) =>
-        p.remapDef ? this.instrumentDefinition(p.remapDef(r, this.notify)) : r,
-      this.instrumentDefinition(d)
-    );
     switch (def.type) {
       case "syn": {
         const mergedPartialOptions = {
@@ -100,12 +84,11 @@ export class Arbor<T extends object> {
           this.root,
           this.list,
           def,
+          this.events,
           mergedPartialOptions
         );
         this.reified.set(def, r);
-        return this.instrumentAttribute(
-          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
-        );
+        return r;
       }
       case "inh": {
         const mergedPartialOptions = {
@@ -118,64 +101,24 @@ export class Arbor<T extends object> {
           this.root,
           this.list,
           def,
+          this.events,
           null,
           mergedPartialOptions
         );
         this.reified.set(def, r);
-        return this.instrumentAttribute(
-          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
-        );
+        return r;
       }
       case "der": {
         // TODO: As attribute gets expanded, more will probably be needed here.
         const r = (x: T) => def.f(x);
         this.reified.set(def, r);
-        return this.instrumentAttribute(
-          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
-        );
+        return r;
       }
       case "trans": {
         const attr = this.add(def.attr);
         const r = (x: T) => def.f(attr(x));
         this.reified.set(def, r);
-        return this.instrumentAttribute(
-          plugins.reduce((ret, p) => (p.remapAttr ? p.remapAttr(ret) : ret), r)
-        );
-      }
-    }
-    return assertUnreachable(def);
-  }
-  protected instrumentAttribute<R>(attr: Attribute<T, R>): Attribute<T, R> {
-    const ret = (n: T): R => this.notify.evaluation(ret, n, attr(n));
-    return ret;
-  }
-  protected instrumentDefinition<R>(
-    def: AttributeDefinition<T, R>
-  ): AttributeDefinition<T, R> {
-    switch (def.type) {
-      case "syn": {
-        const ret: typeof def = {
-          ...def,
-          f: (args) => this.notify.invocation(def, args.node, def.f(args)),
-        };
-        return ret;
-      }
-      case "inh": {
-        const ret: typeof def = {
-          ...def,
-          f: (args) => this.notify.invocation(def, args.node, def.f(args)),
-        };
-        return ret;
-      }
-      case "der": {
-        const ret: typeof def = {
-          ...def,
-          f: (n) => this.notify.invocation(def, n, def.f(n)),
-        };
-        return ret;
-      }
-      case "trans": {
-        return def;
+        return r;
       }
     }
     return assertUnreachable(def);

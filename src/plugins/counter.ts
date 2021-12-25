@@ -1,8 +1,7 @@
+import { Arbor } from "../arbor";
 import { Attribute } from "../kinds/attributes";
 import { AttributeDefinition } from "../kinds/definitions";
-import { SyntheticAttributeEvaluator } from "../kinds/synthetic";
 import { ArborPlugin } from "../plugin";
-import { assertUnreachable } from "../utils";
 import { CounterStatistics } from "./debug";
 
 export class CounterPlugin<T extends object>
@@ -13,37 +12,21 @@ export class CounterPlugin<T extends object>
   protected evaluationMap: Map<Attribute<T, any>, number> = new Map();
   protected nodeEvaluationMap: Map<Attribute<T, any>, WeakMap<T, number>> =
     new Map();
-  wrap<R>(d: AttributeDefinition<T, R>): typeof d {
-    switch (d.type) {
-      case "syn": {
-        const instrumentedFunction: SyntheticAttributeEvaluator<T, R> = (x) => {
-          this.invocationMap.set(d.f, (this.invocationMap.get(d.f) ?? 0) + 1);
-          const tallies = this.nodeInvocationMap.get(d.f) ?? new WeakMap();
-          tallies.set(x.node, (tallies.get(x.node) ?? 0) + 1);
-          this.nodeInvocationMap.set(d.f, tallies);
-          return d.f(x);
-        };
-        return { ...d, f: instrumentedFunction };
-      }
-      case "inh": {
-        return { ...d };
-      }
-      case "der": {
-        return { ...d };
-      }
-      case "trans": {
-        throw new Error("Unimplemented");
-      }
-    }
-    return assertUnreachable(d);
+  connect(arbor: Arbor<T>) {
+    arbor.monitor.on("invocation", (a, n) => {
+      this.recordInvocation(a, n);
+    });
+    arbor.monitor.on("evaluation", (d, n) => {
+      this.recordEvaluation(d, n);
+    });
   }
-  recordInvocation?(d: AttributeDefinition<T, any>, n: T): void {
+  protected recordInvocation(d: AttributeDefinition<T, any>, n: T): void {
     this.invocationMap.set(d.f, (this.invocationMap.get(d.f) ?? 0) + 1);
     const tallies = this.nodeInvocationMap.get(d.f) ?? new WeakMap();
     tallies.set(n, (tallies.get(n) ?? 0) + 1);
     this.nodeInvocationMap.set(d.f, tallies);
   }
-  recordEvaluation?(a: Attribute<T, any>, n: T): void {
+  protected recordEvaluation(a: Attribute<T, any>, n: T): void {
     this.evaluationMap.set(a, (this.evaluationMap.get(a) ?? 0) + 1);
     const tallies = this.nodeEvaluationMap.get(a) ?? new WeakMap();
     tallies.set(n, (tallies.get(n) ?? 0) + 1);

@@ -1,10 +1,15 @@
+import { CacheProvider } from "./cache";
+
 export type SyntheticEvaluationWrapper<T> = <S extends T, R>(
   e: SyntheticAttributeEvaluator<S, R>
 ) => SyntheticAttributeEvaluator<S, R>;
 
+// Merge with Inherited options?
 export interface CommonSyntheticOptions {
   memoize: boolean;
-  /** TODO: Pre-evaluate all nodes (i.e., eager*/
+  /** Pre-evaluate all nodes */
+  eager: boolean;
+  cacheProvider: CacheProvider;
 }
 
 export interface ChildInformation<T, R> {
