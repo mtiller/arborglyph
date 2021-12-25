@@ -1,12 +1,17 @@
 import { CommonInheritedOptions } from "./kinds/inherited";
 import { CommonSyntheticOptions } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
-import { AttributeDefinition } from "./kinds/definitions";
+import {
+  AttributeDefinition,
+  InheritedAttributeDefinition,
+} from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
 import { Reifier } from "./reify/reifier";
 import { StandardReifier } from "./reify/standard";
 import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
+import { Maybe } from "purify-ts/Maybe";
+import { evalParent } from "./attributes/parent";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -36,6 +41,8 @@ export class Arbor<T extends object> {
   public readonly root: T;
   protected plugins: ArborPlugin<T>[];
   protected reifier: Reifier<T>;
+  public readonly parentDef: InheritedAttributeDefinition<T, Maybe<T>>;
+  public readonly parentAttr: Attribute<T, Maybe<T>>;
   constructor(
     root: T,
     public list: ListChildren<T>,
@@ -68,6 +75,8 @@ export class Arbor<T extends object> {
       this.opts.inheritOptions,
       this.opts.syntheticOptions
     );
+    this.parentDef = evalParent();
+    this.parentAttr = this.add(this.parentDef);
   }
   attach<R>(f: (x: this) => R) {
     return f(this);
