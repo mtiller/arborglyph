@@ -18,8 +18,6 @@ import {
   CommonSyntheticOptions,
 } from "../kinds/synthetic";
 import { assertUnreachable } from "../utils";
-import { ArborPlugin } from "../plugin";
-import { Attribute } from "../kinds/attributes";
 
 /**
  * THE TRICK
@@ -63,30 +61,6 @@ export const mobx = {
     };
   },
 };
-
-// export function mobxPlugin<T extends object>(): ArborPlugin<T> {
-//   const map = new Map<Attribute<T, any>, Attribute<T, any>>();
-//   return {
-//     remapRoot: (root: any): any => {
-//       return observable(root);
-//     },
-//     // remapDef: <R>(
-//     //   attr: AttributeDefinition<any, R>
-//     // ): AttributeDefinition<any, R> => {
-//     //   // TODO: This is probably a bad a idea...I don't think we NEED to make everything computable.
-//     //   return computable(attr, { keepAlive: true });
-//     // },
-//     remapAttr: <R>(attr: Attribute<T, R>) => {
-//       const cached = map.get(attr);
-//       if (cached !== undefined) return cached;
-//       const ret = (x: T) => {
-//         return computed(() => attr(x)).get();
-//       };
-//       map.set(attr, ret);
-//       return ret;
-//     },
-//   };
-// }
 
 export function computableValue<T extends object, R>(
   d: AttributeDefinition<T, R>,
@@ -195,31 +169,3 @@ export function computeableInherited<T, R>(
     return computed(() => f(nargs), options);
   };
 }
-
-// export function defineComputedSynthetic<T extends object, R>(
-//   f: SyntheticAttributeEvaluator<T, R>,
-//   sopts?: SyntheticOptions<T, IComputedValue<R>>,
-//   options?: IComputedValueOptions<R>
-// ): AttributeDefinition<T, R> {
-//   return {
-//     attach: (a: Arbor<T>) => {
-//       const cs = computeableSynthetic(f, options);
-//       const attr = a.syn(cs, sopts);
-//       return a.der((x) => attr(x).get());
-//     },
-//   };
-// }
-
-// export function defineComputedInherited<T extends object, R>(
-//   f: InheritedAttributeEvaluator<T, R>,
-//   sopts?: InheritedOptions<T, IComputedValue<R>>,
-//   options?: IComputedValueOptions<R>
-// ): AttributeDefinition<T, R> {
-//   return {
-//     attach: (a: Arbor<T>) => {
-//       const cs = computeableInherited(f, options);
-//       const attr = a.inh(cs, sopts);
-//       return a.der((x) => attr(x).get());
-//     },
-//   };
-// }
