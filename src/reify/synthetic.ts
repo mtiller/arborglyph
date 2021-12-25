@@ -1,4 +1,4 @@
-import { childrenOfNode, ListChildren } from "../arbor";
+import { ListChildren } from "../arbor";
 import { NoSuchChild } from "../errors";
 import { Attribute } from "../kinds/attributes";
 import { SyntheticAttributeDefinition } from "../kinds/definitions";
@@ -10,6 +10,7 @@ import {
 } from "../kinds/synthetic";
 import { CacheStorage } from "../kinds/cache";
 import { ArborEmitter } from "../events";
+import { childrenOfNode } from "../utils";
 
 /**
  * This is the function that takes a description of a synthetic

@@ -1,4 +1,4 @@
-import { childrenOfNode, ListChildren, walkTree } from "../arbor";
+import { ListChildren } from "../arbor";
 import { NodeNotFoundError } from "../errors";
 import { Attribute } from "../kinds/attributes";
 import { InheritedAttributeDefinition } from "../kinds/definitions";
@@ -10,6 +10,7 @@ import {
 } from "../kinds/inherited";
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { ArborEmitter } from "../events";
+import { childrenOfNode, walkTree } from "../utils";
 
 /**
  * This is the function that takes a description of an inherited
