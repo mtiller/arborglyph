@@ -9,7 +9,7 @@ import { Arbor } from "../arbor";
 import { computeableSynthetic } from "../plugins/mobx-helpers";
 import { descendents } from "../attributes/descendents";
 import { synthetic } from "./definitions";
-import { lru } from "../plugins/memoize";
+import { lru, lruPlugin } from "../plugins/memoize";
 import { CounterPlugin } from "../plugins/counter";
 
 describe("Test synthetic attribute evaluation", () => {
@@ -76,29 +76,26 @@ describe("Test synthetic attribute evaluation", () => {
       // compare sets from index and named trees
     });
     it("should find all descendents with large LRU cache", () => {
-      const itree = new Arbor(sampleTree1, indexedBinaryChildren);
+      const stats = new CounterPlugin<SimpleBinaryTree>();
+      const itree = new Arbor(sampleTree1, indexedBinaryChildren, {
+        plugins: [stats, lruPlugin({ max: 30 })],
+      });
 
-      let count = 0;
       const desc = descendents<SimpleBinaryTree>();
-      const icount: typeof desc = (x) => {
-        count++;
-        return desc(x);
-      };
-      const idef = synthetic("counter", icount);
-      const cdef = lru(idef, { max: 30 });
-      const idesc = itree.add(cdef);
+      const idef = synthetic("counter", desc);
+      const idesc = itree.add(idef);
 
       const itotal = idesc(itree.root);
 
       expect(itotal.size).toEqual(14);
-      expect(count).toEqual(15);
+      expect(stats.invocations(idef)).toEqual(15);
 
       /**
        * There is memoization so we expect evaluating the attribute
        * (for all existing nodes) should not lead to any more evaluations.
        **/
       itotal.forEach((x) => idesc(x));
-      expect(count).toEqual(15);
+      expect(stats.invocations(idef)).toEqual(15);
 
       // Create synthetic attribute to find all descendents as a set
       // compare sets from index and named trees
