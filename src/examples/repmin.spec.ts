@@ -19,7 +19,7 @@ describe("Run some repmin test cases", () => {
     const logger = new DebugPlugin<SimpleBinaryTree>();
     logger.events.push("Pre-Tree");
     expect(logger.events).toMatchSnapshot();
-    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const stats = new CounterPlugin();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats, logger],
     });
@@ -44,7 +44,7 @@ describe("Run some repmin test cases", () => {
   });
 
   it("should handle a basic repmin with weakmap caching", () => {
-    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const stats = new CounterPlugin();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats],
       syntheticOptions: { memoize: true },
@@ -58,7 +58,7 @@ describe("Run some repmin test cases", () => {
   });
 
   it("should handle a basic repmin with small caching", () => {
-    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const stats = new CounterPlugin();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats, lruPlugin({ max: 5 })],
     });
@@ -71,7 +71,7 @@ describe("Run some repmin test cases", () => {
   });
 
   it("should handle a basic repmin with large caching", () => {
-    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const stats = new CounterPlugin();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats, lruPlugin({ max: 15 })],
     });

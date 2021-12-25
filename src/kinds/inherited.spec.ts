@@ -70,7 +70,7 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them", () => {
-    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const stats = new CounterPlugin();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats],
     });
@@ -88,7 +88,7 @@ describe("Test inherited attribute functionalty", () => {
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {
-    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const stats = new CounterPlugin();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats],
     });

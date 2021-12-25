@@ -20,7 +20,7 @@ describe.skip("Examples using mutable trees", () => {
     const minElem = findChild(root, ["right", "right", "left"]);
 
     const logger = new DebugPlugin<SimpleBinaryTree>();
-    const stats = new CounterPlugin<SimpleBinaryTree>();
+    const stats = new CounterPlugin();
     const tree = new Arbor(root, indexedBinaryChildren, {
       plugins: [logger, stats],
     });
@@ -97,7 +97,7 @@ describe.skip("Examples using mutable trees", () => {
   //   if (minElem.type === "fork") throw new Error("Expected a leaf"); // This is just to narrow the type.
 
   //   /** Now create a wrapped tree around the observable tree */
-  //   const stats = new CounterPlugin<SimpleBinaryTree>();
+  //   const stats = new CounterPlugin();
   //   const tree = new Arbor(root, indexedBinaryChildren, { plugins: [stats] });
   //   expect(tree.root).toEqual(root);
   //   expect(tree.root).toEqual(root);
@@ -222,7 +222,7 @@ describe.skip("Examples using mutable trees", () => {
 //   results: MutableResults,
 //   ...plugins: ArborPlugin<SimpleBinaryTree>[]
 // ) {
-//   const stats = new CounterPlugin<SimpleBinaryTree>();
+//   const stats = new CounterPlugin();
 //   const map = new Map<any, number>();
 //   const tree = new Arbor(clone(sampleTree1), indexedBinaryChildren, {
 //     plugins: [stats, ...plugins],

@@ -15,7 +15,7 @@ import { CounterPlugin } from "../plugins/counter";
 describe("Test synthetic attribute evaluation", () => {
   describe("Tests for descendent attribute", () => {
     it("should find all descendents", () => {
-      const stats = new CounterPlugin<SimpleBinaryTree>();
+      const stats = new CounterPlugin();
       const itree = new Arbor(sampleTree1, indexedBinaryChildren, {
         plugins: [stats],
       });
@@ -47,7 +47,7 @@ describe("Test synthetic attribute evaluation", () => {
       // compare sets from index and named trees
     });
     it("should find all descendents with caching", () => {
-      const stats = new CounterPlugin<SimpleBinaryTree>();
+      const stats = new CounterPlugin();
       const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
         plugins: [stats],
         syntheticOptions: { memoize: true },
@@ -81,7 +81,7 @@ describe("Test synthetic attribute evaluation", () => {
     ])(
       "given cache size of %p, expecting %p invocations followed by %p invocations",
       (testcase) => {
-        const stats = new CounterPlugin<SimpleBinaryTree>();
+        const stats = new CounterPlugin();
         const itree = new Arbor(sampleTree1, indexedBinaryChildren, {
           plugins: [stats, lruPlugin({ max: testcase.max })],
         });
@@ -105,7 +105,7 @@ describe("Test synthetic attribute evaluation", () => {
     );
     it("should find all descendents using computedFn", () => {
       const root = observable(sampleTree1);
-      const stats = new CounterPlugin<SimpleBinaryTree>();
+      const stats = new CounterPlugin();
       const itree = new Arbor(root, indexedBinaryChildren, {
         plugins: [stats, lruPlugin({})],
       });
