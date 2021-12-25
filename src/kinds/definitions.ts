@@ -4,7 +4,6 @@ import { InheritedAttributeEvaluator } from "./inherited";
 import { SyntheticAttributeEvaluator } from "./synthetic";
 
 export interface BaseAttributeDefinition<T> {
-  prev: AttributeDefinition<T, any>[];
   description: string;
 }
 export interface SyntheticAttributeDefinition<T, R>
@@ -23,7 +22,6 @@ export function synthetic<T, R>(
     type: "syn",
     description,
     f,
-    prev: [],
     opts: opts ?? {},
   };
 }
@@ -57,7 +55,6 @@ export function inherited<T, R>(
     type: "inh",
     description,
     f: cf,
-    prev: [],
     opts: opts ?? {},
     get count() {
       return tally;
@@ -79,7 +76,6 @@ export function derived<T, R>(
     type: "der",
     description,
     f,
-    prev: [],
   };
 }
 
@@ -100,7 +96,6 @@ export function transformer<T, I, O>(
     description: `${name} transformer applied to ${attr.description}`,
     attr,
     f,
-    prev: [attr],
   };
 }
 

@@ -8,7 +8,7 @@ import {
 import { CommonInheritedOptions, ParentFunc } from "../kinds/inherited";
 import { CommonSyntheticOptions } from "../kinds/synthetic";
 
-export interface Reifier<B = any> {
+export interface Reifier<B extends object = any> {
   synthetic<T extends B, R>(
     root: T,
     list: ListChildren<T>,
