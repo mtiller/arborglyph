@@ -75,59 +75,34 @@ describe("Test synthetic attribute evaluation", () => {
       // Create synthetic attribute to find all descendents as a set
       // compare sets from index and named trees
     });
-    it("should find all descendents with large LRU cache", () => {
-      const stats = new CounterPlugin<SimpleBinaryTree>();
-      const itree = new Arbor(sampleTree1, indexedBinaryChildren, {
-        plugins: [stats, lruPlugin({ max: 30 })],
-      });
+    test.each([
+      { max: 30, c1: 15, c2: 15 },
+      { max: 5, c1: 15, c2: 31 },
+    ])(
+      "given cache size of %p, expecting %p invocations followed by %p invocations",
+      (testcase) => {
+        const stats = new CounterPlugin<SimpleBinaryTree>();
+        const itree = new Arbor(sampleTree1, indexedBinaryChildren, {
+          plugins: [stats, lruPlugin({ max: testcase.max })],
+        });
 
-      const desc = descendents<SimpleBinaryTree>();
-      const idef = synthetic("counter", desc);
-      const idesc = itree.add(idef);
+        const desc = descendents<SimpleBinaryTree>();
+        const idef = synthetic("counter", desc);
+        const idesc = itree.add(idef);
 
-      const itotal = idesc(itree.root);
+        const itotal = idesc(itree.root);
 
-      expect(itotal.size).toEqual(14);
-      expect(stats.invocations(idef)).toEqual(15);
+        expect(itotal.size).toEqual(14);
+        expect(stats.invocations(idef)).toEqual(testcase.c1);
 
-      /**
-       * There is memoization so we expect evaluating the attribute
-       * (for all existing nodes) should not lead to any more evaluations.
-       **/
-      itotal.forEach((x) => idesc(x));
-      expect(stats.invocations(idef)).toEqual(15);
-
-      // Create synthetic attribute to find all descendents as a set
-      // compare sets from index and named trees
-    });
-    it("should find all descendents with small LRU cache", () => {
-      const itree = new Arbor(sampleTree1, indexedBinaryChildren);
-
-      let count = 0;
-      const desc = descendents<SimpleBinaryTree>();
-      const icount: typeof desc = (x) => {
-        count++;
-        return desc(x);
-      };
-      const idesc = itree.add(lru(synthetic("counter", icount), { max: 5 }));
-
-      const itotal = idesc(itree.root);
-
-      expect(itotal.size).toEqual(14);
-      expect(count).toEqual(15);
-
-      /**
-       * There is memoization BUT, the LRU cache is so small that
-       * nothing useful gets retained and we end up having to perform
-       * some re-evaluations.
-       **/
-      itotal.forEach((x) => idesc(x));
-      expect(count).toEqual(31);
-
-      // Create synthetic attribute to find all descendents as a set
-      // compare sets from index and named trees
-    });
-
+        /**
+         * There is memoization so we expect evaluating the attribute
+         * (for all existing nodes) should not lead to any more evaluations.
+         **/
+        itotal.forEach((x) => idesc(x));
+        expect(stats.invocations(idef)).toEqual(testcase.c2);
+      }
+    );
     it("should find all descendents using computedFn", () => {
       const root = observable(sampleTree1);
       const itree = new Arbor(root, indexedBinaryChildren);
