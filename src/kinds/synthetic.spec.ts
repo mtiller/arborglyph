@@ -9,7 +9,7 @@ import { Arbor } from "../arbor";
 import { computeableSynthetic } from "../plugins/mobx-helpers";
 import { descendents } from "../attributes/descendents";
 import { synthetic } from "./definitions";
-import { lruPlugin } from "../plugins/memoize";
+import { lruPlugin } from "../plugins/lru";
 import { CounterPlugin } from "../plugins/counter";
 
 describe("Test synthetic attribute evaluation", () => {

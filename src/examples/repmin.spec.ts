@@ -4,7 +4,7 @@ import { fork, indexedBinaryChildren, leaf, LeafNode } from "../testing";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
 import { configure } from "mobx";
-import { lruPlugin } from "../plugins/memoize";
+import { lruPlugin } from "../plugins/lru";
 import { CounterPlugin } from "../plugins/counter";
 import { subTable } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";

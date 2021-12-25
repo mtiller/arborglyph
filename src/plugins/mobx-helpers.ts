@@ -18,7 +18,6 @@ import {
   CommonSyntheticOptions,
 } from "../kinds/synthetic";
 import { assertUnreachable } from "../utils";
-import { memoize } from "./memoize";
 import { ArborPlugin } from "../plugin";
 import { Attribute } from "../kinds/attributes";
 
@@ -117,7 +116,7 @@ export function computable<T extends object, R>(
   d: AttributeDefinition<T, R>,
   opts?: IComputedValueOptions<R>
 ) {
-  const inter = memoize(computableValue(d, opts));
+  const inter = computableValue(d, opts);
   return transformer(inter, "unwrap CV", (x) => x.get());
 }
 
