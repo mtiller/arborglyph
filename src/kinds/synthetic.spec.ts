@@ -9,7 +9,7 @@ import { Arbor } from "../arbor";
 import { computeableSynthetic } from "../plugins/mobx-helpers";
 import { descendents } from "../attributes/descendents";
 import { synthetic } from "./definitions";
-import { lru, lruPlugin } from "../plugins/memoize";
+import { lruPlugin } from "../plugins/memoize";
 import { CounterPlugin } from "../plugins/counter";
 
 describe("Test synthetic attribute evaluation", () => {
@@ -105,31 +105,30 @@ describe("Test synthetic attribute evaluation", () => {
     );
     it("should find all descendents using computedFn", () => {
       const root = observable(sampleTree1);
-      const itree = new Arbor(root, indexedBinaryChildren);
+      const stats = new CounterPlugin<SimpleBinaryTree>();
+      const itree = new Arbor(root, indexedBinaryChildren, {
+        plugins: [stats, lruPlugin({})],
+      });
 
-      let count = 0;
       const desc = computeableSynthetic(descendents<SimpleBinaryTree>());
-      const icount: typeof desc = (x) => {
-        count++;
-        return desc(x);
-      };
       // NB: This must be done at the same level as other memoization
-      const idesc = itree.add(lru(synthetic("descendents", icount), {}));
+      const desc2 = synthetic("descendents", desc);
+      const idesc = itree.add(desc2);
 
       const itotal = idesc(itree.root);
 
       expect(itotal.get().size).toEqual(14);
-      expect(count).toEqual(15);
+      expect(stats.invocations(desc2)).toEqual(15);
 
       idesc(itree.root);
-      expect(count).toEqual(15);
+      expect(stats.invocations(desc2)).toEqual(15);
 
       /**
        * There is memoization so we expect evaluating the attribute
        * (for all existing nodes) should not lead to any more evaluations.
        **/
       itotal.get().forEach((x) => idesc(x));
-      expect(count).toEqual(15);
+      expect(stats.invocations(desc2)).toEqual(15);
 
       // Create synthetic attribute to find all descendents as a set
       // compare sets from index and named trees
