@@ -44,10 +44,12 @@ export class Arbor<T extends object> {
     this.root = root;
     this.events = createEmitter<T>();
     this.monitor = this.events;
+    this.events.emit("created");
     this.plugins = opts.plugins ?? [];
-    this.plugins.forEach((plugin) =>
-      plugin.connect ? plugin.connect(this) : undefined
-    );
+    this.plugins.forEach((plugin) => {
+      plugin.connect ? plugin.connect(this) : undefined;
+      this.events.emit("connected", plugin);
+    });
     this.reifier = opts.reifier ?? new StandardReifier();
     this.reified = new Map();
 
@@ -60,6 +62,11 @@ export class Arbor<T extends object> {
       (cur, plugin) =>
         plugin.syntheticOptions ? plugin.syntheticOptions(cur) : cur,
       opts.syntheticOptions ?? {}
+    );
+    this.events.emit(
+      "options",
+      this.opts.inheritOptions,
+      this.opts.syntheticOptions
     );
   }
   attach<R>(f: (x: this) => R) {
@@ -88,6 +95,7 @@ export class Arbor<T extends object> {
           mergedPartialOptions
         );
         this.reified.set(def, r);
+        this.events.emit("added", def, r);
         return r;
       }
       case "inh": {
@@ -106,18 +114,21 @@ export class Arbor<T extends object> {
           mergedPartialOptions
         );
         this.reified.set(def, r);
+        this.events.emit("added", def, r);
         return r;
       }
       case "der": {
         // TODO: As attribute gets expanded, more will probably be needed here.
         const r = (x: T) => def.f(x);
         this.reified.set(def, r);
+        this.events.emit("added", def, r);
         return r;
       }
       case "trans": {
         const attr = this.add(def.attr);
         const r = (x: T) => def.f(attr(x));
         this.reified.set(def, r);
+        this.events.emit("added", def, r);
         return r;
       }
     }
