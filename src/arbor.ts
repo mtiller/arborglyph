@@ -3,6 +3,7 @@ import { CommonSyntheticOptions } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
 import {
   AttributeDefinition,
+  inherited,
   InheritedAttributeDefinition,
 } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
@@ -11,7 +12,6 @@ import { Reifier } from "./reify/reifier";
 import { StandardReifier } from "./reify/standard";
 import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
 import { Maybe } from "purify-ts/Maybe";
-import { evalParent } from "./attributes/parent";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -75,7 +75,14 @@ export class Arbor<T extends object> {
       this.opts.inheritOptions,
       this.opts.syntheticOptions
     );
-    this.parentDef = evalParent();
+
+    this.parentDef = inherited(
+      "eval parent",
+      (node) => node.parent.map((v) => v.node),
+      {
+        eager: true,
+      }
+    );
     this.parentAttr = this.add(this.parentDef);
   }
   attach<R>(f: (x: this) => R) {
