@@ -31,7 +31,6 @@ export interface InheritedAttributeDefinition<T, R>
   type: "inh";
   f: InheritedAttributeEvaluator<T, R>;
   opts: Partial<InheritedOptions>;
-  count: number;
 }
 
 export interface InheritedOptions {
@@ -46,19 +45,11 @@ export function inherited<T, R>(
   f: InheritedAttributeEvaluator<T, R>,
   opts?: Partial<InheritedOptions>
 ): InheritedAttributeDefinition<T, R> {
-  let tally = 0;
-  const cf: typeof f = (x) => {
-    tally++;
-    return f(x);
-  };
   return {
     type: "inh",
     description,
-    f: cf,
+    f: f,
     opts: opts ?? {},
-    get count() {
-      return tally;
-    },
   };
 }
 
