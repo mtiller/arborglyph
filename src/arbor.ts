@@ -51,15 +51,15 @@ export class Arbor<T extends object> {
     this.reifier = opts.reifier ?? new StandardReifier();
     this.reified = new Map();
 
-    const iopt = this.plugins.reduce(
+    this.opts.inheritOptions = this.plugins.reduce(
       (cur, plugin) =>
         plugin.inheritedOptions ? plugin.inheritedOptions(cur) : cur,
       opts.inheritOptions ?? {}
     );
-    const sopt = this.plugins.reduce(
+    this.opts.syntheticOptions = this.plugins.reduce(
       (cur, plugin) =>
         plugin.syntheticOptions ? plugin.syntheticOptions(cur) : cur,
-      opts.inheritOptions ?? {}
+      opts.syntheticOptions ?? {}
     );
   }
   attach<R>(f: (x: this) => R) {
