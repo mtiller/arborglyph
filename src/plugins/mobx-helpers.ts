@@ -62,110 +62,34 @@ export const mobx = {
   },
 };
 
-export function computableValue<T extends object, R>(
-  d: AttributeDefinition<T, R>,
-  opts?: IComputedValueOptions<R>
-): AttributeDefinition<T, IComputedValue<R>> {
-  const desc = `CV of ${d.description}`;
-  switch (d.type) {
-    case "syn": {
-      return synthetic(desc, computeableSynthetic(d.f, opts));
-    }
-    case "inh": {
-      return inherited(desc, computeableInherited(d.f, opts));
-    }
-    case "der": {
-      return derived<T, IComputedValue<R>>(`CV of ${d.description}`, (args) =>
-        computed(() => d.f(args), opts)
-      );
-    }
-    case "trans": {
-      throw new Error("Unimplemented");
-    }
-  }
-  return assertUnreachable(d);
-}
+// export function computableValue<T extends object, R>(
+//   d: AttributeDefinition<T, R>,
+//   opts?: IComputedValueOptions<R>
+// ): AttributeDefinition<T, IComputedValue<R>> {
+//   const desc = `CV of ${d.description}`;
+//   switch (d.type) {
+//     case "syn": {
+//       return synthetic(desc, computeableSynthetic(d.f, opts));
+//     }
+//     case "inh": {
+//       return inherited(desc, computeableInherited(d.f, opts));
+//     }
+//     case "der": {
+//       return derived<T, IComputedValue<R>>(`CV of ${d.description}`, (args) =>
+//         computed(() => d.f(args), opts)
+//       );
+//     }
+//     case "trans": {
+//       throw new Error("Unimplemented");
+//     }
+//   }
+//   return assertUnreachable(d);
+// }
 
-export function computable<T extends object, R>(
-  d: AttributeDefinition<T, R>,
-  opts?: IComputedValueOptions<R>
-) {
-  const inter = computableValue(d, opts);
-  return transformer(inter, "unwrap CV", (x) => x.get());
-}
-
-/**
- * Make an existing synthetic attribute evaluator into a "computable" one.
- * Making it computable means that it can track observable data.  The net effect
- * is that the attribute will now return an instance of `IComputedValue` which
- * lazily evaluates its result, memoizes the result AND automatically
- * invalidates the cached value if any of the values used to compute it were
- * changed!
- * @param f Original synthetic attribute evaluator
- * @returns
- */
-export function computeableSynthetic<T, R>(
-  f: SyntheticAttributeEvaluator<T, R>,
-  options?: IComputedValueOptions<R>
-): SyntheticAttributeEvaluator<T, IComputedValue<R>> {
-  /** We take args where any precomputed child attributes are assumed to be stored as IComputedValues */
-  return (args) => {
-    /** In order to provide children with normal "attr" method, we need to unwrap these computed values. */
-    const children = args.children.map((c) => {
-      return {
-        node: c.node,
-        get attr() {
-          return c.attr.get(); // Unwrapping happens here
-        },
-      };
-    });
-    /** Now we create an `args` value compatable with the wrapped evaluator */
-    const nargs: SyntheticArg<T, R> = {
-      node: args.node,
-      children: children,
-      attr: (n: T) => {
-        const child = children.find((c) => c.node === n);
-        if (child === undefined) throw new Error("No such child");
-        return child.attr;
-      },
-      createMap: () => observable.map(args.createMap()),
-    };
-    /** And then wrap the evaluator with computed so it returns a computed value */
-    return computed(() => f(nargs), options);
-  };
-}
-
-/**
- * Make an existing inherited attribute evaluator into a "computable" one.
- * Making it computable means that it can track observable data.  The net effect
- * is that the attribute will now return an instance of `IComputedValue` which
- * lazily evaluates its result, memoizes the result AND automatically
- * invalidates the cached value if any of the values used to compute it were
- * changed!
- * @param f Original inherited attribute evaluator
- * @returns
- */
-export function computeableInherited<T, R>(
-  f: InheritedAttributeEvaluator<T, R>,
-  options?: IComputedValueOptions<R>
-): InheritedAttributeEvaluator<T, IComputedValue<R>> {
-  /** We take args where any precomputed parent attribute is assumed to be stored as IComputedValues */
-  return (args) => {
-    /** In order to provide parent with normal "attr" method, we need to unwrap these computed values. */
-    const parent = args.parent.map((p) => {
-      return {
-        node: p.node,
-        get attr() {
-          return p.attr.get(); // Unwrapping happens here
-        },
-      };
-    });
-    /** Now we create an `args` value compatible with the wrapped evaluator */
-    const nargs: InheritedArgs<T, R> = {
-      node: args.node,
-      parent: parent,
-    };
-    /** And then wrap the evaluator with computed so it returns a computed value */
-    return computed(() => f(nargs), options);
-  };
-}
+// export function computable<T extends object, R>(
+//   d: AttributeDefinition<T, R>,
+//   opts?: IComputedValueOptions<R>
+// ) {
+//   const inter = computableValue(d, opts);
+//   return transformer(inter, "unwrap CV", (x) => x.get());
+// }

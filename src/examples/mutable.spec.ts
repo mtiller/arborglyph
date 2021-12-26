@@ -2,12 +2,11 @@ import { findChild, fork, indexedBinaryChildren, leaf } from "../testing";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
 import { configure, observable } from "mobx";
-import { computable } from "../plugins/mobx-helpers";
-import rfdc from "rfdc";
 import { CounterPlugin } from "../plugins/counter";
 import { DebugPlugin } from "../plugins/debug";
 import { evalPath } from "../attributes/path";
 import { evalGlobmin, evalMin, evalRepmin } from "./repmin_attrs";
+import { MobxReifier } from "../reify/mobx";
 
 describe.skip("Examples using mutable trees", () => {
   // Being a bit sloppy with MobX here.
@@ -23,24 +22,23 @@ describe.skip("Examples using mutable trees", () => {
     const stats = new CounterPlugin();
     const tree = new Arbor(root, indexedBinaryChildren, {
       plugins: [logger, stats],
+      reifier: new MobxReifier(),
     });
     expect(tree.root).toEqual(root);
     expect(tree.root).toEqual(root);
 
-    const path = tree.add(computable(evalPath()));
+    const path = tree.add(evalPath());
     logger.stringifyNode = path;
     logger.stringifyResult = () => "";
 
     /** Now define the min attribute */
-    const cevalMin = computable(evalMin);
-    const min = tree.add(cevalMin);
+    const min = tree.add(evalMin);
 
     /** Now define the globmin attribute, but we must provide a slightly different function for evaluating the min attribute */
-    const globmin = tree.add(computable(evalGlobmin(min)));
+    const globmin = tree.add(evalGlobmin(min));
 
     /** Finaly, define the repmin attribute (again need to unwrap globmin values) */
-    const cevalRepmin = computable(evalRepmin(globmin));
-    const repmin = tree.add(cevalRepmin);
+    const repmin = tree.add(evalRepmin(globmin));
 
     /** Compute the rootMin computed value for the root */
     const rootMin = min(root);

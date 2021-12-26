@@ -1,11 +1,7 @@
 import { CommonInheritedOptions } from "./kinds/inherited";
 import { CommonSyntheticOptions } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
-import {
-  AttributeDefinition,
-  inherited,
-  InheritedAttributeDefinition,
-} from "./kinds/definitions";
+import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
 import { Reifier } from "./reify/reifier";
@@ -30,7 +26,7 @@ export interface ArborOptions<T extends object> {
   plugins?: ArborPlugin<T>[];
   inheritOptions?: Partial<CommonInheritedOptions>;
   syntheticOptions?: Partial<CommonSyntheticOptions>;
-  reifier?: Reifier<T>;
+  reifier?: Reifier<object>;
   // wrappers
 }
 
