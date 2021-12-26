@@ -7,10 +7,10 @@ import {
   ParentFunc,
   ParentInformation,
 } from "../kinds/inherited";
-import { Just, Maybe, Nothing } from "purify-ts/Maybe";
+import { Maybe } from "purify-ts/Maybe";
 import { ArborEmitter } from "../events";
 import { CacheStorage } from "../kinds/cache";
-import { childrenOfNode, walkTree } from "../utils";
+import { walkTree } from "../utils";
 
 /**
  * A special function used to reify the parent.  This follows a special procedure
