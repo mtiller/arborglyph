@@ -43,10 +43,11 @@ export function reifyParent<T extends object>(
  * @param opts Various options we have when reifying
  * @returns
  */
-export function reifyInheritedAttribute<T extends object, R>(
+export function reifyInheritedAttribute<T extends object, DR, R>(
   root: T,
   list: ListChildren<T>,
-  def: InheritedAttributeDefinition<T, R>,
+  def2: InheritedAttributeDefinition<T, DR>,
+  f: InheritedAttributeEvaluator<T, R>,
   emitter: ArborEmitter<T>,
   p: ParentFunc<T>,
   opts: CommonInheritedOptions
@@ -72,7 +73,7 @@ export function reifyInheritedAttribute<T extends object, R>(
      **/
     const memoizeEvaluator: InheritedAttributeEvaluator<T, R> = (args) => {
       if (storage.has(args.node)) return storage.get(args.node) as R;
-      const ret = def.f(args);
+      const ret = f(args);
       /**
        * Record this **Before** calling emit because the emitter may trigger
        * other evaluations (because of stringifyNode + path attribute, for example).
@@ -81,7 +82,7 @@ export function reifyInheritedAttribute<T extends object, R>(
       storage.set(args.node, ret);
       emitter.emit(
         "invocation",
-        def as InheritedAttributeDefinition<T, unknown>,
+        def2 as InheritedAttributeDefinition<T, unknown>,
         args.node,
         ret
       );
@@ -102,10 +103,10 @@ export function reifyInheritedAttribute<T extends object, R>(
   }
 
   const evaluator: InheritedAttributeEvaluator<T, R> = (args) => {
-    const ret = def.f(args);
+    const ret = f(args);
     emitter.emit(
       "invocation",
-      def as InheritedAttributeDefinition<T, unknown>,
+      def2 as InheritedAttributeDefinition<T, unknown>,
       args.node,
       ret
     );

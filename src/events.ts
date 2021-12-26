@@ -14,12 +14,8 @@ export interface TreeEvents<T extends object> {
     inheritedOptions: Partial<InheritedOptions>,
     synthethicOptions: Partial<SyntheticOptions>
   ) => void;
-  invocation: (
-    d: AttributeDefinition<T, unknown>,
-    n: T,
-    result: unknown
-  ) => void;
-  evaluation: (a: Attribute<T, unknown>, n: T, result: unknown) => void;
+  invocation: (d: AttributeDefinition<T, any>, n: T, result: unknown) => void;
+  evaluation: (a: Attribute<T, any>, n: T, result: unknown) => void;
 }
 
 export type ArborMonitor<T extends object> = Pick<

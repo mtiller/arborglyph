@@ -38,10 +38,11 @@ export class StandardReifier implements Reifier<object> {
         mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
     };
 
-    return reifySyntheticAttribute<T, R>(
+    return reifySyntheticAttribute<T, R, R>(
       root,
       list,
       def,
+      def.f,
       emitter,
       completeOptions
     );
@@ -56,19 +57,17 @@ export class StandardReifier implements Reifier<object> {
   ): Attribute<T, R> {
     const mergedPartialOptions = { ...this.inheritedOptions, ...opts };
     const completeOptions: CommonInheritedOptions = {
-      // TODO: Set this to false.  But for this to work, we need parent as a built-in
-      // memoized, eagerly evaluated attribute because that's a precondition for having
-      // lazily evaluated inherited attributes.
       eager: mergedPartialOptions.eager ?? false,
       memoize: mergedPartialOptions.memoize ?? true,
       cacheProvider:
         mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
     };
 
-    return reifyInheritedAttribute<T, R>(
+    return reifyInheritedAttribute<T, R, R>(
       root,
       list,
       def,
+      def.f,
       emitter,
       p,
       completeOptions

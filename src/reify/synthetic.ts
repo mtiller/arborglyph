@@ -17,42 +17,43 @@ import { childrenOfNode } from "../utils";
  * attribute and returns an actual implementation capable of computing
  * the synthetic attribute for any node in the tree.
  *
+ * Note that the definition's return type (DR) may not necessarily match
+ * the attribute return type (R).  This allows the reifier to perform
+ * some transformations of the resulting attribute (which is useful, for
+ * example, when dealing with observables).
+ *
  * @param tree Tree we are associating this synthetic attribute with
  * @param evaluator The function that evaluates the synthetic attribute
  * @param opts Various options we have when reifying
  * @returns
  */
-export function reifySyntheticAttribute<T extends object, R>(
+export function reifySyntheticAttribute<T extends object, DR, R>(
   root: T,
   list: ListChildren<T>,
-  d: SyntheticAttributeDefinition<T, R>,
+  d2: SyntheticAttributeDefinition<T, DR>,
+  df: SyntheticAttributeEvaluator<T, R>,
   emitter: ArborEmitter<T>,
   opts: CommonSyntheticOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? false;
 
-  const f: typeof d["f"] = (x) => {
-    const r = d.f(x);
-    emitter.emit(
-      "invocation",
-      d as SyntheticAttributeDefinition<T, unknown>,
-      x.node,
-      r
-    );
+  const f: typeof df = (x) => {
+    const r = df(x);
+    emitter.emit("invocation", d2, x.node, r);
     return r;
   };
 
-  const evaluator: SyntheticAttributeEvaluator<T, R> = memo
-    ? wrapWithMap(d, opts.cacheProvider(), f)
+  const evaluator: typeof df = memo
+    ? wrapWithMap(d2, opts.cacheProvider(), f)
     : f;
 
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(d, root, list, evaluator);
+  return baseSyntheticAttributeCalculation(d2, root, list, evaluator);
 }
 
-function baseSyntheticAttributeCalculation<T, R>(
-  d: SyntheticAttributeDefinition<T, R>,
+function baseSyntheticAttributeCalculation<T, DR, R>(
+  d: SyntheticAttributeDefinition<T, DR>,
   root: T,
   list: ListChildren<T>,
   f: SyntheticAttributeEvaluator<T, R>
@@ -89,8 +90,8 @@ interface EvaluationRecord<T, R> {
   children: T[];
 }
 
-function wrapWithMap<T extends object, R>(
-  def: SyntheticAttributeDefinition<T, R>,
+function wrapWithMap<T extends object, DR, R>(
+  def: SyntheticAttributeDefinition<T, DR>,
   childStorage: CacheStorage<T, EvaluationRecord<T, R>>,
   evaluator: SyntheticAttributeEvaluator<T, R>
 ): SyntheticAttributeEvaluator<T, R> {
