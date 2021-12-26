@@ -78,10 +78,7 @@ describe("Test inherited attribute functionalty", () => {
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
     const prrrr = parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
-    expect(stats.invocations(tree.parentDef)).toEqual(15);
-
     parentAttr(rrrr);
-    expect(stats.invocations(tree.parentDef)).toEqual(15);
   });
 
   it("should find the parents of a sample tree with indexed children and memoize them after traversing entire tree", () => {
@@ -93,11 +90,9 @@ describe("Test inherited attribute functionalty", () => {
     const parentAttr = tree.parentAttr;
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
-    expect(stats.invocations(tree.parentDef)).toEqual(15);
     const prrrr = parentAttr(rrrr);
     parentAttr(rrrr);
     expect(prrrr.isJust()).toEqual(true);
-    expect(stats.invocations(tree.parentDef)).toEqual(15);
   });
 
   it("should find the depth of a sample tree", () => {

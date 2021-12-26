@@ -26,7 +26,7 @@ describe("Run some repmin test cases", () => {
     logger.events.push("Post-Tree");
     expect(logger.events).toMatchSnapshot();
     const { globmin, repmin, path } = tree.attach(repminCluster);
-    logger.stringifyNode = path;
+    // logger.stringifyNode = path;
     logger.events.push("Post-Attach");
     expect(logger.events).toMatchSnapshot();
 

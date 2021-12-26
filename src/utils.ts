@@ -1,5 +1,6 @@
 import { ScalarFunction } from "./kinds/attributes";
 import { ListChildren } from "./arbor";
+import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 
 export function treeRepr<T, R>(
   cur: T,
@@ -30,18 +31,23 @@ export function mustGet<T, R>(m: Map<T, R>, key: T): R {
  * @param tree The tree we are walking
  * @param f Function to evaluate at each node
  */
-export function walkTree<T>(cur: T, list: ListChildren<T>, f: (x: T) => void) {
-  f(cur);
+export function walkTree<T>(
+  cur: T,
+  list: ListChildren<T>,
+  f: (x: T, parent: Maybe<T>) => void,
+  parent: Maybe<T> = Nothing
+) {
+  f(cur, parent);
   const children = list(cur);
   if (Array.isArray(children)) {
     /** If this is an indexed tree... */
     for (const child of children) {
-      walkTree(child, list, f);
+      walkTree(child, list, f, Just(cur));
     }
   } else {
     /** If this tree has named children */
     for (const child of Object.entries(children)) {
-      walkTree(child[1], list, f);
+      walkTree(child[1], list, f, Just(cur));
     }
   }
 }

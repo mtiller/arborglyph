@@ -1,6 +1,12 @@
 /** An implementation of the repmin example */
 
-import { fork, indexedBinaryChildren, leaf, LeafNode } from "../testing";
+import {
+  findChild,
+  fork,
+  indexedBinaryChildren,
+  leaf,
+  LeafNode,
+} from "../testing";
 import { sampleTree1, SimpleBinaryTree } from "../testing";
 import { Arbor } from "../arbor";
 import { configure, observable } from "mobx";
@@ -21,12 +27,18 @@ describe("Run some repmin test cases on mutable trees", () => {
     expect(logger.events).toMatchSnapshot();
     const stats = new CounterPlugin();
     const otree = observable(sampleTree1);
+    // const otree = sampleTree1;
     const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats, logger],
     });
     logger.events.push("Post-Tree");
     expect(logger.events).toMatchSnapshot();
     const { globmin, repmin, path } = tree.attach(repminCluster);
+
+    // expect(path(tree.root)).toEqual("root");
+    // const l = findChild(tree.root, ["left"]);
+    // expect(path(l)).toEqual("root/left");
+
     logger.stringifyNode = path;
     logger.events.push("Post-Attach");
     expect(logger.events).toMatchSnapshot();
@@ -92,7 +104,7 @@ export function repminCluster(tree: Arbor<SimpleBinaryTree>) {
   const min = tree.add(evalMin);
   const globmin = tree.add(evalGlobmin(min));
   const repmin = tree.add(evalRepmin(globmin));
-  const path = tree.add(evalPath());
+  const path = tree.add(evalPath({ eager: false }));
   const subtable = tree.add(
     subTable(path, (x): x is LeafNode => x.type === "leaf")
   );

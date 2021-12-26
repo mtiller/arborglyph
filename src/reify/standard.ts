@@ -51,7 +51,7 @@ export class StandardReifier implements Reifier<object> {
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
-    p: ParentFunc<T> | null,
+    p: ParentFunc<T>,
     opts: CommonInheritedOptions
   ): Attribute<T, R> {
     const mergedPartialOptions = { ...this.inheritedOptions, ...opts };

@@ -12,6 +12,7 @@ import { Reifier } from "./reify/reifier";
 import { StandardReifier } from "./reify/standard";
 import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
 import { Maybe } from "purify-ts/Maybe";
+import { reifyParent } from "./reify/inherited";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -41,7 +42,6 @@ export class Arbor<T extends object> {
   public readonly root: T;
   protected plugins: ArborPlugin<T>[];
   protected reifier: Reifier<T>;
-  public readonly parentDef: InheritedAttributeDefinition<T, Maybe<T>>;
   public readonly parentAttr: Attribute<T, Maybe<T>>;
   constructor(
     root: T,
@@ -76,23 +76,16 @@ export class Arbor<T extends object> {
       this.opts.syntheticOptions
     );
 
-    this.parentDef = inherited(
-      "eval parent",
-      (node) => node.parent.map((v) => v.node),
-      {
-        eager: true,
-      }
-    );
-    this.parentAttr = this.add(this.parentDef);
+    this.parentAttr = reifyParent(this.root, this.list, this.events);
   }
   attach<R>(f: (x: this) => R) {
     return f(this);
   }
+  // TODO: Add opts with unified options
   add<R>(
     def: AttributeDefinition<T, R>,
     reifier?: Reifier<T>
   ): Attribute<T, R> {
-    const isparent = def === (this.parentDef as any);
     if (this.reified.has(def)) {
       return this.reified.get(def) as Attribute<T, R>;
     }
@@ -119,9 +112,6 @@ export class Arbor<T extends object> {
           ...this.opts.inheritOptions,
           ...def.opts,
         };
-        if (isparent) {
-          mergedPartialOptions.eager = true;
-        }
         reifier = reifier ?? this.reifier;
 
         const r = this.reifier.inherited(
@@ -129,7 +119,7 @@ export class Arbor<T extends object> {
           this.list,
           def,
           this.events,
-          isparent ? null : this.parentAttr,
+          this.parentAttr,
           mergedPartialOptions
         );
         this.reified.set(def, r);
