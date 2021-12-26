@@ -195,16 +195,14 @@ function parentInformation<T, R>(
   pf: ParentFunc<T>,
   f: InheritedAttributeEvaluator<T, R>
 ): Maybe<ParentInformation<T, R>> {
-  return pf(x).map((parent) => {
+  const possibleParent = pf(x);
+  return possibleParent.map((parent) => {
     // This is called only if the node `x` has a parent.
-    const attr = (): R => {
-      const info = parentInformation(parent, pf, f);
-      return f({ parent: info, node: x });
-    };
     return {
-      node: x,
+      node: parent,
       get attr() {
-        return attr();
+        const info = parentInformation(parent, pf, f);
+        return f({ parent: info, node: parent });
       },
     };
   });

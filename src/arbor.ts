@@ -92,10 +92,10 @@ export class Arbor<T extends object> {
     def: AttributeDefinition<T, R>,
     reifier?: Reifier<T>
   ): Attribute<T, R> {
+    const isparent = def === (this.parentDef as any);
     if (this.reified.has(def)) {
       return this.reified.get(def) as Attribute<T, R>;
     }
-    const plugins = this.plugins ?? [];
     switch (def.type) {
       case "syn": {
         const mergedPartialOptions = {
@@ -119,6 +119,9 @@ export class Arbor<T extends object> {
           ...this.opts.inheritOptions,
           ...def.opts,
         };
+        if (isparent) {
+          mergedPartialOptions.eager = true;
+        }
         reifier = reifier ?? this.reifier;
 
         const r = this.reifier.inherited(
@@ -126,7 +129,7 @@ export class Arbor<T extends object> {
           this.list,
           def,
           this.events,
-          null,
+          isparent ? null : this.parentAttr,
           mergedPartialOptions
         );
         this.reified.set(def, r);

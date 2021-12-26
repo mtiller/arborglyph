@@ -5,6 +5,7 @@ export function evalPath<T>(): InheritedAttributeDefinition<T, string> {
     return parent.caseOf({
       Nothing: () => "root",
       Just: (p) => {
+        if (node === p.node) throw new Error("Node was its own parent?!?");
         for (const [key, value] of Object.entries(p.node)) {
           if (value === node) {
             return `${p.attr}/${key}`;
