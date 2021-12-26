@@ -59,7 +59,7 @@ export class StandardReifier implements Reifier<object> {
       // TODO: Set this to false.  But for this to work, we need parent as a built-in
       // memoized, eagerly evaluated attribute because that's a precondition for having
       // lazily evaluated inherited attributes.
-      eager: mergedPartialOptions.eager ?? true,
+      eager: mergedPartialOptions.eager ?? false,
       memoize: mergedPartialOptions.memoize ?? true,
       cacheProvider:
         mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
