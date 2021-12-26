@@ -76,6 +76,8 @@ export class Arbor<T extends object> {
       this.opts.syntheticOptions
     );
 
+    // TODO: Any change in tree structure will require re-evaluating parent
+    // attributes.
     this.parentAttr = reifyParent(this.root, this.list, this.events);
   }
   attach<R>(f: (x: this) => R) {
