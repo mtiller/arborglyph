@@ -1,6 +1,4 @@
 import { createEmitter } from "./events";
-import { NamedSyntheticFunction } from "./former";
-import { Attribute } from "./kinds/attributes";
 
 describe("Test event emitter", () => {
   it("should create an event emitter", () => {
