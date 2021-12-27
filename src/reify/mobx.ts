@@ -5,7 +5,7 @@ import {
   observable,
 } from "mobx";
 import { Maybe } from "purify-ts/Maybe";
-import { ListChildren } from "../arbor";
+import { ListChildren } from "../children";
 import { ArborEmitter } from "../events";
 import { Attribute } from "../kinds/attributes";
 import {

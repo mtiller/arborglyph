@@ -5,13 +5,13 @@ import { SyntheticAttributeEvaluator } from "./synthetic";
 
 export interface BaseAttributeDefinition<T> {
   description: string;
+  opts: Partial<ReificationOptions>;
 }
 
 export interface SyntheticAttributeDefinition<T, R>
   extends BaseAttributeDefinition<T> {
   type: "syn";
   f: SyntheticAttributeEvaluator<T, R>;
-  opts: Partial<ReificationOptions>;
 }
 
 export function synthetic<T, R>(
@@ -31,7 +31,6 @@ export interface InheritedAttributeDefinition<T, R>
   extends BaseAttributeDefinition<T> {
   type: "inh";
   f: InheritedAttributeEvaluator<T, R>;
-  opts: Partial<InheritedOptions>;
 }
 
 export interface InheritedOptions {
@@ -68,6 +67,7 @@ export function derived<T, R>(
     type: "der",
     description,
     f,
+    opts: {},
   };
 }
 
@@ -88,6 +88,7 @@ export function transformer<T, I, O>(
     description: `${name} transformer applied to ${attr.description}`,
     attr,
     f,
+    opts: {},
   };
 }
 

@@ -1,8 +1,8 @@
-import { createEmitter } from "./events";
+import { TreeEvents, typedEmitter } from "./events";
 
 describe("Test event emitter", () => {
   it("should create an event emitter", () => {
-    const te = createEmitter<any>();
+    const te = typedEmitter<TreeEvents<any>>();
     let count = 0;
     const foo = te.on("evaluation", (attr) => {
       count++;

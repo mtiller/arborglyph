@@ -4,60 +4,88 @@ import { assertUnreachable } from "./utils";
 import { ArborPlugin } from "./plugin";
 import { Reifier } from "./reify/reifier";
 import { StandardReifier } from "./reify/standard";
-import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
+import {
+  ArborEmitter,
+  ArborMonitor,
+  MutationEmitter,
+  typedEmitter,
+} from "./events";
 import { Maybe } from "purify-ts/Maybe";
 import { ReificationOptions } from "./kinds/options";
+import { ListChildren } from "./children";
 
 /**
- * This file contains a couple different ways to represent a tree.  It is
- * worth noting that these are all "top down".  This is really the only
- * practical representation because a bottom up tree isn't really traversable
- * because you'd have to know all the leaves in order to ensure that you could
- * visit every node.
+ * These are options associated with the operation of an Arbor instance.
  */
-
-export type IndexedChildren<T> = (x: T) => T[];
-export type NamedChildren<T> = (x: T) => Record<string, T>;
-export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
-
 export interface ArborOptions<T extends object> {
-  immutable: boolean; // Whether modifications to the tree are allowed (default: true)
+  /** Indicates the underlying tree is immutable (i.e., the nodes in the tree will never be changed) (default: true) */
+  immutable: boolean;
+  /** A list of potential plugins. (default: []) */
   plugins: ArborPlugin<T>[];
+  /** Default reification options (if any) to be applied to all attributes (default: {}) */
   reification: Partial<ReificationOptions>;
+  /** Default reifier for attributes in this tree. (default: `StandardReifier`) */
   reifier: Reifier<object>;
 }
 
-/** A potentially convenient class, not sure what I think about it yet. */
+/**
+ * The `Arbor` class is used to manage creation of attributes associated with a tree.
+ * The `root` of the tree is provided along with a function, `list`.  Given any node
+ * the tree, the `list` function should list all children associated with that node.
+ * Finally, the `opts` argument allows any of the default `ArborOption` values
+ * to be overriden.
+ */
 export class Arbor<T extends object> {
-  protected reified: Map<AttributeDefinition<any, any>, Attribute<any, any>>;
-  protected events: ArborEmitter<T> = createEmitter<T>();
-  public readonly monitor: ArborMonitor<T> = this.events;
-  public readonly root: T;
-  public readonly parentAttr: Attribute<T, Maybe<T>>;
+  /** The attribute that returns the parent of any node in the tree */
+  protected parentAttr: Attribute<T, Maybe<T>>;
+  /** A map of already reified attributes (and the definitions they were reified from) */
+  protected reified = new Map<
+    AttributeDefinition<any, any>,
+    Attribute<any, any>
+  >();
+  /** An event emitter for tracking attributes (creation, invocation, etc.) */
+  protected events: ArborEmitter<T> = typedEmitter();
+  /** An event emitter for tracking events related to the tree and its structure */
+  protected mutations: MutationEmitter<T> = typedEmitter();
+  /** The (current) root of the tree */
+  protected treeRoot: T;
+  /** The options associated with this tree (with defaults filled in where necessary) */
   protected options: ArborOptions<T>;
+
   constructor(
+    /** Initial tree root node */
     root: T,
+    /** Function to provide children for any given node */
     public list: ListChildren<T>,
+    /** Option overrides, if any */
     opts: Partial<ArborOptions<T>> = {}
   ) {
-    this.root = root;
-    this.events.emit("created");
-    this.reified = new Map();
+    /** Record initial root node */
+    this.treeRoot = root;
 
+    /** Normalize the options (fill in deafults) */
     this.options = normalizeOptions(this, this.events, opts);
-    this.events.emit("options", this.options.reification);
 
-    // This means an error will result if the underlying tree is mutated.
-    if (this.options.immutable) {
-      deepFreeze(root);
-    }
-    // TODO: Any change in tree structure will require re-evaluating parent
-    // attributes.
-    this.parentAttr = this.options.reifier.parent(
-      this.root,
-      this.list,
-      this.events
-    );
+    /**
+     * Now that plugins are connected (via `normalizeOptions`), it makes sense
+     * to start emitting events.
+     */
+    this.events.emit("initialized", this.options.reification);
+
+    /** Set the initial root (this assignment keeps the compiler happy) */
+    this.parentAttr = this.setRoot(root);
+
+    /** Setup listener to handle future changes in root node */
+    this.mutations.on("reroot", this.setRoot);
+  }
+  get root() {
+    return this.treeRoot;
+  }
+  get monitor(): ArborMonitor<T> {
+    return this.events;
+  }
+  get parent(): Attribute<T, Maybe<T>> {
+    return this.parentAttr;
   }
   attach<R>(f: (x: this) => R) {
     return f(this);
@@ -72,29 +100,19 @@ export class Arbor<T extends object> {
     }
     switch (def.type) {
       case "syn": {
-        const mergedPartialOptions = {
-          ...this.options.reification,
-          ...def.opts,
-          ...opts,
-        };
         reifier = reifier ?? this.options.reifier;
         const r: Attribute<T, R> = reifier.synthetic(
-          this.root,
+          this.treeRoot,
           this.list,
           def,
           this.events,
-          mergedPartialOptions
+          this.completeOptions(def, opts)
         );
         this.reified.set(def, r);
         this.events.emit("added", def, r);
         return r;
       }
       case "inh": {
-        const mergedPartialOptions = {
-          ...this.options.reification,
-          ...def.opts,
-          ...opts,
-        };
         reifier = reifier ?? this.options.reifier;
 
         const r = reifier.inherited(
@@ -103,7 +121,7 @@ export class Arbor<T extends object> {
           def,
           this.events,
           this.parentAttr,
-          mergedPartialOptions
+          this.completeOptions(def, opts)
         );
         this.reified.set(def, r);
         this.events.emit("added", def, r);
@@ -125,6 +143,36 @@ export class Arbor<T extends object> {
       }
     }
     return assertUnreachable(def);
+  }
+  protected completeOptions(
+    def: AttributeDefinition<T, any>,
+    opts?: Partial<ReificationOptions>
+  ): Partial<ReificationOptions> {
+    return {
+      ...this.options.reification,
+      ...def.opts,
+      ...opts,
+    };
+  }
+  protected setRoot(newroot: T) {
+    this.treeRoot = newroot;
+    /**
+     * If this tree is immutable, we freeze it so that any modifications
+     * trigger an exception.
+     */
+    if (this.options.immutable) {
+      /** Recursively freeze everything in the tree */
+      deepFreeze(newroot);
+      this.mutations.on("mutation", () => {
+        console.error("Mutation event issued for immutable tree!");
+      });
+    }
+    this.parentAttr = this.options.reifier.parent(
+      this.treeRoot,
+      this.list,
+      this.events
+    );
+    return this.parentAttr;
   }
 }
 
