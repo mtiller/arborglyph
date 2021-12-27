@@ -12,7 +12,7 @@ import { CounterPlugin } from "../plugins/counter";
 describe("Test inherited attribute functionalty", () => {
   it("should find the parents of a sample tree with named children", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
-    const parentAttr = tree.parentAttr;
+    const parentAttr = tree.parent;
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -40,7 +40,7 @@ describe("Test inherited attribute functionalty", () => {
   });
   it("should find the parents of a sample tree with indexed children", () => {
     const tree = new Arbor(sampleTree1, indexedBinaryChildren);
-    const parentAttr = tree.parentAttr;
+    const parentAttr = tree.parent;
 
     expect(parentAttr(tree.root)).toEqual(Nothing);
 
@@ -73,7 +73,7 @@ describe("Test inherited attribute functionalty", () => {
       plugins: [stats],
     });
     // Memoize (should be default) but not eager.
-    const parentAttr = tree.parentAttr;
+    const parentAttr = tree.parent;
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
     const prrrr = parentAttr(rrrr);
@@ -87,7 +87,7 @@ describe("Test inherited attribute functionalty", () => {
       plugins: [stats],
     });
 
-    const parentAttr = tree.parentAttr;
+    const parentAttr = tree.parent;
 
     const rrrr = findChild(sampleTree1, ["right", "right", "right", "right"]);
     const prrrr = parentAttr(rrrr);

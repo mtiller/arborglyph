@@ -1,9 +1,15 @@
-import { Just, Nothing } from "purify-ts/Maybe";
+import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { Arbor } from "../arbor";
 import { subTable, symbolTableEvaluator } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";
-import { derived, synthetic } from "../kinds/definitions";
-import { LeafNode, namedBinaryChildren, sampleTree1 } from "../testing";
+import { TreeEvents } from "../events";
+import { AttributeDefinition, derived, synthetic } from "../kinds/definitions";
+import {
+  LeafNode,
+  namedBinaryChildren,
+  sampleTree1,
+  SimpleBinaryTree,
+} from "../testing";
 import { mustGet } from "../utils";
 
 describe("Example of building a symbol table", () => {
@@ -24,11 +30,13 @@ describe("Example of building a symbol table", () => {
     const tree = new Arbor(sampleTree1, namedBinaryChildren);
 
     const path = tree.add(evalPath());
-    const leafpath = tree.add(
-      derived("leaf path", (node) =>
-        node.type === "leaf" ? Just(path(node)) : Nothing
-      )
+    const pathDef: AttributeDefinition<
+      SimpleBinaryTree,
+      Maybe<string>
+    > = derived("leaf path", (node: SimpleBinaryTree) =>
+      node.type === "leaf" ? Just(path(node)) : Nothing
     );
+    const leafpath = tree.add(pathDef);
     const table = tree.add(
       synthetic("symbol table", symbolTableEvaluator(leafpath))
     );
