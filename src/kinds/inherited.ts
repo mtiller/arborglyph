@@ -1,14 +1,6 @@
 import { Maybe } from "purify-ts/Maybe";
 import { CacheProvider } from "./cache";
 
-/** Options when reifying an inherited attribute */
-export interface CommonInheritedOptions {
-  memoize: boolean;
-  /** Pre-evaluate all nodes */
-  eager: boolean;
-  cacheProvider: CacheProvider;
-}
-
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;
 

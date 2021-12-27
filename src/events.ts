@@ -4,17 +4,13 @@ import { AttributeDefinition } from "./kinds/definitions";
 import TypedEmitter from "typed-emitter";
 import EventEmitter from "events";
 import { ArborPlugin } from "./plugin";
-import { CommonInheritedOptions } from "./kinds/inherited";
-import { CommonSyntheticOptions } from "./kinds/synthetic";
+import { ReificationOptions } from "./kinds/options";
 
 export interface TreeEvents<T extends object> {
   created: () => void;
   connected: (plugin: ArborPlugin<T>) => void;
   added: (d: AttributeDefinition<T, any>, a: Attribute<T, any>) => void;
-  options: (
-    inheritedOptions: Partial<CommonInheritedOptions>,
-    synthethicOptions: Partial<CommonSyntheticOptions>
-  ) => void;
+  options: (reificationOptions: Partial<ReificationOptions>) => void;
   invocation: (d: AttributeDefinition<T, any>, n: T, result: unknown) => void;
   evaluation: (a: Attribute<T, any>, n: T, result: unknown) => void;
 }

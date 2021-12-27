@@ -1,5 +1,3 @@
-import { CommonInheritedOptions } from "./kinds/inherited";
-import { CommonSyntheticOptions } from "./kinds/synthetic";
 import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
 import { assertUnreachable } from "./utils";
@@ -9,6 +7,7 @@ import { StandardReifier } from "./reify/standard";
 import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
 import { Maybe } from "purify-ts/Maybe";
 import { reifyParent } from "./reify/inherited";
+import { ReificationOptions } from "./kinds/options";
 
 /**
  * This file contains a couple different ways to represent a tree.  It is
@@ -24,8 +23,7 @@ export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
 
 export interface ArborOptions<T extends object> {
   plugins?: ArborPlugin<T>[];
-  inheritOptions?: Partial<CommonInheritedOptions>;
-  syntheticOptions?: Partial<CommonSyntheticOptions>;
+  reification?: Partial<ReificationOptions>;
   reifier?: Reifier<object>;
   // wrappers
 }
@@ -33,8 +31,8 @@ export interface ArborOptions<T extends object> {
 /** A potentially convenient class, not sure what I think about it yet. */
 export class Arbor<T extends object> {
   protected reified: Map<AttributeDefinition<any, any>, Attribute<any, any>>;
-  public readonly monitor: ArborMonitor<T>;
-  protected events: ArborEmitter<T>;
+  protected events: ArborEmitter<T> = createEmitter<T>();
+  public readonly monitor: ArborMonitor<T> = this.events;
   public readonly root: T;
   protected plugins: ArborPlugin<T>[];
   protected reifier: Reifier<T>;
@@ -45,8 +43,6 @@ export class Arbor<T extends object> {
     protected opts: ArborOptions<T> = {}
   ) {
     this.root = root;
-    this.events = createEmitter<T>();
-    this.monitor = this.events;
     this.events.emit("created");
     this.plugins = opts.plugins ?? [];
     this.plugins.forEach((plugin) => {
@@ -56,21 +52,12 @@ export class Arbor<T extends object> {
     this.reifier = opts.reifier ?? new StandardReifier();
     this.reified = new Map();
 
-    this.opts.inheritOptions = this.plugins.reduce(
+    this.opts.reification = this.plugins.reduce(
       (cur, plugin) =>
-        plugin.inheritedOptions ? plugin.inheritedOptions(cur) : cur,
-      opts.inheritOptions ?? {}
+        plugin.reificationOptions ? plugin.reificationOptions(cur) : cur,
+      opts.reification ?? {}
     );
-    this.opts.syntheticOptions = this.plugins.reduce(
-      (cur, plugin) =>
-        plugin.syntheticOptions ? plugin.syntheticOptions(cur) : cur,
-      opts.syntheticOptions ?? {}
-    );
-    this.events.emit(
-      "options",
-      this.opts.inheritOptions,
-      this.opts.syntheticOptions
-    );
+    this.events.emit("options", this.opts.reification);
 
     // TODO: Any change in tree structure will require re-evaluating parent
     // attributes.
@@ -82,6 +69,7 @@ export class Arbor<T extends object> {
   // TODO: Add opts with unified options
   add<R>(
     def: AttributeDefinition<T, R>,
+    opts?: Partial<ReificationOptions>,
     reifier?: Reifier<T>
   ): Attribute<T, R> {
     if (this.reified.has(def)) {
@@ -90,8 +78,9 @@ export class Arbor<T extends object> {
     switch (def.type) {
       case "syn": {
         const mergedPartialOptions = {
-          ...this.opts.syntheticOptions,
+          ...this.opts.reification,
           ...def.opts,
+          ...opts,
         };
         reifier = reifier ?? this.reifier;
         const r: Attribute<T, R> = reifier.synthetic(
@@ -107,8 +96,9 @@ export class Arbor<T extends object> {
       }
       case "inh": {
         const mergedPartialOptions = {
-          ...this.opts.inheritOptions,
+          ...this.opts.reification,
           ...def.opts,
+          ...opts,
         };
         reifier = reifier ?? this.reifier;
 

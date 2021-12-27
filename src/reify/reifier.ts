@@ -5,8 +5,8 @@ import {
   InheritedAttributeDefinition,
   SyntheticAttributeDefinition,
 } from "../kinds/definitions";
-import { CommonInheritedOptions, ParentFunc } from "../kinds/inherited";
-import { CommonSyntheticOptions } from "../kinds/synthetic";
+import { ParentFunc } from "../kinds/inherited";
+import { ReificationOptions } from "../kinds/options";
 
 export interface Reifier<B extends object = any> {
   synthetic<T extends B, R>(
@@ -14,7 +14,7 @@ export interface Reifier<B extends object = any> {
     list: ListChildren<T>,
     d: SyntheticAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
-    opts: Partial<CommonSyntheticOptions>
+    opts: Partial<ReificationOptions>
   ): Attribute<T, R>;
   inherited<T extends B, R>(
     root: T,
@@ -22,6 +22,6 @@ export interface Reifier<B extends object = any> {
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
     p: ParentFunc<T>,
-    opts: Partial<CommonInheritedOptions>
+    opts: Partial<ReificationOptions>
   ): Attribute<T, R>;
 }

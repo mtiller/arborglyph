@@ -1,12 +1,9 @@
-import { CommonInheritedOptions, CommonSyntheticOptions } from ".";
 import { Arbor } from "./arbor";
+import { ReificationOptions } from "./kinds/options";
 
 export interface ArborPlugin<T extends object> {
   connect?(arbor: Arbor<T>): void;
-  inheritedOptions?(
-    cur: Partial<CommonInheritedOptions>
-  ): Partial<CommonInheritedOptions>;
-  syntheticOptions?(
-    cur: Partial<CommonSyntheticOptions>
-  ): Partial<CommonSyntheticOptions>;
+  reificationOptions?(
+    cur: Partial<ReificationOptions>
+  ): Partial<ReificationOptions>;
 }

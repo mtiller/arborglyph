@@ -12,22 +12,17 @@ import {
   InheritedAttributeDefinition,
 } from "../kinds/definitions";
 import {
-  CommonInheritedOptions,
   InheritedArgs,
   InheritedAttributeEvaluator,
   ParentFunc,
 } from "../kinds/inherited";
-import {
-  CommonSyntheticOptions,
-  SyntheticArg,
-  SyntheticAttributeEvaluator,
-} from "../kinds/synthetic";
+import { ReificationOptions } from "../kinds/options";
+import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
 import { reifyInheritedAttribute } from "./inherited";
 import { Reifier } from "./reifier";
-import { StandardReifierOptions } from "./standard";
 import { reifySyntheticAttribute } from "./synthetic";
 
-export interface MobxReifierOptions extends StandardReifierOptions {
+export interface MobxReifierOptions extends ReificationOptions {
   computed: { requiresReaction?: boolean; keepAlive?: boolean };
 }
 
@@ -58,40 +53,25 @@ export interface MobxReifierOptions extends StandardReifierOptions {
  * could avoid stale data getting memoized.
  */
 export class MobxReifier implements Reifier<object> {
-  protected syntheticOptions: Partial<CommonSyntheticOptions>;
-  protected inheritedOptions: Partial<CommonInheritedOptions>;
-  protected computedOptions: IComputedValueOptions<unknown>;
+  protected options: Partial<MobxReifierOptions>;
   constructor(opts?: Partial<MobxReifierOptions>) {
-    this.syntheticOptions = opts?.synthetic ?? {};
-    this.inheritedOptions = opts?.inherited ?? {};
-    this.computedOptions = opts?.computed ?? {};
+    this.options = opts ?? {};
   }
   synthetic<T extends object, R>(
     root: T,
     list: ListChildren<T>,
     def: SyntheticAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
-    opts: Partial<CommonSyntheticOptions>
+    opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
-    const mergedPartialOptions = { ...this.syntheticOptions, ...opts };
-    const completeOptions: CommonSyntheticOptions = {
-      memoize: mergedPartialOptions.memoize ?? true, // Default value is true, not sure any other value makes sense
-      eager: mergedPartialOptions.eager ?? true,
-      cacheProvider:
-        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
-    };
-
-    const f = computeableSynthetic(def.f, {
-      keepAlive: this.computedOptions.keepAlive,
-      requiresReaction: this.computedOptions.requiresReaction,
-    });
+    const f = computeableSynthetic(def.f, this.computedOptions());
     const computableAttr = reifySyntheticAttribute<T, R, IComputedValue<R>>(
       root,
       list,
       def,
       f,
       emitter,
-      completeOptions
+      this.reificationOptions()
     );
     return (x) => computableAttr(x).get();
   }
@@ -101,20 +81,9 @@ export class MobxReifier implements Reifier<object> {
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
     p: ParentFunc<T>,
-    opts: Partial<CommonInheritedOptions>
+    opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
-    const mergedPartialOptions = { ...this.inheritedOptions, ...opts };
-    const completeOptions: CommonInheritedOptions = {
-      eager: mergedPartialOptions.eager ?? false,
-      memoize: mergedPartialOptions.memoize ?? true,
-      cacheProvider:
-        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
-    };
-
-    const f = computeableInherited(def.f, {
-      keepAlive: this.computedOptions.keepAlive,
-      requiresReaction: this.computedOptions.requiresReaction,
-    });
+    const f = computeableInherited(def.f, this.computedOptions());
 
     const computeableAttr = reifyInheritedAttribute<T, R, IComputedValue<R>>(
       root,
@@ -123,10 +92,26 @@ export class MobxReifier implements Reifier<object> {
       f,
       emitter,
       p,
-      completeOptions
+      this.reificationOptions()
     );
-
     return (x) => computeableAttr(x).get();
+  }
+  protected computedOptions() {
+    return {
+      keepAlive: this.options?.computed?.keepAlive ?? false,
+      requiresReaction: this.options.computed?.requiresReaction ?? false,
+    };
+  }
+
+  protected reificationOptions(opts?: Partial<ReificationOptions>) {
+    const mergedPartialOptions = { ...this.options, ...opts };
+    const completeOptions: ReificationOptions = {
+      eager: mergedPartialOptions.eager ?? false,
+      memoize: mergedPartialOptions.memoize ?? true,
+      cacheProvider:
+        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
+    };
+    return completeOptions;
   }
 }
 

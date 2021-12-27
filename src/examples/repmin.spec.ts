@@ -47,7 +47,7 @@ describe("Run some repmin test cases", () => {
     const stats = new CounterPlugin();
     const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
       plugins: [stats],
-      syntheticOptions: { memoize: true },
+      reification: { memoize: true },
     });
     const { repmin } = tree.attach(repminCluster);
 
@@ -65,9 +65,9 @@ describe("Run some repmin test cases", () => {
     const { repmin } = tree.attach(repminCluster);
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(stats.invocations(evalMin)).toEqual(37); // Better, but not as good as with weakmap
+    expect(stats.invocations(evalMin)).toEqual(42); // Better, but not as good as with weakmap
     expect(repmin(tree.root)).toEqual(repminResult(1));
-    expect(stats.invocations(evalMin)).toEqual(37);
+    expect(stats.invocations(evalMin)).toEqual(42);
   });
 
   it("should handle a basic repmin with large caching", () => {

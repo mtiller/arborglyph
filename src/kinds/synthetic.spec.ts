@@ -50,7 +50,7 @@ describe("Test synthetic attribute evaluation", () => {
       const stats = new CounterPlugin();
       const tree = new Arbor(sampleTree1, indexedBinaryChildren, {
         plugins: [stats],
-        syntheticOptions: { memoize: true },
+        reification: { memoize: true },
       });
 
       const desc = descendents<SimpleBinaryTree>();

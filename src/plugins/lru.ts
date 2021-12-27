@@ -14,7 +14,7 @@ export interface LRUOptions {
 
 export function lruPlugin<T extends object>(opts: LRUOptions): ArborPlugin<T> {
   return {
-    syntheticOptions: (cur) => ({
+    reificationOptions: (cur) => ({
       ...cur,
       memoize: true,
       cacheProvider: () =>

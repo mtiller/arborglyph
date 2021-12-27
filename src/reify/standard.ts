@@ -4,34 +4,27 @@ import {
   InheritedAttributeDefinition,
   SyntheticAttributeDefinition,
 } from "../kinds/definitions";
-import { CommonInheritedOptions, ParentFunc } from "../kinds/inherited";
-import { CommonSyntheticOptions } from "../kinds/synthetic";
+import { ParentFunc } from "../kinds/inherited";
 import { Reifier } from "./reifier";
 import { reifySyntheticAttribute } from "./synthetic";
 import { reifyInheritedAttribute } from "./inherited";
 import { ArborEmitter } from "../events";
-
-export interface StandardReifierOptions {
-  inherited: Partial<CommonInheritedOptions>;
-  synthetic: Partial<CommonSyntheticOptions>;
-}
+import { ReificationOptions } from "../kinds/options";
 
 export class StandardReifier implements Reifier<object> {
-  protected syntheticOptions: Partial<CommonSyntheticOptions>;
-  protected inheritedOptions: Partial<CommonInheritedOptions>;
-  constructor(opts?: Partial<StandardReifierOptions>) {
-    this.syntheticOptions = opts?.synthetic ?? {};
-    this.inheritedOptions = opts?.inherited ?? {};
+  protected options: Partial<ReificationOptions>;
+  constructor(opts?: Partial<ReificationOptions>) {
+    this.options = opts ?? {};
   }
   synthetic<T extends object, R>(
     root: T,
     list: ListChildren<T>,
     def: SyntheticAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
-    opts: Partial<CommonSyntheticOptions>
+    opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
-    const mergedPartialOptions = { ...this.syntheticOptions, ...opts };
-    const completeOptions: CommonSyntheticOptions = {
+    const mergedPartialOptions = { ...this.options, ...opts };
+    const completeOptions: ReificationOptions = {
       memoize: mergedPartialOptions.memoize ?? false,
       eager: mergedPartialOptions.eager ?? true,
       cacheProvider:
@@ -53,10 +46,10 @@ export class StandardReifier implements Reifier<object> {
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
     p: ParentFunc<T>,
-    opts: Partial<CommonInheritedOptions>
+    opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
-    const mergedPartialOptions = { ...this.inheritedOptions, ...opts };
-    const completeOptions: CommonInheritedOptions = {
+    const mergedPartialOptions = { ...this.options, ...opts };
+    const completeOptions: ReificationOptions = {
       eager: mergedPartialOptions.eager ?? false,
       memoize: mergedPartialOptions.memoize ?? true,
       cacheProvider:

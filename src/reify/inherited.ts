@@ -2,7 +2,6 @@ import { ListChildren } from "../arbor";
 import { Attribute } from "../kinds/attributes";
 import { InheritedAttributeDefinition } from "../kinds/definitions";
 import {
-  CommonInheritedOptions,
   InheritedAttributeEvaluator,
   ParentFunc,
   ParentInformation,
@@ -11,6 +10,7 @@ import { Maybe } from "purify-ts/Maybe";
 import { ArborEmitter } from "../events";
 import { CacheStorage } from "../kinds/cache";
 import { walkTree } from "../utils";
+import { ReificationOptions } from "../kinds/options";
 
 /**
  * A special function used to reify the parent.  This follows a special procedure
@@ -50,7 +50,7 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
   f: InheritedAttributeEvaluator<T, R>,
   emitter: ArborEmitter<T>,
   p: ParentFunc<T>,
-  opts: CommonInheritedOptions
+  opts: ReificationOptions
 ): Attribute<T, R> {
   /** Check whether this attribute should be eagerly (vs. lazily) evaluated. */
   const eager = opts.eager;

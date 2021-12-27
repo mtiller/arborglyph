@@ -4,14 +4,6 @@ export type SyntheticEvaluationWrapper<T> = <S extends T, R>(
   e: SyntheticAttributeEvaluator<S, R>
 ) => SyntheticAttributeEvaluator<S, R>;
 
-// Merge with Inherited options?
-export interface CommonSyntheticOptions {
-  memoize: boolean;
-  /** Pre-evaluate all nodes */
-  eager: boolean;
-  cacheProvider: CacheProvider;
-}
-
 export interface ChildInformation<T, R> {
   node: T;
   attr: R;

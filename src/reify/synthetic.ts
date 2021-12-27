@@ -4,13 +4,13 @@ import { Attribute } from "../kinds/attributes";
 import { SyntheticAttributeDefinition } from "../kinds/definitions";
 import {
   ChildInformation,
-  CommonSyntheticOptions,
   SyntheticArg,
   SyntheticAttributeEvaluator,
 } from "../kinds/synthetic";
 import { CacheStorage } from "../kinds/cache";
 import { ArborEmitter } from "../events";
 import { childrenOfNode } from "../utils";
+import { ReificationOptions } from "../kinds/options";
 
 /**
  * This is the function that takes a description of a synthetic
@@ -33,7 +33,7 @@ export function reifySyntheticAttribute<T extends object, DR, R>(
   d2: SyntheticAttributeDefinition<T, DR>,
   df: SyntheticAttributeEvaluator<T, R>,
   emitter: ArborEmitter<T>,
-  opts: CommonSyntheticOptions
+  opts: ReificationOptions
 ): Attribute<T, R> {
   /** Check what level of memoization is requested */
   const memo = opts.memoize ?? false;
