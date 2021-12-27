@@ -78,29 +78,42 @@ export class Arbor<T extends object> {
     /** Setup listener to handle future changes in root node */
     this.mutations.on("reroot", this.setRoot);
   }
+  /** The current root of the tree */
   get root() {
     return this.treeRoot;
   }
+  /** Use this to subscribe to attribute related events */
   get monitor(): ArborMonitor<T> {
     return this.events;
   }
+  /** An attribute for retrieving the parent of any node in the tree */
   get parent(): Attribute<T, Maybe<T>> {
     return this.parentAttr;
   }
+  /** Use `attach` to perform bulk operations on the `Arbor` instance using a function. */
   attach<R>(f: (x: this) => R) {
     return f(this);
   }
+  /**
+   * Add an attribute to the tree by providing a definition of the attribute and (optionally)
+   * any reification options or even a custom reifier.
+   **/
   add<R>(
     def: AttributeDefinition<T, R>,
     opts?: Partial<ReificationOptions>,
     reifier?: Reifier<T>
   ): Attribute<T, R> {
+    /** Check if this definition was already reified. */
     if (this.reified.has(def)) {
       return this.reified.get(def) as Attribute<T, R>;
     }
+
+    /** Use default reifier if one wasn't provided. */
+    reifier = reifier ?? this.options.reifier;
+
+    /** Based on the type of attribute, we reify things differently */
     switch (def.type) {
       case "syn": {
-        reifier = reifier ?? this.options.reifier;
         const r: Attribute<T, R> = reifier.synthetic(
           this.treeRoot,
           this.list,
@@ -113,8 +126,6 @@ export class Arbor<T extends object> {
         return r;
       }
       case "inh": {
-        reifier = reifier ?? this.options.reifier;
-
         const r = reifier.inherited(
           this.root,
           this.list,
@@ -144,6 +155,11 @@ export class Arbor<T extends object> {
     }
     return assertUnreachable(def);
   }
+  /**
+   * This is a helper function that overlays various partial options
+   * on top of each other.  The result is still partial, but it represents
+   * the relative priority of the various ways to override the options.
+   */
   protected completeOptions(
     def: AttributeDefinition<T, any>,
     opts?: Partial<ReificationOptions>
@@ -154,6 +170,12 @@ export class Arbor<T extends object> {
       ...opts,
     };
   }
+  /**
+   * This method is used anytime the root of the tree changes.
+   *
+   * @param newroot The new root of the tree
+   * @returns The new parent attribute
+   */
   protected setRoot(newroot: T) {
     this.treeRoot = newroot;
     /**
@@ -176,23 +198,43 @@ export class Arbor<T extends object> {
   }
 }
 
+/**
+ * This function takes a `Partial` instance of `ArborOptions` and
+ * normalizes it with default values to create a non-`Partial` version.
+ *
+ * @param tree The `Arbor` instance
+ * @param events An `EventEmitter`
+ * @param opts Any `ArborOptions` overrides
+ * @returns
+ */
 function normalizeOptions<T extends object>(
   tree: Arbor<T>,
   events: ArborEmitter<T>,
   opts?: Partial<ArborOptions<T>>
 ): ArborOptions<T> {
+  /** Formulate the list of plugins (insert default if necessary) */
   const plugins = opts?.plugins ?? [];
+
+  /** Iterate over plugins and connect them to the `Arbor` instance */
   plugins.forEach((plugin) => {
     plugin.connect ? plugin.connect(tree) : undefined;
     events.emit("connected", plugin);
   });
+
+  /** Determine the reifier to be used (injecting default if necessary) */
   const reifier = opts?.reifier ?? new StandardReifier();
+
+  /**
+   * Iterate over plugins and process any "overrides" they might wish to
+   * inject into the reification options.
+   */
   const reification = plugins.reduce(
     (cur, plugin) =>
       plugin.reificationOptions ? plugin.reificationOptions(cur) : cur,
     opts?.reification ?? {}
   );
 
+  /** Return the resulting complete, concrete options. */
   return {
     immutable: opts?.immutable ?? true,
     plugins: plugins,
@@ -201,7 +243,12 @@ function normalizeOptions<T extends object>(
   };
 }
 
-function deepFreeze(object: any) {
+/**
+ * Perform a recursive freeze of all nodes in the tree.
+ * @param object The root of the tree to freeze
+ * @returns void
+ */
+function deepFreeze(object: any): void {
   // Retrieve the property names defined on object
   const propNames = Object.getOwnPropertyNames(object);
 
