@@ -193,6 +193,43 @@ work could be to add `mobx` support as well. But the key here is that a
 considerable amount of work could be done on the performance side without having
 to worry about rewriting any of the declarative constructs.
 
+## Mutability
+
+In Javascript, objects are either mutable or immutable. There is an interesting
+symmetry around mutability. If a tree is _immutable_, then the only way to
+truly change the tree is to change the root. In other words, if any single node
+changes, the root of the tree must change. But, nested subtrees that were no
+changed can remain the same. On the other hand, if a tree is mutable, then a
+change to subtree is local to that subtree and the root stays the same.
+
+Mutability impacts two things in `arborglyph`. The first is maintaining the
+parent data structures (_i.e.,_ knowing definitively who the parent of every
+node is). The other is dealing with memoized attributes.
+
+If a tree is immutable, then the only change possible is changing the root node.
+In that case, we can easily recompute all parent nodes with a quick traversal
+of the tree. As far as memoization is concerned, we don't need to invalidate
+any of the cached synthetic attributes but we would need to invalidate any
+inherited attributes in retained subtrees. But the simplest policy here is to
+simply invalidate inherited attributes for all nodes.
+
+If, on the other hande, the tree is mutable, then things are more complicated.
+Changing a node has the potential to change the parentage of its children, so we
+must update the parent data structures for all children of that node. With
+respect to caching, let us first consider the worst case scenario which is that
+a change in any node requires us to invalidate all cached synthetic attributes
+of its ancestors and all inherited attributes of its descendents.
+
+A slightly less "worst case" scenario occurs if our tree is a `mbox`
+`observable`. In this case, we can use the `MobxReifier` which will cache _only_
+the `IComputedValue` of each attribute. In this case, we do not need to
+invalidate the cache because a `mobx` `IComputedValue` instance is itself a
+memoization of the attribute that will automatically and lazily recompute the
+value if any of its dependencies of changed. Even better, the attributes
+themselves are **also** `observable` in this case and, as such, `mobx` will
+track all dependencies all the way back to the underlying tree of any attribute,
+even if it depends on other attributes.
+
 ## Future Work
 
 I suspect there may be a few other types of attributes worth implementing.
@@ -213,5 +250,5 @@ figured out what the use case is there (although I don't doubt there are some).
 
 Another consideration here is how to deal with semantic error processing in the
 context of both the tree traversal as well as in the propagation of errors
-between layers of attributes.  I think I need a bit more practical examples
+between layers of attributes. I think I need a bit more practical examples
 to figure out the best approach here.
