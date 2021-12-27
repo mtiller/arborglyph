@@ -30,6 +30,7 @@ describe("Run some repmin test cases on mutable trees", () => {
     // const otree = sampleTree1;
     const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats, logger],
+      immutable: false,
     });
     logger.events.push("Post-Tree");
     expect(logger.events).toMatchSnapshot();
@@ -62,6 +63,7 @@ describe("Run some repmin test cases on mutable trees", () => {
     const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats],
       reification: { memoize: true },
+      immutable: false,
     });
     const { repmin } = tree.attach(repminCluster);
 
@@ -76,6 +78,7 @@ describe("Run some repmin test cases on mutable trees", () => {
     const otree = observable(sampleTree1);
     const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats, lruPlugin({ max: 5 })],
+      immutable: false,
     });
     const { repmin } = tree.attach(repminCluster);
 
@@ -90,6 +93,7 @@ describe("Run some repmin test cases on mutable trees", () => {
     const otree = observable(sampleTree1);
     const tree = new Arbor(otree, indexedBinaryChildren, {
       plugins: [stats, lruPlugin({ max: 15 })],
+      immutable: false,
     });
     const { repmin } = tree.attach(repminCluster);
 

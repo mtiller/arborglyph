@@ -109,6 +109,7 @@ describe("Test synthetic attribute evaluation", () => {
       const itree = new Arbor(root, indexedBinaryChildren, {
         plugins: [stats, lruPlugin({})],
         reifier: new MobxReifier(),
+        immutable: false,
       });
 
       const desc = descendents<SimpleBinaryTree>();

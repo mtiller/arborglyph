@@ -47,6 +47,10 @@ export class Arbor<T extends object> {
     this.options = normalizeOptions(this, this.events, opts);
     this.events.emit("options", this.options.reification);
 
+    // This means an error will result if the underlying tree is mutated.
+    if (this.options.immutable) {
+      deepFreeze(root);
+    }
     // TODO: Any change in tree structure will require re-evaluating parent
     // attributes.
     this.parentAttr = this.options.reifier.parent(
@@ -147,4 +151,21 @@ function normalizeOptions<T extends object>(
     reification: reification,
     reifier: reifier,
   };
+}
+
+function deepFreeze(object: any) {
+  // Retrieve the property names defined on object
+  const propNames = Object.getOwnPropertyNames(object);
+
+  // Freeze properties before freezing self
+
+  for (const name of propNames) {
+    const value = object[name];
+
+    if (value && typeof value === "object") {
+      deepFreeze(value);
+    }
+  }
+
+  return Object.freeze(object);
 }
