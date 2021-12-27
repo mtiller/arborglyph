@@ -1,4 +1,4 @@
-import { ListChildren } from "../arbor";
+import { ListChildren } from "../children";
 import { Attribute } from "../kinds/attributes";
 import {
   InheritedAttributeDefinition,

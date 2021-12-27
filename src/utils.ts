@@ -1,5 +1,5 @@
 import { ScalarFunction } from "./kinds/attributes";
-import { ListChildren } from "./arbor";
+import { ListChildren } from "./children";
 import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 
 export function treeRepr<T, R>(

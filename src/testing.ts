@@ -1,4 +1,4 @@
-import { IndexedChildren, NamedChildren } from "./arbor";
+import { IndexedChildren, NamedChildren } from "./children";
 import { assertUnreachable } from "./utils";
 
 export type LeafNode = { type: "leaf"; value: number };

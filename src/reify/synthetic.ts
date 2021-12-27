@@ -1,4 +1,4 @@
-import { ListChildren } from "../arbor";
+import { ListChildren } from "../children";
 import { NoSuchChild } from "../errors";
 import { Attribute } from "../kinds/attributes";
 import { SyntheticAttributeDefinition } from "../kinds/definitions";
