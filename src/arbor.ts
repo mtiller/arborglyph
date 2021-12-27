@@ -6,7 +6,6 @@ import { Reifier } from "./reify/reifier";
 import { StandardReifier } from "./reify/standard";
 import { ArborEmitter, ArborMonitor, createEmitter } from "./events";
 import { Maybe } from "purify-ts/Maybe";
-import { reifyParent } from "./reify/inherited";
 import { ReificationOptions } from "./kinds/options";
 
 /**
@@ -22,10 +21,10 @@ export type NamedChildren<T> = (x: T) => Record<string, T>;
 export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
 
 export interface ArborOptions<T extends object> {
-  plugins?: ArborPlugin<T>[];
-  reification?: Partial<ReificationOptions>;
-  reifier?: Reifier<object>;
-  // wrappers
+  immutable: boolean; // Whether modifications to the tree are allowed (default: true)
+  plugins: ArborPlugin<T>[];
+  reification: Partial<ReificationOptions>;
+  reifier: Reifier<object>;
 }
 
 /** A potentially convenient class, not sure what I think about it yet. */
@@ -34,39 +33,31 @@ export class Arbor<T extends object> {
   protected events: ArborEmitter<T> = createEmitter<T>();
   public readonly monitor: ArborMonitor<T> = this.events;
   public readonly root: T;
-  protected plugins: ArborPlugin<T>[];
-  protected reifier: Reifier<T>;
   public readonly parentAttr: Attribute<T, Maybe<T>>;
+  protected options: ArborOptions<T>;
   constructor(
     root: T,
     public list: ListChildren<T>,
-    protected opts: ArborOptions<T> = {}
+    opts: Partial<ArborOptions<T>> = {}
   ) {
     this.root = root;
     this.events.emit("created");
-    this.plugins = opts.plugins ?? [];
-    this.plugins.forEach((plugin) => {
-      plugin.connect ? plugin.connect(this) : undefined;
-      this.events.emit("connected", plugin);
-    });
-    this.reifier = opts.reifier ?? new StandardReifier();
     this.reified = new Map();
 
-    this.opts.reification = this.plugins.reduce(
-      (cur, plugin) =>
-        plugin.reificationOptions ? plugin.reificationOptions(cur) : cur,
-      opts.reification ?? {}
-    );
-    this.events.emit("options", this.opts.reification);
+    this.options = normalizeOptions(this, this.events, opts);
+    this.events.emit("options", this.options.reification);
 
     // TODO: Any change in tree structure will require re-evaluating parent
     // attributes.
-    this.parentAttr = reifyParent(this.root, this.list, this.events);
+    this.parentAttr = this.options.reifier.parent(
+      this.root,
+      this.list,
+      this.events
+    );
   }
   attach<R>(f: (x: this) => R) {
     return f(this);
   }
-  // TODO: Add opts with unified options
   add<R>(
     def: AttributeDefinition<T, R>,
     opts?: Partial<ReificationOptions>,
@@ -78,11 +69,11 @@ export class Arbor<T extends object> {
     switch (def.type) {
       case "syn": {
         const mergedPartialOptions = {
-          ...this.opts.reification,
+          ...this.options.reification,
           ...def.opts,
           ...opts,
         };
-        reifier = reifier ?? this.reifier;
+        reifier = reifier ?? this.options.reifier;
         const r: Attribute<T, R> = reifier.synthetic(
           this.root,
           this.list,
@@ -96,13 +87,13 @@ export class Arbor<T extends object> {
       }
       case "inh": {
         const mergedPartialOptions = {
-          ...this.opts.reification,
+          ...this.options.reification,
           ...def.opts,
           ...opts,
         };
-        reifier = reifier ?? this.reifier;
+        reifier = reifier ?? this.options.reifier;
 
-        const r = this.reifier.inherited(
+        const r = reifier.inherited(
           this.root,
           this.list,
           def,
@@ -131,4 +122,29 @@ export class Arbor<T extends object> {
     }
     return assertUnreachable(def);
   }
+}
+
+function normalizeOptions<T extends object>(
+  tree: Arbor<T>,
+  events: ArborEmitter<T>,
+  opts?: Partial<ArborOptions<T>>
+): ArborOptions<T> {
+  const plugins = opts?.plugins ?? [];
+  plugins.forEach((plugin) => {
+    plugin.connect ? plugin.connect(tree) : undefined;
+    events.emit("connected", plugin);
+  });
+  const reifier = opts?.reifier ?? new StandardReifier();
+  const reification = plugins.reduce(
+    (cur, plugin) =>
+      plugin.reificationOptions ? plugin.reificationOptions(cur) : cur,
+    opts?.reification ?? {}
+  );
+
+  return {
+    immutable: opts?.immutable ?? true,
+    plugins: plugins,
+    reification: reification,
+    reifier: reifier,
+  };
 }

@@ -7,14 +7,22 @@ import {
 import { ParentFunc } from "../kinds/inherited";
 import { Reifier } from "./reifier";
 import { reifySyntheticAttribute } from "./synthetic";
-import { reifyInheritedAttribute } from "./inherited";
+import { reifyInheritedAttribute, reifyParent } from "./inherited";
 import { ArborEmitter } from "../events";
 import { ReificationOptions } from "../kinds/options";
+import { Maybe } from "purify-ts/Maybe";
 
 export class StandardReifier implements Reifier<object> {
   protected options: Partial<ReificationOptions>;
   constructor(opts?: Partial<ReificationOptions>) {
     this.options = opts ?? {};
+  }
+  parent<T extends object>(
+    root: T,
+    list: ListChildren<T>,
+    emitter: ArborEmitter<T>
+  ): Attribute<T, Maybe<T>> {
+    return reifyParent(root, list, emitter);
   }
   synthetic<T extends object, R>(
     root: T,

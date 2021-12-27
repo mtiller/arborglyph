@@ -4,6 +4,7 @@ import {
   IComputedValueOptions,
   observable,
 } from "mobx";
+import { Maybe } from "purify-ts/Maybe";
 import { ListChildren } from "../arbor";
 import { ArborEmitter } from "../events";
 import { Attribute } from "../kinds/attributes";
@@ -18,7 +19,7 @@ import {
 } from "../kinds/inherited";
 import { ReificationOptions } from "../kinds/options";
 import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
-import { reifyInheritedAttribute } from "./inherited";
+import { reifyInheritedAttribute, reifyParent } from "./inherited";
 import { Reifier } from "./reifier";
 import { reifySyntheticAttribute } from "./synthetic";
 
@@ -57,6 +58,15 @@ export class MobxReifier implements Reifier<object> {
   constructor(opts?: Partial<MobxReifierOptions>) {
     this.options = opts ?? {};
   }
+  parent<T extends object>(
+    root: T,
+    list: ListChildren<T>,
+    emitter: ArborEmitter<T>
+  ): Attribute<T, Maybe<T>> {
+    // TODO: Ensure root is observable?
+    return reifyParent(root, list, emitter);
+  }
+
   synthetic<T extends object, R>(
     root: T,
     list: ListChildren<T>,

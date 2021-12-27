@@ -1,3 +1,4 @@
+import { Maybe } from "purify-ts/Maybe";
 import { ListChildren } from "../arbor";
 import { ArborEmitter } from "../events";
 import { Attribute } from "../kinds/attributes";
@@ -9,6 +10,11 @@ import { ParentFunc } from "../kinds/inherited";
 import { ReificationOptions } from "../kinds/options";
 
 export interface Reifier<B extends object = any> {
+  parent<T extends object>(
+    root: T,
+    list: ListChildren<T>,
+    emitter: ArborEmitter<T>
+  ): Attribute<T, Maybe<T>>;
   synthetic<T extends B, R>(
     root: T,
     list: ListChildren<T>,
