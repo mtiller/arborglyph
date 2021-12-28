@@ -2,7 +2,7 @@ import { Just, Maybe, Nothing } from "purify-ts/Maybe";
 import { Arbor } from "../arbor";
 import { subTable, symbolTableEvaluator } from "../attributes/name-map";
 import { evalPath } from "../attributes/path";
-import { TreeEvents } from "../events";
+import { ArborEvents } from "../events";
 import { AttributeDefinition, derived, synthetic } from "../kinds/definitions";
 import {
   LeafNode,

@@ -6,6 +6,9 @@
  * visit every node.
  */
 
+/** Used if children of a node are stored in an array or otherwise ordered. */
 export type IndexedChildren<T> = (x: T) => T[];
+/** Used if the children of a node are properties of their parent node */
 export type NamedChildren<T> = (x: T) => Record<string, T>;
+/** Union of both types */
 export type ListChildren<T> = IndexedChildren<T> | NamedChildren<T>;
