@@ -181,20 +181,28 @@ export class Arbor<T extends object> {
    * @param n
    */
   public update<N extends T>(n: N): void {
-    /** Invalidate both synthetic and inherited attributes for the mutated node */
-    this.mutations.emit("invalidate", n, true, true);
-    /** Invalidate inherited attributes of all children */
-    walkTree(n, this.list, (x) =>
-      this.mutations.emit("invalidate", x, false, true)
-    );
+    /** These will be the sets of synthetic and inherited attributes that need their caches invalidated. */
+    const synthetics: Set<T> = new Set();
+    const inherited: Set<T> = new Set();
+
+    /** The updated node is in both sets */
+    synthetics.add(n);
+    inherited.add(n);
+
+    /** Walk the tree and add all children to the inherited set */
+    walkTree(n, this.list, (x) => inherited.add(x));
+
     /** Iterate over all parents and invalidate any synthetic attributes. */
     for (
       let cur = this.parentAttr(n);
       cur.isJust();
       cur = cur.chain(this.parentAttr)
     ) {
-      cur.map((x) => this.mutations.emit("invalidate", x, true, false));
+      cur.map((x) => synthetics.add(x));
     }
+
+    /** Now invalidate the cache entries */
+    this.mutations.emit("invalidate", synthetics, inherited);
   }
   /**
    * This method is used to change the root of the tree
@@ -223,6 +231,12 @@ export class Arbor<T extends object> {
 
     /** Inform anybody who is interested that we have rerooted the tree */
     this.mutations.emit("reroot", this.treeRoot);
+
+    /**
+     * Send an update out for the tree node.  This should have the effect of invalidating
+     * all inherited attributes.
+     */
+    this.update(this.treeRoot);
   }
 }
 

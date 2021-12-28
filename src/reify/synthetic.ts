@@ -45,9 +45,14 @@ export function reifySyntheticAttribute<T extends object, DR, R>(
     return r;
   };
 
-  const evaluator: typeof df = memo
-    ? wrapWithMap(d2, opts.cacheProvider(), f)
-    : f;
+  let evaluator: typeof df = f;
+  if (memo) {
+    const storage = opts.cacheProvider();
+    monitor.on("invalidate", (synthetic, _) =>
+      synthetic.forEach((x) => storage.delete(x))
+    );
+    evaluator = wrapWithMap(d2, storage, f);
+  }
 
   /** Build a function that can compute our attribute */
   return baseSyntheticAttributeCalculation(d2, root, list, evaluator);

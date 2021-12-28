@@ -17,8 +17,15 @@ export function lruPlugin<T extends object>(opts: LRUOptions): ArborPlugin<T> {
     reificationOptions: (cur) => ({
       ...cur,
       memoize: true,
-      cacheProvider: () =>
-        new LRUCache<T, SyntheticEvaluationRecord<any, any>>(opts),
+      cacheProvider: () => {
+        const lru = new LRUCache<T, SyntheticEvaluationRecord<any, any>>(opts);
+        return {
+          get: (k) => lru.get(k),
+          set: (k, v) => lru.set(k, v),
+          has: (k) => lru.has(k),
+          delete: (k) => lru.del(k),
+        };
+      },
     }),
   };
 }

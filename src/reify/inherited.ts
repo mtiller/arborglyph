@@ -67,6 +67,9 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
   if (memo) {
     /** If memoization is requested, first create storage for memoized values. */
     const storage = opts.cacheProvider() as CacheStorage<T, R>;
+    monitor.on("invalidate", (_, inherited) =>
+      inherited.forEach((x) => storage.delete(x))
+    );
 
     /**
      * Now create a special memoized wrapper that checks for memoized values and

@@ -47,8 +47,8 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       total1: 7,
       total2: 7,
       total3: 14,
-      total4: 14,
-      total5: 15,
+      total4: 15,
+      total5: 16,
     },
   ])(
     "with memoize set to %p, expect %p subtree evaluations and %p total evaluations",
@@ -89,7 +89,7 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       /** Switching root shouldn't cause any invocations yet (because this is lazy) */
       expect(stats.invocations(evalMin)).toEqual(args.total2);
       /** Now, if we evaluate the root we should get the root min */
-      expect(min(tree.root)).toEqual(1);
+      expect(min(tree.root)).toEqual(2);
       /** We expect 7 new evaluations because the cached values were useless now */
       expect(stats.invocations(evalMin)).toEqual(args.total3);
 
@@ -106,7 +106,7 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       expect(stats.invocations(evalMin)).toEqual(args.total4);
 
       /** Now, if we evaluate the root we should get the root min */
-      expect(min(tree.root)).toEqual(1);
+      expect(min(tree.root)).toEqual(3);
 
       /** In the memoized case, this should only add one new evaluation (the root), otherwise 7 more evaluations will occur */
       expect(stats.invocations(evalMin)).toEqual(args.total5);

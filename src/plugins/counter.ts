@@ -1,10 +1,6 @@
 import { Arbor } from "../arbor";
 import { Attribute } from "../kinds/attributes";
-import {
-  AttributeDefinition,
-  inherited,
-  synthetic,
-} from "../kinds/definitions";
+import { AttributeDefinition } from "../kinds/definitions";
 import { ArborPlugin } from "../plugin";
 import { CounterStatistics } from "./debug";
 
@@ -23,9 +19,9 @@ export class CounterPlugin implements ArborPlugin<any>, CounterStatistics<any> {
     arbor.eventMonitor.on("evaluation", (d, n) => {
       this.recordEvaluation(d, n);
     });
-    arbor.mutationMonitor.on("invalidate", (n, synthetic, inherited) => {
-      if (inherited) this.invalidatedInheritedNodes.add(n);
-      if (synthetic) this.invalidatedSyntheticNodes.add(n);
+    arbor.mutationMonitor.on("invalidate", (synthetic, inherited) => {
+      synthetic.forEach((x) => this.invalidatedSyntheticNodes.add(x));
+      inherited.forEach((x) => this.invalidatedInheritedNodes.add(x));
     });
   }
   protected recordInvocation(d: AttributeDefinition<any, any>, n: any): void {
