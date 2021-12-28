@@ -8,6 +8,7 @@ import { Arbor } from "..";
 import { CounterPlugin } from "../plugins/counter";
 import {
   findChild,
+  fork,
   indexedBinaryChildren,
   symTree1,
   symTree2,
@@ -31,8 +32,24 @@ describe("Evaluate several simple cases and check cache consistency", () => {
   const rl2 = findChild(symTree2, ["right", "left"]);
 
   test.each([
-    { memoized: false, sub: 3, total1: 10, total2: 17, total3: 24, total4: 31 },
-    { memoized: true, sub: 3, total1: 7, total2: 7, total3: 14, total4: 14 },
+    {
+      memoized: false,
+      sub: 3,
+      total1: 10,
+      total2: 17,
+      total3: 24,
+      total4: 31,
+      total5: 38,
+    },
+    {
+      memoized: true,
+      sub: 3,
+      total1: 7,
+      total2: 7,
+      total3: 14,
+      total4: 14,
+      total5: 15,
+    },
   ])(
     "with memoize set to %p, expect %p subtree evaluations and %p total evaluations",
     (args) => {
@@ -83,7 +100,21 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       /** In the memoized case, no new evaluations are required, otherwise 7 more evaluations will occur */
       expect(stats.invocations(evalMin)).toEqual(args.total4);
 
-      // TODO: Replace a subtree and invalidate cache (if there is one)
+      /** Create a new tree that contains nodes from old tree (so cache should be reused) */
+      tree.setRoot(fork(l1, r2));
+      /** The change in root shouldn't have impacted totals yet */
+      expect(stats.invocations(evalMin)).toEqual(args.total4);
+
+      /** Now, if we evaluate the root we should get the root min */
+      expect(min(tree.root)).toEqual(1);
+
+      /** In the memoized case, this should only add one new evaluation (the root), otherwise 7 more evaluations will occur */
+      expect(stats.invocations(evalMin)).toEqual(args.total5);
     }
   );
+
+  // TODO: Mutable cases
+  // - MobX
+  // - non-MobX
+  // - Replace a subtree and invalidate cache
 });

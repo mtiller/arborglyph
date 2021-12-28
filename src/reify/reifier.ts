@@ -1,6 +1,6 @@
 import { Maybe } from "purify-ts/Maybe";
 import { ListChildren } from "../children";
-import { ArborEmitter } from "../events";
+import { ArborEmitter, MutationMonitor } from "../events";
 import { Attribute } from "../kinds/attributes";
 import {
   InheritedAttributeDefinition,
@@ -20,6 +20,7 @@ export interface Reifier<B extends object = any> {
     list: ListChildren<T>,
     d: SyntheticAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
+    monitor: MutationMonitor<T>,
     opts: Partial<ReificationOptions>
   ): Attribute<T, R>;
   inherited<T extends B, R>(
@@ -27,6 +28,7 @@ export interface Reifier<B extends object = any> {
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
+    monitor: MutationMonitor<T>,
     p: ParentFunc<T>,
     opts: Partial<ReificationOptions>
   ): Attribute<T, R>;

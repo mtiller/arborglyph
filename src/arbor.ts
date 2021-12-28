@@ -1,6 +1,6 @@
 import { Attribute } from "./kinds/attributes";
 import { AttributeDefinition } from "./kinds/definitions";
-import { assertUnreachable } from "./utils";
+import { assertUnreachable, walkTree } from "./utils";
 import { ArborPlugin } from "./plugin";
 import { Reifier } from "./reify/reifier";
 import { StandardReifier } from "./reify/standard";
@@ -8,6 +8,7 @@ import {
   ArborEmitter,
   ArborMonitor,
   MutationEmitter,
+  MutationMonitor,
   typedEmitter,
 } from "./events";
 import { Maybe } from "purify-ts/Maybe";
@@ -81,8 +82,11 @@ export class Arbor<T extends object> {
     return this.treeRoot;
   }
   /** Use this to subscribe to attribute related events */
-  get monitor(): ArborMonitor<T> {
+  get eventMonitor(): ArborMonitor<T> {
     return this.events;
+  }
+  get mutationMonitor(): MutationMonitor<T> {
+    return this.mutations;
   }
   /** An attribute for retrieving the parent of any node in the tree */
   get parent(): Attribute<T, Maybe<T>> {
@@ -117,6 +121,7 @@ export class Arbor<T extends object> {
           this.list,
           def,
           this.events,
+          this.mutations,
           this.completeOptions(def, opts)
         );
         this.reified.set(def, r);
@@ -129,6 +134,7 @@ export class Arbor<T extends object> {
           this.list,
           def,
           this.events,
+          this.mutations,
           this.parentAttr,
           this.completeOptions(def, opts)
         );
@@ -167,6 +173,28 @@ export class Arbor<T extends object> {
       ...def.opts,
       ...opts,
     };
+  }
+  /**
+   * This method should be called for a mutable tree when an update has been
+   * made to a given node.
+   *
+   * @param n
+   */
+  public update<N extends T>(n: N): void {
+    /** Invalidate both synthetic and inherited attributes for the mutated node */
+    this.mutations.emit("invalidate", n, true, true);
+    /** Invalidate inherited attributes of all children */
+    walkTree(n, this.list, (x) =>
+      this.mutations.emit("invalidate", x, false, true)
+    );
+    /** Iterate over all parents and invalidate any synthetic attributes. */
+    for (
+      let cur = this.parentAttr(n);
+      cur.isJust();
+      cur = cur.chain(this.parentAttr)
+    ) {
+      cur.map((x) => this.mutations.emit("invalidate", x, true, false));
+    }
   }
   /**
    * This method is used to change the root of the tree

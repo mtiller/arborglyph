@@ -19,7 +19,9 @@ export class DebugPlugin<T extends object> implements ArborPlugin<T> {
   ) {}
 
   connect(arbor: Arbor<T>) {
-    arbor.monitor.on("invocation", (d, n, r) => this.recordInvocation(d, n, r));
+    arbor.eventMonitor.on("invocation", (d, n, r) =>
+      this.recordInvocation(d, n, r)
+    );
   }
   protected recordInvocation<R>(
     d: AttributeDefinition<T, R>,

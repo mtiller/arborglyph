@@ -1,6 +1,10 @@
 import { Arbor } from "../arbor";
 import { Attribute } from "../kinds/attributes";
-import { AttributeDefinition } from "../kinds/definitions";
+import {
+  AttributeDefinition,
+  inherited,
+  synthetic,
+} from "../kinds/definitions";
 import { ArborPlugin } from "../plugin";
 import { CounterStatistics } from "./debug";
 
@@ -10,12 +14,18 @@ export class CounterPlugin implements ArborPlugin<any>, CounterStatistics<any> {
   protected evaluationMap: Map<Attribute<any, any>, number> = new Map();
   protected nodeEvaluationMap: Map<Attribute<any, any>, WeakMap<any, number>> =
     new Map();
+  protected invalidatedInheritedNodes: Set<any> = new Set<any>();
+  protected invalidatedSyntheticNodes: Set<any> = new Set<any>();
   connect(arbor: Arbor<any>) {
-    arbor.monitor.on("invocation", (a, n) => {
+    arbor.eventMonitor.on("invocation", (a, n) => {
       this.recordInvocation(a, n);
     });
-    arbor.monitor.on("evaluation", (d, n) => {
+    arbor.eventMonitor.on("evaluation", (d, n) => {
       this.recordEvaluation(d, n);
+    });
+    arbor.mutationMonitor.on("invalidate", (n, synthetic, inherited) => {
+      if (inherited) this.invalidatedInheritedNodes.add(n);
+      if (synthetic) this.invalidatedSyntheticNodes.add(n);
     });
   }
   protected recordInvocation(d: AttributeDefinition<any, any>, n: any): void {
@@ -39,5 +49,11 @@ export class CounterPlugin implements ArborPlugin<any>, CounterStatistics<any> {
     if (n === undefined) return this.evaluationMap.get(d) ?? 0;
     const tallies = this.nodeEvaluationMap.get(d) ?? new WeakMap();
     return tallies.get(n) ?? 0;
+  }
+  invalidatedSynthetic() {
+    return this.invalidatedInheritedNodes;
+  }
+  invalidatedInherited() {
+    return this.invalidatedInheritedNodes;
   }
 }

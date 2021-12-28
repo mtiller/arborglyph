@@ -6,7 +6,7 @@ import {
 } from "mobx";
 import { Maybe } from "purify-ts/Maybe";
 import { ListChildren } from "../children";
-import { ArborEmitter } from "../events";
+import { ArborEmitter, MutationMonitor } from "../events";
 import { Attribute } from "../kinds/attributes";
 import {
   SyntheticAttributeDefinition,
@@ -72,6 +72,7 @@ export class MobxReifier implements Reifier<object> {
     list: ListChildren<T>,
     def: SyntheticAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
+    monitor: MutationMonitor<T>,
     opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
     const f = computeableSynthetic(def.f, this.computedOptions());
@@ -81,6 +82,7 @@ export class MobxReifier implements Reifier<object> {
       def,
       f,
       emitter,
+      monitor, // TODO: We'll probably want to filter this
       this.reificationOptions()
     );
     return (x) => computableAttr(x).get();
@@ -90,6 +92,7 @@ export class MobxReifier implements Reifier<object> {
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
+    monitor: MutationMonitor<T>,
     p: ParentFunc<T>,
     opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
@@ -101,6 +104,7 @@ export class MobxReifier implements Reifier<object> {
       def,
       f,
       emitter,
+      monitor, // TODO: probably need to filter this
       p,
       this.reificationOptions()
     );

@@ -8,7 +8,7 @@ import { ParentFunc } from "../kinds/inherited";
 import { Reifier } from "./reifier";
 import { reifySyntheticAttribute } from "./synthetic";
 import { reifyInheritedAttribute, reifyParent } from "./inherited";
-import { ArborEmitter } from "../events";
+import { ArborEmitter, MutationMonitor } from "../events";
 import { ReificationOptions } from "../kinds/options";
 import { Maybe } from "purify-ts/Maybe";
 
@@ -29,6 +29,7 @@ export class StandardReifier implements Reifier<object> {
     list: ListChildren<T>,
     def: SyntheticAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
+    monitor: MutationMonitor<T>,
     opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
     const mergedPartialOptions = { ...this.options, ...opts };
@@ -45,6 +46,7 @@ export class StandardReifier implements Reifier<object> {
       def,
       def.f,
       emitter,
+      monitor,
       completeOptions
     );
   }
@@ -53,6 +55,7 @@ export class StandardReifier implements Reifier<object> {
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
+    monitor: MutationMonitor<T>,
     p: ParentFunc<T>,
     opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
@@ -70,6 +73,7 @@ export class StandardReifier implements Reifier<object> {
       def,
       def.f,
       emitter,
+      monitor,
       p,
       completeOptions
     );

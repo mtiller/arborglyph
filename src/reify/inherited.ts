@@ -7,7 +7,7 @@ import {
   ParentInformation,
 } from "../kinds/inherited";
 import { Maybe } from "purify-ts/Maybe";
-import { ArborEmitter } from "../events";
+import { ArborEmitter, MutationMonitor } from "../events";
 import { CacheStorage } from "../kinds/cache";
 import { walkTree } from "../utils";
 import { ReificationOptions } from "../kinds/options";
@@ -49,6 +49,7 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
   def2: InheritedAttributeDefinition<T, DR>,
   f: InheritedAttributeEvaluator<T, R>,
   emitter: ArborEmitter<T>,
+  monitor: MutationMonitor<T>,
   p: ParentFunc<T>,
   opts: ReificationOptions
 ): Attribute<T, R> {
