@@ -37,7 +37,7 @@ export interface ArborOptions<T extends object> {
  */
 export class Arbor<T extends object> {
   /** The attribute that returns the parent of any node in the tree */
-  protected parentAttr: Attribute<T, Maybe<T>>;
+  protected parentAttr!: Attribute<T, Maybe<T>>;
   /** A map of already reified attributes (and the definitions they were reified from) */
   protected reified = new Map<
     AttributeDefinition<any, any>,
@@ -73,10 +73,8 @@ export class Arbor<T extends object> {
     this.events.emit("initialized", this.options.reification);
 
     /** Set the initial root (this assignment keeps the compiler happy) */
-    this.parentAttr = this.setRoot(root);
-
-    /** Setup listener to handle future changes in root node */
-    this.mutations.on("reroot", this.setRoot);
+    // this.parentAttr = this.setRoot(root);
+    this.setRoot(root);
   }
   /** The current root of the tree */
   get root() {
@@ -171,12 +169,12 @@ export class Arbor<T extends object> {
     };
   }
   /**
-   * This method is used anytime the root of the tree changes.
+   * This method is used to change the root of the tree
    *
    * @param newroot The new root of the tree
    * @returns The new parent attribute
    */
-  protected setRoot(newroot: T) {
+  public setRoot(newroot: T) {
     this.treeRoot = newroot;
     /**
      * If this tree is immutable, we freeze it so that any modifications
@@ -194,7 +192,9 @@ export class Arbor<T extends object> {
       this.list,
       this.events
     );
-    return this.parentAttr;
+
+    /** Inform anybody who is interested that we have rerooted the tree */
+    this.mutations.emit("reroot", this.treeRoot);
   }
 }
 

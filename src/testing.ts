@@ -63,3 +63,21 @@ export const sampleTree1 = fork(
   fork(leaf(7), fork(fork(leaf(5), leaf(9)), leaf(3))),
   fork(leaf(4), fork(leaf(1), fork(leaf(6), leaf(8))))
 );
+
+/**
+ *                .
+ *              /   \
+ *             .     .
+ *            / \   / \
+ *           5   3 1   8
+ */
+export const symTree1 = fork(fork(leaf(5), leaf(3)), fork(leaf(1), leaf(8)));
+
+/**
+ *                .
+ *              /   \
+ *             .     .
+ *            / \   / \
+ *           2   4 9   6
+ */
+export const symTree2 = fork(fork(leaf(5), leaf(3)), fork(leaf(1), leaf(8)));
