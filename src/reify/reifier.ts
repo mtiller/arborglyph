@@ -13,7 +13,7 @@ export interface Reifier<B extends object = any> {
   parent<T extends object>(
     root: T,
     list: ListChildren<T>,
-    emitter: ArborEmitter<T>
+    monitor: MutationMonitor<T>
   ): Attribute<T, Maybe<T>>;
   synthetic<T extends B, R>(
     root: T,

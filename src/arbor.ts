@@ -73,6 +73,12 @@ export class Arbor<T extends object> {
      */
     this.events.emit("initialized", this.options.reification);
 
+    this.parentAttr = this.options.reifier.parent(
+      this.treeRoot,
+      this.list,
+      this.events
+    );
+
     /** Set the initial root (this assignment keeps the compiler happy) */
     // this.parentAttr = this.setRoot(root);
     this.setRoot(root);
@@ -223,11 +229,6 @@ export class Arbor<T extends object> {
         console.error("Mutation event issued for immutable tree!");
       });
     }
-    this.parentAttr = this.options.reifier.parent(
-      this.treeRoot,
-      this.list,
-      this.events
-    );
 
     /** Inform anybody who is interested that we have rerooted the tree */
     this.mutations.emit("reroot", this.treeRoot);

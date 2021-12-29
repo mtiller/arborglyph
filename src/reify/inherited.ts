@@ -20,12 +20,31 @@ import { ReificationOptions } from "../kinds/options";
 export function reifyParent<T extends object>(
   root: T,
   list: ListChildren<T>,
-  emitter: ArborEmitter<T>
+  monitor: MutationMonitor<T>
 ): Attribute<T, Maybe<T>> {
+  let currentRoot = root;
   const parentCache = new WeakMap<T, Maybe<T>>();
-  walkTree(root, list, (n: T, parent: Maybe<T>) => {
-    parentCache.set(n, parent);
+
+  const walk = () => {
+    walkTree(currentRoot, list, (n: T, parent: Maybe<T>) => {
+      parentCache.set(n, parent);
+    });
+  };
+
+  /** Perform an initial walk of the tree. */
+  walk();
+
+  /** Re-walk if the tree is rerooted */
+  monitor.on("reroot", (r) => {
+    currentRoot = r;
+    walk();
   });
+
+  /** If any inherited attributes get invalidated, we should probably rewalk the whole tree. */
+  monitor.on("invalidate", (_, inherited) => {
+    if (inherited.size > 0) walk();
+  });
+
   return (x: T): Maybe<T> => {
     const p = parentCache.get(x);
     if (p) return p;

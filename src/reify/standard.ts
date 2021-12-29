@@ -20,9 +20,9 @@ export class StandardReifier implements Reifier<object> {
   parent<T extends object>(
     root: T,
     list: ListChildren<T>,
-    emitter: ArborEmitter<T>
+    monitor: MutationMonitor<T>
   ): Attribute<T, Maybe<T>> {
-    return reifyParent(root, list, emitter);
+    return reifyParent(root, list, monitor);
   }
   synthetic<T extends object, R>(
     root: T,
