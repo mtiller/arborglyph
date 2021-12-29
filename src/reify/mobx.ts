@@ -6,7 +6,12 @@ import {
 } from "mobx";
 import { Maybe } from "purify-ts/Maybe";
 import { ListChildren } from "../children";
-import { ArborEmitter, MutationMonitor } from "../events";
+import {
+  ArborEmitter,
+  MutationEvents,
+  MutationMonitor,
+  typedEmitter,
+} from "../events";
 import { Attribute } from "../kinds/attributes";
 import {
   SyntheticAttributeDefinition,
@@ -54,6 +59,7 @@ export interface MobxReifierOptions extends ReificationOptions {
  * could avoid stale data getting memoized.
  */
 export class MobxReifier implements Reifier<object> {
+  protected dummy = typedEmitter<MutationEvents<object>>();
   protected options: Partial<MobxReifierOptions>;
   constructor(opts?: Partial<MobxReifierOptions>) {
     this.options = opts ?? {};
@@ -61,10 +67,10 @@ export class MobxReifier implements Reifier<object> {
   parent<T extends object>(
     root: T,
     list: ListChildren<T>,
-    emitter: ArborEmitter<T>
+    monitor: MutationMonitor<T>
   ): Attribute<T, Maybe<T>> {
     // TODO: Ensure root is observable?
-    return reifyParent(root, list, emitter);
+    return reifyParent(root, list, monitor);
   }
 
   synthetic<T extends object, R>(
@@ -82,8 +88,8 @@ export class MobxReifier implements Reifier<object> {
       def,
       f,
       emitter,
-      monitor, // TODO: We'll probably want to filter this
-      this.reificationOptions()
+      this.dummy, // We can safely ignore invalidation and reroot events, IComputedValue will handle cache invalidation
+      this.reificationOptions(opts)
     );
     return (x) => computableAttr(x).get();
   }
@@ -92,7 +98,7 @@ export class MobxReifier implements Reifier<object> {
     list: ListChildren<T>,
     def: InheritedAttributeDefinition<T, R>,
     emitter: ArborEmitter<T>,
-    monitor: MutationMonitor<T>,
+    monitor2: MutationMonitor<T>,
     p: ParentFunc<T>,
     opts: Partial<ReificationOptions>
   ): Attribute<T, R> {
@@ -104,9 +110,9 @@ export class MobxReifier implements Reifier<object> {
       def,
       f,
       emitter,
-      monitor, // TODO: probably need to filter this
+      this.dummy, // We can safely ignore invalidation and reroot events, IComputedValue will handle cache invalidation
       p,
-      this.reificationOptions()
+      this.reificationOptions(opts)
     );
     return (x) => computeableAttr(x).get();
   }

@@ -26,8 +26,15 @@ export function reifyParent<T extends object>(
   const parentCache = new WeakMap<T, Maybe<T>>();
 
   const walk = () => {
+    const seen = new Set<T>();
     walkTree(currentRoot, list, (n: T, parent: Maybe<T>) => {
+      if (seen.has(n)) {
+        throw new Error(
+          "Same node exists multiple times in a single tree, Arbor doesn't allow this (ambiguos parent node)"
+        );
+      }
       parentCache.set(n, parent);
+      seen.add(n);
     });
   };
 

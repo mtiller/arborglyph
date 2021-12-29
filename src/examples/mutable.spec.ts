@@ -27,7 +27,7 @@ describe.skip("Examples using mutable trees", () => {
     expect(tree.root).toEqual(root);
     expect(tree.root).toEqual(root);
 
-    const path = tree.add(evalPath());
+    const path = tree.add(evalPath({ eager: true }));
     logger.stringifyNode = path;
     logger.stringifyResult = () => "";
 

@@ -1,14 +1,6 @@
 # Ideas
 
-1. Builtin parent
-
-1. Alternative `synthetic` implementation for observables (with integrated wrap/unwrap)
-
-1. Add generic wrapper for caching (LRU, weakmap, etc) (use Storage interface)
-
 1. Simple fixed length array LRU implementation built in?
-
-1. Add wrap, unwrap functionality for attrs **and** root (observable). Drop in for `mobx`.
 
 1. Conditional attribute "wrapper" (Either + transform)
 
@@ -37,3 +29,6 @@ Companion libraries for `mobx`, `immer`, ...?
 - Add path attribute + name table
 - Add derived type (skips all tree walking), no caching, no eager evaluation. Transform other attributes.
 - Merge memoized value and children into a single entry.
+- Builtin parent
+- Add a cacheProvider option to allow alternative implementations of `CacheStorage` interface besides `WeakMap`
+- Custom reifier for MobX to wrap evaluations and attributes in `IComputedValue`s.
