@@ -10,11 +10,11 @@ import { walkTree } from "../utils";
  * and for the entire tree.
  */
 export function reifyParent<T extends object>(
-  root: T,
+  initialRoot: T,
   list: ListChildren<T>,
   monitor: MutationMonitor<T>
 ): Attribute<T, Maybe<T>> {
-  let currentRoot = root;
+  let currentRoot = initialRoot;
   const parentCache = new WeakMap<T, Maybe<T>>();
 
   const walk = () => {

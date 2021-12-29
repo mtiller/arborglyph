@@ -2,6 +2,7 @@ import {
   computed,
   IComputedValue,
   IComputedValueOptions,
+  isObservable,
   observable,
 } from "mobx";
 import { Maybe } from "purify-ts/Maybe";
@@ -70,6 +71,8 @@ export class MobxReifier implements Reifier<object> {
     list: ListChildren<T>,
     monitor: MutationMonitor<T>
   ): Attribute<T, Maybe<T>> {
+    if (!isObservable(root))
+      throw new Error("Using MobxReifier, but root node isn't observable!");
     // TODO: Ensure root is observable?
     return reifyParent(root, list, monitor);
   }
