@@ -76,11 +76,10 @@ export class Arbor<T extends object> {
     this.parentAttr = this.options.reifier.parent(
       this.treeRoot,
       this.list,
-      this.events
+      this.mutations
     );
 
-    /** Set the initial root (this assignment keeps the compiler happy) */
-    // this.parentAttr = this.setRoot(root);
+    /** Set the initial root */
     this.setRoot(root);
   }
   /** The current root of the tree */
@@ -187,6 +186,11 @@ export class Arbor<T extends object> {
    * @param n
    */
   public update<N extends T>(n: N): void {
+    this.performInvalidation(n);
+    this.mutations.emit("finalize");
+  }
+
+  protected performInvalidation(n: T) {
     /** These will be the sets of synthetic and inherited attributes that need their caches invalidated. */
     const synthetics: Set<T> = new Set();
     const inherited: Set<T> = new Set();
@@ -217,6 +221,7 @@ export class Arbor<T extends object> {
    * @returns The new parent attribute
    */
   public setRoot(newroot: T) {
+    this.performInvalidation(this.treeRoot);
     this.treeRoot = newroot;
     /**
      * If this tree is immutable, we freeze it so that any modifications
@@ -225,19 +230,11 @@ export class Arbor<T extends object> {
     if (this.options.immutable) {
       /** Recursively freeze everything in the tree */
       deepFreeze(newroot);
-      this.mutations.on("mutation", () => {
-        console.error("Mutation event issued for immutable tree!");
-      });
     }
 
     /** Inform anybody who is interested that we have rerooted the tree */
     this.mutations.emit("reroot", this.treeRoot);
-
-    /**
-     * Send an update out for the tree node.  This should have the effect of invalidating
-     * all inherited attributes.
-     */
-    this.update(this.treeRoot);
+    this.mutations.emit("finalize");
   }
 }
 

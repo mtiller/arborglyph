@@ -9,10 +9,10 @@ import EventEmitter from "events";
 export interface MutationEvents<T extends object> {
   /** Instructs caches to invalidate any entries for `n` that are for `synthetic` and/or `inherited` attributes. */
   invalidate(synthetic: Set<T>, inherited: Set<T>): void;
-  /** Used when a node (still) in the tree is mutated. */
-  mutation(n: T, parametric: boolean): void;
   /** Used when the root node of the tree is changed. */
   reroot(root: T): void;
+  /** Finalize any structural changes */
+  finalize(): void;
 }
 
 /** A subset of the event emmiter interface that is read only. */

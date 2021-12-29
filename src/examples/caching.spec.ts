@@ -38,7 +38,7 @@ const cases: CaseData[] = [
     sub: 3,
     total1: 10,
     total2: 17,
-    total3: 17,
+    total3: 24,
     total4: 31,
     total5: 38,
   },
@@ -49,7 +49,7 @@ const cases: CaseData[] = [
     sub: 3,
     total1: 7,
     total2: 7,
-    total3: 7,
+    total3: 11,
     total4: 15,
     total5: 16,
   },
@@ -60,7 +60,7 @@ const cases: CaseData[] = [
     sub: 3,
     total1: 7,
     total2: 7,
-    total3: 7,
+    total3: 11,
     total4: 15,
     total5: 16,
   },
@@ -71,6 +71,7 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       const tree1 = { ...symTree1 };
       const tree2 = { ...symTree2 };
       const l1 = findChild(tree1, ["left"]);
+      const r1 = findChild(tree1, ["right"]);
       const r2 = findChild(tree2, ["right"]);
       const stats = new CounterPlugin();
       const tree = new Arbor(tree1, indexedBinaryChildren, {
@@ -103,10 +104,10 @@ describe("Evaluate several simple cases and check cache consistency", () => {
 
       /** How we mutate the tree depends on whether the underlying tree is immutable */
       if (args.immutable) {
-        /** If immutable, create a new tree that contains nodes from old tree (so cache should be reused) */
+        /** If immutable, create a new tree that contains nodes from old tree (so cache of synthetics should be reused) */
         tree.setRoot(fork(l1, r2));
       } else {
-        /** If tree is mutable, replace left and right subtrees and inform Arbor of change to node. */
+        /** If tree is mutable, replace right subtree and inform Arbor of change to node. */
         const t = tree.root;
         expect(t.type).toEqual("fork");
         if (t.type === "fork") {
@@ -118,10 +119,9 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       expect(stats.invocations(evalMin)).toEqual(args.total2);
 
       /** Now request the value of a root level inherited attribute */
-      // TODO: Needs the current parentAttr!  Cannot reassign, need to modify values in closure!
       expect(globmin(tree.root)).toEqual(3);
 
-      /** The change in root shouldn't have impacted totals yet */
+      /** For memoized cases, synthetic attributes for the root and all nodes on the right side need to be recomputed (4) */
       expect(stats.invocations(evalMin)).toEqual(args.total3);
 
       /**
@@ -137,16 +137,21 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       expect(stats.invocations(evalMin)).toEqual(args.total4);
 
       /** Let's switch back to the original tree.  The cached values for that should still apply! */
-      tree.setRoot(tree1);
+      if (args.immutable) {
+        /** If immutable, create a new tree that contains nodes from old tree (so cache of synthetics should be reused) */
+        tree.setRoot(tree1);
+      } else {
+        /** If tree is mutable, replace right subtree and inform Arbor of change to node. */
+        const t = tree.root;
+        expect(t.type).toEqual("fork");
+        if (t.type === "fork") {
+          t.right = r1;
+          tree.update(t);
+        }
+      }
       /** Now, if we evaluate the root we should get the root min */
       expect(min(tree.root)).toEqual(1);
       /** In the memoized case, no new evaluations are required, otherwise 7 more evaluations will occur */
-      expect(stats.invocations(evalMin)).toEqual(args.total4);
-
-      /** Now, if we evaluate the root we should get the root min */
-      expect(min(tree.root)).toEqual(3);
-
-      /** In the memoized case, this should only add one new evaluation (the root), otherwise 7 more evaluations will occur */
       expect(stats.invocations(evalMin)).toEqual(args.total5);
     });
   });

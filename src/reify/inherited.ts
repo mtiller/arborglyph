@@ -37,12 +37,15 @@ export function reifyParent<T extends object>(
   /** Re-walk if the tree is rerooted */
   monitor.on("reroot", (r) => {
     currentRoot = r;
-    walk();
   });
 
   /** If any inherited attributes get invalidated, we should probably rewalk the whole tree. */
   monitor.on("invalidate", (_, inherited) => {
-    if (inherited.size > 0) walk();
+    inherited.forEach((x) => parentCache.delete(x));
+  });
+
+  monitor.on("finalize", () => {
+    walk();
   });
 
   return (x: T): Maybe<T> => {
