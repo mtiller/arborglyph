@@ -7,10 +7,11 @@ import {
 import { ParentFunc } from "../kinds/inherited";
 import { Reifier } from "./reifier";
 import { reifySyntheticAttribute } from "./synthetic";
-import { reifyInheritedAttribute, reifyParent } from "./inherited";
+import { reifyInheritedAttribute } from "./inherited";
 import { ArborEmitter, MutationMonitor } from "../events";
 import { ReificationOptions } from "../kinds/options";
 import { Maybe } from "purify-ts/Maybe";
+import { reifyParent } from "./parent";
 
 export class StandardReifier implements Reifier<object> {
   protected options: Partial<ReificationOptions>;

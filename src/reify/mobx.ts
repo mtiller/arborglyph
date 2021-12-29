@@ -24,7 +24,8 @@ import {
 } from "../kinds/inherited";
 import { ReificationOptions } from "../kinds/options";
 import { SyntheticArg, SyntheticAttributeEvaluator } from "../kinds/synthetic";
-import { reifyInheritedAttribute, reifyParent } from "./inherited";
+import { reifyInheritedAttribute } from "./inherited";
+import { reifyParent } from "./parent";
 import { Reifier } from "./reifier";
 import { reifySyntheticAttribute } from "./synthetic";
 
