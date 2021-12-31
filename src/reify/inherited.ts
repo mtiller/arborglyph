@@ -73,7 +73,12 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
     };
 
     /** Create an attribute function using a memoizing attribute evaluator */
-    const memoed = baseInheritedAttributeCalculation(memoizeEvaluator, p);
+    const memoed = baseInheritedAttributeCalculation(
+      def2,
+      memoizeEvaluator,
+      p,
+      emitter
+    );
 
     /* If precomputing of the attribute for all nodes was selected... */
     if (eager) {
@@ -96,8 +101,12 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
     return ret;
   };
 
+  // NB - We don't perform eager evaluation here because there would be no point,
+  // the results would just be lost.  Yes, we might "observe them", but computing all
+  // nodes just because a few might be observed seems wasteful.
+
   /** Build a function that can compute our attribute but doesn't use caching */
-  return baseInheritedAttributeCalculation(evaluator, p);
+  return baseInheritedAttributeCalculation(def2, evaluator, p, emitter);
 }
 
 /**
@@ -107,16 +116,20 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
  * @param p An optional "parent function" (to save searching the tree for `x`)
  * @returns A function that takes a node and returns the attribute value
  */
-function baseInheritedAttributeCalculation<T, R>(
+function baseInheritedAttributeCalculation<T extends object, R, DR>(
+  def: InheritedAttributeDefinition<T, DR>,
   f: InheritedAttributeEvaluator<T, R>,
-  p: ParentFunc<T>
+  p: ParentFunc<T>,
+  emitter: ArborEmitter<T>
 ): Attribute<T, R> {
   const ret = (x: T): R => {
     /**
      * If a parent function was supplied, then this is very easy
      */
     const information = parentInformation(x, p, ret);
-    return f({ node: x, parent: information });
+    const result = f({ node: x, parent: information });
+    emitter.emit("evaluation", def as any, x, result);
+    return result;
   };
   return ret;
 }

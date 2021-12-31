@@ -41,7 +41,7 @@ export function reifySyntheticAttribute<T extends object, DR, R>(
 
   const f: typeof df = (x) => {
     const r = df(x);
-    emitter.emit("invocation", d2, x.node, r);
+    emitter.emit("invocation", d2 as any, x.node, r);
     return r;
   };
 
@@ -55,14 +55,15 @@ export function reifySyntheticAttribute<T extends object, DR, R>(
   }
 
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(d2, root, list, evaluator);
+  return baseSyntheticAttributeCalculation(d2, root, list, evaluator, emitter);
 }
 
-function baseSyntheticAttributeCalculation<T, DR, R>(
+function baseSyntheticAttributeCalculation<T extends object, DR, R>(
   d: SyntheticAttributeDefinition<T, DR>,
   root: T,
   list: ListChildren<T>,
-  f: SyntheticAttributeEvaluator<T, R>
+  f: SyntheticAttributeEvaluator<T, R>,
+  emitter: ArborEmitter<T>
 ): Attribute<T, R> {
   const ret = (x: T): R => {
     const childNodes = childrenOfNode<T>(list, x);
@@ -86,6 +87,8 @@ function baseSyntheticAttributeCalculation<T, DR, R>(
       createMap: <K, V>() => new Map<K, V>(),
     };
     const result = f(args);
+    emitter.emit("evaluation", d as any, x, result);
+
     return result;
   };
   return ret;

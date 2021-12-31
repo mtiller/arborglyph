@@ -71,9 +71,9 @@ export class MobxReifier implements Reifier<object> {
     list: ListChildren<T>,
     monitor: MutationMonitor<T>
   ): Attribute<T, Maybe<T>> {
+    // Ensure root is observable?
     if (!isObservable(root))
       throw new Error("Using MobxReifier, but root node isn't observable!");
-    // TODO: Ensure root is observable?
     return reifyParent(root, list, monitor);
   }
 

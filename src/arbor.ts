@@ -130,7 +130,7 @@ export class Arbor<T extends object> {
           this.completeOptions(def, opts)
         );
         this.reified.set(def, r);
-        this.events.emit("added", def, r);
+        this.events.emit("added", def as any, r);
         return r;
       }
       case "inh": {
@@ -144,7 +144,7 @@ export class Arbor<T extends object> {
           this.completeOptions(def, opts)
         );
         this.reified.set(def, r);
-        this.events.emit("added", def, r);
+        this.events.emit("added", def as any, r);
         return r;
       }
       case "der": {

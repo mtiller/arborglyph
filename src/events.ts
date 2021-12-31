@@ -28,10 +28,10 @@ export type MutationEmitter<T extends object> = TypedEmitter<MutationEvents<T>>;
 export interface ArborEvents<T extends object> {
   created: () => void;
   connected: (plugin: ArborPlugin<T>) => void;
-  added: (d: AttributeDefinition<T, any>, a: Attribute<T, any>) => void;
+  added: <R>(d: AttributeDefinition<T, R>, a: Attribute<T, R>) => void;
   initialized: (reificationOptions: Partial<ReificationOptions>) => void;
-  invocation: (d: AttributeDefinition<T, any>, n: T, result: unknown) => void;
-  evaluation: (a: Attribute<T, any>, n: T, result: unknown) => void;
+  invocation: <R>(d: AttributeDefinition<T, R>, n: T, result: R) => void;
+  evaluation: <R>(a: Attribute<T, R>, n: T, result: R) => void;
 }
 
 /** A subset of the event emmiter interface that is read only. */
