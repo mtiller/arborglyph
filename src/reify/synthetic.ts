@@ -30,7 +30,7 @@ import { ReificationOptions } from "../kinds/options";
 export function reifySyntheticAttribute<T extends object, DR, R>(
   root: T,
   list: ListChildren<T>,
-  d2: SyntheticAttributeDefinition<T, DR>,
+  def: SyntheticAttributeDefinition<T, DR>,
   df: SyntheticAttributeEvaluator<T, R>,
   emitter: ArborEmitter<T>,
   monitor: MutationMonitor<T>,
@@ -41,7 +41,7 @@ export function reifySyntheticAttribute<T extends object, DR, R>(
 
   const f: typeof df = (x) => {
     const r = df(x);
-    emitter.emit("invocation", d2 as any, x.node, r);
+    emitter.emit("invocation", def as any, x.node, r);
     return r;
   };
 
@@ -51,11 +51,16 @@ export function reifySyntheticAttribute<T extends object, DR, R>(
     monitor.on("invalidate", (synthetic, _) =>
       synthetic.forEach((x) => storage.delete(x))
     );
-    evaluator = wrapWithMap(d2, storage, f);
+    monitor.on("invalidateAttribute", (indef) => {
+      if (def === indef) {
+        storage.clear();
+      }
+    });
+    evaluator = wrapWithMap(def, storage, f);
   }
 
   /** Build a function that can compute our attribute */
-  return baseSyntheticAttributeCalculation(d2, root, list, evaluator, emitter);
+  return baseSyntheticAttributeCalculation(def, root, list, evaluator, emitter);
 }
 
 function baseSyntheticAttributeCalculation<T extends object, DR, R>(

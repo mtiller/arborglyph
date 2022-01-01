@@ -25,7 +25,7 @@ import { ReificationOptions } from "../kinds/options";
 export function reifyInheritedAttribute<T extends object, DR, R>(
   root: T,
   list: ListChildren<T>,
-  def2: InheritedAttributeDefinition<T, DR>,
+  def: InheritedAttributeDefinition<T, DR>,
   f: InheritedAttributeEvaluator<T, R>,
   emitter: ArborEmitter<T>,
   monitor: MutationMonitor<T>,
@@ -50,6 +50,12 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
       inherited.forEach((x) => storage.delete(x))
     );
 
+    monitor.on("invalidateAttribute", (indef) => {
+      if (def === indef) {
+        storage.clear();
+      }
+    });
+
     /**
      * Now create a special memoized wrapper that checks for memoized values and
      * caches any attributes actually evaluated.
@@ -65,7 +71,7 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
       storage.set(args.node, ret);
       emitter.emit(
         "invocation",
-        def2 as InheritedAttributeDefinition<T, unknown>,
+        def as InheritedAttributeDefinition<T, unknown>,
         args.node,
         ret
       );
@@ -74,7 +80,7 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
 
     /** Create an attribute function using a memoizing attribute evaluator */
     const memoed = baseInheritedAttributeCalculation(
-      def2,
+      def,
       memoizeEvaluator,
       p,
       emitter
@@ -94,7 +100,7 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
     const ret = f(args);
     emitter.emit(
       "invocation",
-      def2 as InheritedAttributeDefinition<T, unknown>,
+      def as InheritedAttributeDefinition<T, unknown>,
       args.node,
       ret
     );
@@ -106,7 +112,7 @@ export function reifyInheritedAttribute<T extends object, DR, R>(
   // nodes just because a few might be observed seems wasteful.
 
   /** Build a function that can compute our attribute but doesn't use caching */
-  return baseInheritedAttributeCalculation(def2, evaluator, p, emitter);
+  return baseInheritedAttributeCalculation(def, evaluator, p, emitter);
 }
 
 /**

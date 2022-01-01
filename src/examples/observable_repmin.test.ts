@@ -107,7 +107,8 @@ describe("Run some repmin test cases on mutable trees", () => {
 export function repminCluster(tree: Arbor<SimpleBinaryTree>) {
   const min = tree.add(evalMin);
   const globmin = tree.add(evalGlobmin(min));
-  const repmin = tree.add(evalRepmin(globmin));
+  const repminAttr = evalRepmin(globmin);
+  const repmin = tree.add(repminAttr, {});
   const path = tree.add(evalPath({ eager: false }));
   const subtable = tree.add(
     subTable(path, (x): x is LeafNode => x.type === "leaf")
@@ -116,7 +117,7 @@ export function repminCluster(tree: Arbor<SimpleBinaryTree>) {
   // which interfere with my ability to test lazy evaluation.
   //const table = subtable(tree.root);
 
-  return { subtable, min, globmin, repmin, path };
+  return { subtable, min, globmin, repmin, path, repminAttr };
 }
 
 export function repminResult(x: number) {

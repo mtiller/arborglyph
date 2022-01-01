@@ -179,6 +179,9 @@ export class Arbor<T extends object> {
       ...opts,
     };
   }
+  public invalidateAttribute(d: AttributeDefinition<T, any>): void {
+    this.mutations.emit("invalidateAttribute", d);
+  }
   /**
    * This method should be called for a mutable tree when an update has been
    * made to a given node.

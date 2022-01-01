@@ -1,5 +1,4 @@
 import { Maybe } from "purify-ts/Maybe";
-import { CacheProvider } from "./cache";
 
 /** A parent function takes a given node and returns its parent, if it has one. */
 export type ParentFunc<T> = (x: T) => Maybe<T>;

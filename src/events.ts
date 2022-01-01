@@ -9,6 +9,8 @@ import EventEmitter from "events";
 export interface MutationEvents<T extends object> {
   /** Instructs caches to invalidate any entries for `n` that are for `synthetic` and/or `inherited` attributes. */
   invalidate(synthetic: Set<T>, inherited: Set<T>): void;
+  /** Invalidate entire cache for a given attribute. */
+  invalidateAttribute(def: AttributeDefinition<T, any>): void;
   /** Used when the root node of the tree is changed. */
   reroot(root: T): void;
   /** Finalize any structural changes */

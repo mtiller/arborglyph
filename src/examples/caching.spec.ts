@@ -235,7 +235,7 @@ describe("Tests for inter-related attributes", () => {
       immutable: false,
     });
     /** Attach attributes to tree */
-    const { min, globmin, repmin } = tree.attach(repminCluster);
+    const { min, globmin, repmin, repminAttr } = tree.attach(repminCluster);
 
     /** A few noteworthy nodes */
     const l1 = findChild(tree1, ["left"]);
@@ -288,6 +288,13 @@ describe("Tests for inter-related attributes", () => {
       /** However, synthetic attributes that depended on that inherited attribute are still stale! */
       expect(repmin(l1)).toEqual(fork(leaf(1), leaf(1)));
       expect(repmin(r1)).toEqual(fork(leaf(1), leaf(1)));
+
+      // TODO: This is an ugly hack...
+      tree.invalidateAttribute(repminAttr);
+
+      /** Now, by forcibly invalidating the repmin attribute caches for all nodes, we get the right answer */
+      expect(repmin(l1)).toEqual(fork(leaf(2), leaf(2)));
+      expect(repmin(r1)).toEqual(fork(leaf(2), leaf(2)));
     }
   });
 });

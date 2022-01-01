@@ -24,6 +24,7 @@ export function lruPlugin<T extends object>(opts: LRUOptions): ArborPlugin<T> {
           set: (k, v) => lru.set(k, v),
           has: (k) => lru.has(k),
           delete: (k) => lru.del(k),
+          clear: () => lru.reset(),
         };
       },
     }),

@@ -12,6 +12,7 @@ import { ArborEmitter, MutationMonitor } from "../events";
 import { ReificationOptions } from "../kinds/options";
 import { Maybe } from "purify-ts/Maybe";
 import { reifyParent } from "./parent";
+import { ClearableWeakMap } from "../kinds/cache";
 
 export class StandardReifier implements Reifier<object> {
   protected options: Partial<ReificationOptions>;
@@ -38,7 +39,8 @@ export class StandardReifier implements Reifier<object> {
       memoize: mergedPartialOptions.memoize ?? false,
       eager: mergedPartialOptions.eager ?? true,
       cacheProvider:
-        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
+        mergedPartialOptions.cacheProvider ??
+        (() => new ClearableWeakMap<any, any>()),
     };
 
     return reifySyntheticAttribute<T, R, R>(
@@ -65,7 +67,8 @@ export class StandardReifier implements Reifier<object> {
       eager: mergedPartialOptions.eager ?? false,
       memoize: mergedPartialOptions.memoize ?? true,
       cacheProvider:
-        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
+        mergedPartialOptions.cacheProvider ??
+        (() => new ClearableWeakMap<any, any>()),
     };
 
     return reifyInheritedAttribute<T, R, R>(

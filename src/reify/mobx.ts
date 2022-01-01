@@ -14,6 +14,7 @@ import {
   typedEmitter,
 } from "../events";
 import { Attribute } from "../kinds/attributes";
+import { ClearableWeakMap } from "../kinds/cache";
 import {
   SyntheticAttributeDefinition,
   InheritedAttributeDefinition,
@@ -133,7 +134,8 @@ export class MobxReifier implements Reifier<object> {
       eager: mergedPartialOptions.eager ?? false,
       memoize: mergedPartialOptions.memoize ?? true,
       cacheProvider:
-        mergedPartialOptions.cacheProvider ?? (() => new WeakMap<any, any>()),
+        mergedPartialOptions.cacheProvider ??
+        (() => new ClearableWeakMap<any, any>()),
     };
     return completeOptions;
   }
