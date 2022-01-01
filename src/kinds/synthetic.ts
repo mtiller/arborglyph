@@ -1,9 +1,3 @@
-import { CacheProvider } from "./cache";
-
-export type SyntheticEvaluationWrapper<T> = <S extends T, R>(
-  e: SyntheticAttributeEvaluator<S, R>
-) => SyntheticAttributeEvaluator<S, R>;
-
 export interface ChildInformation<T, R> {
   node: T;
   attr: R;
@@ -21,6 +15,7 @@ export interface SyntheticArg<T, R> {
   node: T;
   attr: (child: T) => R;
   children: Array<ChildInformation<T, R>>;
+  // Should we really provide this?  Or should users just provide observable maps themselves?
   createMap: <K, V>() => Map<K, V>;
 }
 

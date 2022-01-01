@@ -127,7 +127,10 @@ function baseInheritedAttributeCalculation<T extends object, R, DR>(
      * If a parent function was supplied, then this is very easy
      */
     const information = parentInformation(x, p, ret);
-    const result = f({ node: x, parent: information });
+    const result = f({
+      node: x,
+      parent: information,
+    });
     emitter.emit("evaluation", def as any, x, result);
     return result;
   };
