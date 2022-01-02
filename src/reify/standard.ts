@@ -41,6 +41,7 @@ export class StandardReifier implements Reifier<object> {
       cacheProvider:
         mergedPartialOptions.cacheProvider ??
         (() => new ClearableWeakMap<any, any>()),
+      pure: mergedPartialOptions.pure ?? true,
     };
 
     return reifySyntheticAttribute<T, R, R>(
@@ -69,6 +70,7 @@ export class StandardReifier implements Reifier<object> {
       cacheProvider:
         mergedPartialOptions.cacheProvider ??
         (() => new ClearableWeakMap<any, any>()),
+      pure: mergedPartialOptions.pure ?? true,
     };
 
     return reifyInheritedAttribute<T, R, R>(

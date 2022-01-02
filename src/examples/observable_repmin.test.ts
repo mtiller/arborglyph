@@ -34,7 +34,7 @@ describe("Run some repmin test cases on mutable trees", () => {
     });
     logger.events.push("Post-Tree");
     expect(logger.events).toMatchSnapshot();
-    const { globmin, repmin, path } = tree.attach(repminCluster);
+    const { globmin, repmin, path } = tree.attach(repminCluster(false));
 
     // expect(path(tree.root)).toEqual("root");
     // const l = findChild(tree.root, ["left"]);
@@ -65,7 +65,7 @@ describe("Run some repmin test cases on mutable trees", () => {
       reification: { memoize: true },
       immutable: false,
     });
-    const { repmin } = tree.attach(repminCluster);
+    const { repmin } = tree.attach(repminCluster(false));
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
     expect(stats.invocations(evalMin)).toEqual(15);
@@ -80,7 +80,7 @@ describe("Run some repmin test cases on mutable trees", () => {
       plugins: [stats, lruPlugin({ max: 5 })],
       immutable: false,
     });
-    const { repmin } = tree.attach(repminCluster);
+    const { repmin } = tree.attach(repminCluster(false));
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
     expect(stats.invocations(evalMin)).toEqual(42); // Better, but not as good as with weakmap
@@ -95,7 +95,7 @@ describe("Run some repmin test cases on mutable trees", () => {
       plugins: [stats, lruPlugin({ max: 15 })],
       immutable: false,
     });
-    const { repmin } = tree.attach(repminCluster);
+    const { repmin } = tree.attach(repminCluster(false));
 
     expect(repmin(tree.root)).toEqual(repminResult(1));
     expect(stats.invocations(evalMin)).toEqual(15); // Matches weak map
@@ -104,20 +104,22 @@ describe("Run some repmin test cases on mutable trees", () => {
   });
 });
 
-export function repminCluster(tree: Arbor<SimpleBinaryTree>) {
-  const min = tree.add(evalMin);
-  const globmin = tree.add(evalGlobmin(min));
-  const repminAttr = evalRepmin(globmin);
-  const repmin = tree.add(repminAttr, {});
-  const path = tree.add(evalPath({ eager: false }));
-  const subtable = tree.add(
-    subTable(path, (x): x is LeafNode => x.type === "leaf")
-  );
-  // Invoking an attribute here causes all kinds of premature evaluations
-  // which interfere with my ability to test lazy evaluation.
-  //const table = subtable(tree.root);
+export function repminCluster(pure: boolean) {
+  return (tree: Arbor<SimpleBinaryTree>) => {
+    const min = tree.add(evalMin, { pure: pure });
+    const globmin = tree.add(evalGlobmin(min), { pure: pure });
+    const repminAttr = evalRepmin(globmin);
+    const repmin = tree.add(repminAttr);
+    const path = tree.add(evalPath({ eager: false }));
+    const subtable = tree.add(
+      subTable(path, (x): x is LeafNode => x.type === "leaf")
+    );
+    // Invoking an attribute here causes all kinds of premature evaluations
+    // which interfere with my ability to test lazy evaluation.
+    //const table = subtable(tree.root);
 
-  return { subtable, min, globmin, repmin, path, repminAttr };
+    return { subtable, min, globmin, repmin, path, repminAttr };
+  };
 }
 
 export function repminResult(x: number) {

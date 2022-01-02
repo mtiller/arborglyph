@@ -15,6 +15,10 @@ import { Maybe } from "purify-ts/Maybe";
 import { ReificationOptions } from "./kinds/options";
 import { ListChildren } from "./children";
 
+interface ReificationDetails {
+  attr: Attribute<any, any>;
+  options: Partial<ReificationOptions>;
+}
 /**
  * These are options associated with the operation of an Arbor instance.
  */
@@ -42,7 +46,7 @@ export class Arbor<T extends object> {
   /** A map of already reified attributes (and the definitions they were reified from) */
   protected reified = new Map<
     AttributeDefinition<any, any>,
-    Attribute<any, any>
+    ReificationDetails
   >();
   /** An event emitter for tracking attributes (creation, invocation, etc.) */
   protected events: ArborEmitter<T> = typedEmitter();
@@ -111,12 +115,15 @@ export class Arbor<T extends object> {
     reifier?: Reifier<T>
   ): Attribute<T, R> {
     /** Check if this definition was already reified. */
-    if (this.reified.has(def)) {
-      return this.reified.get(def) as Attribute<T, R>;
+    const details = this.reified.get(def);
+    if (details) {
+      return details.attr as Attribute<T, R>;
     }
 
     /** Use default reifier if one wasn't provided. */
     reifier = reifier ?? this.options.reifier;
+
+    const options = this.completeOptions(def, opts);
 
     /** Based on the type of attribute, we reify things differently */
     switch (def.type) {
@@ -127,9 +134,9 @@ export class Arbor<T extends object> {
           def,
           this.events,
           this.mutations,
-          this.completeOptions(def, opts)
+          options
         );
-        this.reified.set(def, r);
+        this.reified.set(def, { attr: r, options });
         this.events.emit("added", def as any, r);
         return r;
       }
@@ -143,21 +150,21 @@ export class Arbor<T extends object> {
           this.parentAttr,
           this.completeOptions(def, opts)
         );
-        this.reified.set(def, r);
+        this.reified.set(def, { attr: r, options });
         this.events.emit("added", def as any, r);
         return r;
       }
       case "der": {
         // TODO: As attribute gets expanded, more will probably be needed here.
         const r = (x: T) => def.f(x);
-        this.reified.set(def, r);
+        this.reified.set(def, { attr: r, options });
         this.events.emit("added", def, r);
         return r;
       }
       case "trans": {
         const attr = this.add(def.attr);
         const r = (x: T) => def.f(attr(x));
-        this.reified.set(def, r);
+        this.reified.set(def, { attr: r, options });
         this.events.emit("added", def, r);
         return r;
       }
@@ -178,9 +185,6 @@ export class Arbor<T extends object> {
       ...def.opts,
       ...opts,
     };
-  }
-  public invalidateAttribute(d: AttributeDefinition<T, any>): void {
-    this.mutations.emit("invalidateAttribute", d);
   }
   /**
    * This method should be called for a mutable tree when an update has been
@@ -216,6 +220,13 @@ export class Arbor<T extends object> {
 
     /** Now invalidate the cache entries */
     this.mutations.emit("invalidate", synthetics, inherited);
+
+    /** For all non-pure attributes, invalidate their caches. */
+    for (const [def, details] of this.reified) {
+      if (details.options.pure === false) {
+        this.mutations.emit("invalidateAttribute", def);
+      }
+    }
   }
   /**
    * This method is used to change the root of the tree

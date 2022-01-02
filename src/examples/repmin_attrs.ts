@@ -11,8 +11,10 @@ export const evalMin = synthetic<SimpleBinaryTree, number>(
 );
 
 export function evalGlobmin<R>(min: ScalarFunction<SimpleBinaryTree, R>) {
-  return inherited<SimpleBinaryTree, R>("global min", ({ node, parent }) =>
-    parent.map((p) => p.attr).orDefault(min(node))
+  return inherited<SimpleBinaryTree, R>(
+    "global min",
+    ({ node, parent }) => parent.map((p) => p.attr).orDefault(min(node)),
+    { pure: false }
   );
 }
 
@@ -22,6 +24,7 @@ export function evalRepmin(globmin: ScalarFunction<SimpleBinaryTree, number>) {
     ({ node, attr }) =>
       node.type === "leaf"
         ? leaf(globmin(node))
-        : fork(attr(node.left), attr(node.right))
+        : fork(attr(node.left), attr(node.right)),
+    { pure: false }
   );
 }

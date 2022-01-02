@@ -43,7 +43,7 @@ export interface InheritedOptions {
 export function inherited<T, R>(
   description: string,
   f: InheritedAttributeEvaluator<T, R>,
-  opts?: Partial<InheritedOptions>
+  opts?: Partial<ReificationOptions>
 ): InheritedAttributeDefinition<T, R> {
   return {
     type: "inh",

@@ -136,6 +136,7 @@ export class MobxReifier implements Reifier<object> {
       cacheProvider:
         mergedPartialOptions.cacheProvider ??
         (() => new ClearableWeakMap<any, any>()),
+      pure: mergedPartialOptions.pure ?? true,
     };
     return completeOptions;
   }

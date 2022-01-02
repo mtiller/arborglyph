@@ -115,7 +115,7 @@ describe("Evaluate several simple cases and check cache consistency", () => {
       reifier: args.observable ? new MobxReifier() : undefined,
     });
     /** Attach attributes to tree */
-    const { min, globmin } = tree.attach(repminCluster);
+    const { min, globmin } = tree.attach(repminCluster(true));
     /** Everything is lazy, so we shouldn't see any evaluations yet. */
     expect(stats.invocations(evalMin)).toEqual(0);
 
@@ -225,7 +225,7 @@ describe("Evaluate several simple cases and check cache consistency", () => {
 });
 
 describe("Tests for inter-related attributes", () => {
-  it("should compute syn(inh(syn(...))) correctly", () => {
+  it("should compute syn(inh(syn(...))) correctly using impurity", () => {
     /** Setup a normal repmin problem */
     const tree1 = clone(symTree1);
     const stats = new CounterPlugin();
@@ -235,7 +235,66 @@ describe("Tests for inter-related attributes", () => {
       immutable: false,
     });
     /** Attach attributes to tree */
-    const { min, globmin, repmin, repminAttr } = tree.attach(repminCluster);
+    const { min, globmin, repmin, repminAttr } = tree.attach(
+      repminCluster(false)
+    );
+
+    /** A few noteworthy nodes */
+    const l1 = findChild(tree1, ["left"]);
+    const rl1 = findChild(tree1, ["right", "left"]);
+    const r1 = findChild(tree1, ["right"]);
+
+    /** Ensure the expected results, pre-mutation */
+    expect(min(tree.root)).toEqual(1);
+    expect(globmin(tree.root)).toEqual(1);
+    expect(globmin(r1)).toEqual(1);
+    expect(globmin(l1)).toEqual(1);
+    expect(repmin(l1)).toEqual(fork(leaf(1), leaf(1)));
+    expect(repmin(r1)).toEqual(fork(leaf(1), leaf(1)));
+
+    expect(rl1.type).toEqual("leaf");
+    if (rl1.type === "leaf") {
+      expect(rl1.value).toEqual(1);
+
+      /* Mutate value of left-right node to 2 */
+      rl1.value = 2;
+
+      /** These evaluations give the wrong results because they have stale cached data */
+      expect(min(rl1)).toEqual(1);
+      expect(min(tree.root)).toEqual(1);
+      expect(globmin(rl1)).toEqual(1);
+      expect(globmin(l1)).toEqual(1);
+      expect(repmin(l1)).toEqual(fork(leaf(1), leaf(1)));
+      expect(repmin(r1)).toEqual(fork(leaf(1), leaf(1)));
+
+      /** We can address the stale data for synthetic attributes by notifying the tree of what we changed */
+      tree.update(rl1);
+
+      /** Now the synthetic attributes are recomputed and correct. */
+      expect(min(rl1)).toEqual(2);
+      expect(min(tree.root)).toEqual(2);
+
+      /** These are the values we would expect. */
+      expect(globmin(rl1)).toEqual(2);
+      expect(globmin(l1)).toEqual(2);
+      expect(repmin(l1)).toEqual(fork(leaf(2), leaf(2)));
+      expect(repmin(r1)).toEqual(fork(leaf(2), leaf(2)));
+    }
+  });
+
+  it("should compute syn(inh(syn(...))) incorrectly assuming purity", () => {
+    /** Setup a normal repmin problem */
+    const tree1 = clone(symTree1);
+    const stats = new CounterPlugin();
+    const tree = new Arbor(tree1, indexedBinaryChildren, {
+      plugins: [stats],
+      reification: { memoize: true },
+      immutable: false,
+    });
+    /** Attach attributes to tree */
+    const { min, globmin, repmin, repminAttr } = tree.attach(
+      repminCluster(true)
+    );
 
     /** A few noteworthy nodes */
     const l1 = findChild(tree1, ["left"]);
@@ -277,24 +336,6 @@ describe("Tests for inter-related attributes", () => {
       expect(globmin(l1)).toEqual(1);
       expect(repmin(l1)).toEqual(fork(leaf(1), leaf(1)));
       expect(repmin(r1)).toEqual(fork(leaf(1), leaf(1)));
-
-      /** But if we imply that the root node has been updated, all the cached inherited values are invalidated */
-      tree.update(tree.root);
-
-      /** Now we get the right answer */
-      expect(globmin(rl1)).toEqual(2);
-      expect(globmin(l1)).toEqual(2);
-
-      /** However, synthetic attributes that depended on that inherited attribute are still stale! */
-      expect(repmin(l1)).toEqual(fork(leaf(1), leaf(1)));
-      expect(repmin(r1)).toEqual(fork(leaf(1), leaf(1)));
-
-      // TODO: This is an ugly hack...
-      tree.invalidateAttribute(repminAttr);
-
-      /** Now, by forcibly invalidating the repmin attribute caches for all nodes, we get the right answer */
-      expect(repmin(l1)).toEqual(fork(leaf(2), leaf(2)));
-      expect(repmin(r1)).toEqual(fork(leaf(2), leaf(2)));
     }
   });
 });
